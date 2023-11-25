@@ -1,0 +1,50 @@
+### Product: update
+PUT {{host-url}}/api/v1/products/1
+Content-Type: application/json
+
+{
+  "productName": "Example Product 1",
+  "description": "This is an example product description.",
+  "price": 56.99,
+  "stockQuantity": 150
+}
+
+### getAll / get by id
+GET {{host-url}}/api/v1/products/1
+
+### Brand update
+PUT {{host-url}}/api/v1/brands/1
+Content-Type: application/json
+
+{
+  "brandName": "Coach"
+}
+
+### getAll / get by id
+GET {{host-url}}/api/v1/brands/1
+
+### productAttributes update
+PUT {{host-url}}/api/v1/productAttributes/1
+Content-Type: application/json
+
+{
+  "attributeName": "Color",
+  "attributeValue": "Blue"
+}
+
+### getAll / get by id
+GET {{host-url}}/api/v1/productAttributes/1
+
+### supplier update
+PUT {{host-url}}/api/v1/suppliers/3
+Content-Type: application/json
+
+{
+  "supplierName": "Chitchi",
+  "contactInfo": "Email: chitchi@example.com, Phone: +112233445566"
+}
+
+### getAll / get by id
+GET {{host-url}}/api/v1/suppliers/all
+
+

@@ -1,0 +1,58 @@
+server:
+  port: 9001
+  error:
+    path: /error
+
+backend:
+  host: us.umiuni.com  # Backend host
+  port: 5003         # Backend port
+  error:
+    path: /error
+
+spring:
+  datasource:
+    url: jdbc:mysql://us.umiuni.com:3306/umi_shop
+    username: root
+    password: Voidmain4Voidmain4@
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.MySQL5InnoDBDialect
+  sql:
+    init:
+      platform: mysql
+
+springfox:
+  documentation:
+    swagger:
+      ui:
+        base-url: /api-docs
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  swagger-ui:
+    path: /swagger-ui.html
+management:
+  endpoints:
+    web:
+      exposure:
+        include: mappings
+
+#logging:
+#  level:
+#    org:
+#      hibernate:
+#        type:
+#          descriptor:
+#            sql: trace
+#      springframework:
+#        security: DEBUG
+
+stripe:
+  secret:
+    key: sk_test_HNULuXYU2Y2e6HFczm6E5Nd6

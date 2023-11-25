@@ -1,0 +1,873 @@
+### create product 1
+POST {{host-url}}/api/v1/products
+Content-Type: application/json
+
+{
+  "productName": "Example Product10",
+  "skuCode": "SKU123464",
+  "categoryId": 1,
+  "categoryName": "Electronics",
+  "brandId": 2,
+  "brandName": "Brand XYZ",
+  "supplierId": 3,
+  "supplierName": "Supplier ABC",
+  "description": "This is an example product description.",
+  "price": 99.99,
+  "imageUrl": "https://cdn-icons-png.flaticon.com/512/2687/2687160.png?ga=GA1.1.1144698582.1700534973",
+  "stockQuantity": 100,
+  "stockStatus": "IN_STOCK",
+  "shippingInfo": "Ships within 2-3 business days.",
+  "lastStockUpdate": "2023-11-15T10:00:00"
+}
+
+### 2
+POST {{host-url}}/api/v1/products
+Content-Type: application/json
+
+{
+  "productName": "Full Product10",
+  "skuCode": "FULL12310",
+  "categoryId": 1,
+  "categoryName": "Electronics",
+  "brandId": 2,
+  "brandName": "Brand XYZ",
+  "supplierId": 3,
+  "supplierName": "Supplier ABC",
+  "description": "This is a complete product description.",
+  "price": 79.99,
+  "imageUrl": "https://cdn-icons-png.flaticon.com/512/2687/2687160.png?ga=GA1.1.1144698582.1700534973",
+  "stockQuantity": 200,
+  "stockStatus": "IN_STOCK",
+  "shippingInfo": "Ships within 1-2 business days.",
+  "lastStockUpdate": "2023-11-17T09:15:00"
+}
+
+### 3
+POST {{host-url}}/api/v1/products
+Content-Type: application/json
+
+{
+  "productName": "OutOfStock Product10",
+  "skuCode": "OUTOFSTK45610",
+  "categoryId": 2,
+  "categoryName": "Clothing",
+  "brandId": 3,
+  "brandName": "Brand ABC",
+  "supplierId": 4,
+  "supplierName": "Supplier XYZ",
+  "description": "This product is temporarily out of stock.",
+  "imageUrl": "https://cdn-icons-png.flaticon.com/512/2687/2687160.png?ga=GA1.1.1144698582.1700534973",
+  "price": 49.99,
+  "stockStatus": "OUT_OF_STOCK",
+  "stockQuantity": 0,
+  "shippingInfo": "Notify me when it's back in stock."
+}
+
+### 4
+POST {{host-url}}/api/v1/products
+Content-Type: application/json
+
+{
+  "productName": "Custom Product10",
+  "skuCode": "CUSTOM12310",
+  "categoryId": 4,
+  "categoryName": "Furniture",
+  "brandId": 5,
+  "brandName": "Brand LMN",
+  "supplierId": 6,
+  "supplierName": "Supplier GHI",
+  "description": "A custom product with unique details.",
+  "price": 129.99,
+  "imageUrl": "https://cdn-icons-png.flaticon.com/512/2687/2687160.png?ga=GA1.1.1144698582.1700534973",
+  "stockQuantity": 75,
+  "stockStatus": "IN_STOCK",
+  "shippingInfo": "Ships within 5-7 business days.",
+  "lastStockUpdate": "2023-11-18T11:30:00"
+}
+
+### 5
+POST {{host-url}}/api/v1/products
+Content-Type: application/json
+
+{
+  "productName": "High Stock Product",
+  "skuCode": "HIGHSTOCK789",
+  "categoryId": 1,
+  "categoryName": "Electronics",
+  "brandId": 2,
+  "brandName": "Brand XYZ",
+  "supplierId": 3,
+  "supplierName": "Supplier ABC",
+  "description": "A product with a large stock quantity.",
+  "price": 79.99,
+  "imageUrl": "https://example.com/high-stock-product-image.jpg",
+  "stockQuantity": 500,
+  "stockStatus": "IN_STOCK",
+  "shippingInfo": "Expedited shipping available. Ships within 1-2 business days.",
+  "lastStockUpdate": "2023-11-19T13:45:00"
+}
+
+### 6
+POST {{host-url}}/api/v1/products
+Content-Type: application/json
+
+{
+  "productName": "Backorder Product",
+  "skuCode": "BACKORDER456",
+  "categoryId": 3,
+  "categoryName": "Sports & Outdoors",
+  "brandId": 4,
+  "brandName": "Brand DEF",
+  "supplierId": 5,
+  "supplierName": "Supplier HIJ",
+  "description": "This product is available for backorder.",
+  "price": 59.99,
+  "imageUrl": "https://example.com/backorder-product-image.jpg",
+  "stockQuantity": 100,
+  "stockStatus": "IN_STOCK",
+  "shippingInfo": "Available for backorder. Estimated shipping in 2-3 weeks."
+}
+
+### 7
+POST {{host-url}}/api/v1/products
+Content-Type: application/json
+
+{
+  "productName": "Discounted Product",
+  "skuCode": "DISCOUNT123",
+  "categoryId": 2,
+  "categoryName": "Clothing",
+  "brandId": 3,
+  "brandName": "Brand ABC",
+  "supplierId": 4,
+  "supplierName": "Supplier XYZ",
+  "description": "This product is on sale for a limited time.",
+  "price": 39.99,
+  "imageUrl": "https://example.com/discounted-product-image.jpg",
+  "stockQuantity": 100,
+  "stockStatus": "IN_STOCK",
+  "shippingInfo": "Hurry, limited stock available! Ships within 1-2 business days."
+}
+
+### 8
+POST {{host-url}}/api/v1/products
+Content-Type: application/json
+
+{
+  "productName": "Long Description Product",
+  "skuCode": "LONGDESC789",
+  "categoryId": 3,
+  "categoryName": "Home & Garden",
+  "brandId": 4,
+  "brandName": "Brand PQR",
+  "supplierId": 5,
+  "supplierName": "Supplier XYZ",
+  "description": "This product has a very long and detailed description. It provides comprehensive information about the product's features, benefits, and usage. Customers can make an informed decision by reading this extensive description. Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum id justo non felis lacinia volutpat. Nulla facilisi. Donec rhoncus malesuada odio, sit amet auctor mi bibendum eget. Nam auctor dui id semper. Sed volutpat ultrices massa, non efficitur nulla luctus ac. Sed laoreet, arcu id facilisis dictum, mi massa iaculis libero, at feugiat sapien ligula in neque. Nunc vulputate, orci id pharetra bibendum, nunc eros blandit urna, id pellentesque libero justo id nisi. Cras nec tempor quam. Fusce consequat tincidunt neque nec luctus. Proin volutpat, nisi et bibendum lacinia, erat eros convallis velit, id laoreet est nisl vel nulla. Nulla sit amet nisl velit. Sed viverra nibh ut nisi vehicula eleifend. Fusce quis magna id arcu imperdiet sodales. Vivamus euismod nunc a ligula cursus, sit amet vestibulum odio accumsan.",
+  "price": 149.99,
+  "imageUrl": "https://example.com/long-description-product-image.jpg",
+  "stockQuantity": 1000,
+  "stockStatus": "IN_STOCK",
+  "shippingInfo": "Ships within 2-4 business days.",
+  "lastStockUpdate": "2023-11-21T16:30:00"
+}
+
+### create product 9
+POST {{host-url}}/api/v1/products
+Content-Type: application/json
+
+{
+  "productName": "Affordable Product",
+  "skuCode": "AFFORD123",
+  "categoryId": 2,
+  "categoryName": "Clothing",
+  "brandId": 3,
+  "brandName": "Brand ABC",
+  "supplierId": 4,
+  "supplierName": "Supplier HIJ",
+  "description": "A budget-friendly product for fashion enthusiasts.",
+  "price": 29.99,
+  "imageUrl": "https://example.com/affordable-product-image.jpg",
+  "stockQuantity": 25,
+  "stockStatus": "LOW_STOCK",
+  "shippingInfo": "Limited stock available. Order now!",
+  "lastStockUpdate": "2023-11-22T10:45:00"
+}
+
+### Brand create
+POST {{host-url}}/api/v1/brands
+Content-Type: application/json
+
+{
+  "brandName": "HP"
+}
+
+
+### Category create
+POST {{host-url}}/api/v1/categories
+Content-Type: application/json
+
+{
+  "categoryName": "Travel & Luggage"
+}
+
+### Supplier create 1
+POST {{host-url}}/api/v1/suppliers
+Content-Type: application/json
+
+{
+  "supplierName": "UmiUni",
+  "contactInfo": "Email: admin@umiuni.com, Phone: +1234567890"
+}
+
+### Supplier create 2
+POST {{host-url}}/api/v1/suppliers
+Content-Type: application/json
+
+{
+  "supplierName": "Supplier5",
+  "contactInfo": "Email: supplier5@example.com, Phone: +98766743210"
+}
+
+### Supplier create 3
+POST {{host-url}}/api/v1/suppliers
+Content-Type: application/json
+
+{
+  "supplierName": "Supplier3",
+  "contactInfo": "Email: supplier3@example.com, Phone: +9876253210"
+}
+
+### Supplier create 4
+POST {{host-url}}/api/v1/suppliers
+Content-Type: application/json
+
+{
+  "supplierName": "Supplier4",
+  "contactInfo": "Email: supplier4@example.com, Phone: +1234567890, Address: 123 Supplier Street, City: Supplier City, Country: Supplier Country"
+}
+
+### ProductAttribute create 1
+POST {{host-url}}/api/v1/productAttributes
+Content-Type: application/json
+
+{
+  "productId": 1,
+  "skuCode": "SKU12345",
+  "attributeName": "Color",
+  "attributeValue": "Red"
+}
+
+### ProductAttribute create 1
+POST {{host-url}}/api/v1/productAttributes
+Content-Type: application/json
+
+{
+  "productId": 1,
+  "skuCode": "SKU12345",
+  "attributeName": "Weight",
+  "attributeValue": "2.5 lbs"
+}
+
+### ProductAttribute create 2
+POST {{host-url}}/api/v1/productAttributes
+Content-Type: application/json
+
+{
+  "productId": 2,
+  "skuCode": "FULL123",
+  "attributeName": "Compatibility",
+  "attributeValue": "Universal"
+}
+
+### ProductAttribute create 3
+POST {{host-url}}/api/v1/productAttributes
+Content-Type: application/json
+
+{
+  "productId": 3,
+  "skuCode": "CUSTOM123",
+  "attributeName": "Customizable Options",
+  "attributeValue": "Choose your color and size."
+}
+
+### ProductAttribute create 4
+POST {{host-url}}/api/v1/productAttributes
+Content-Type: application/json
+
+{
+  "productId": 4,
+  "skuCode": "OUTOFSTK456",
+  "attributeName": "Availability",
+  "attributeValue": "Out of Stock"
+}
+
+### ProductAttribute create 5
+POST {{host-url}}/api/v1/productAttributes
+Content-Type: application/json
+
+{
+  "productId": 5,
+  "skuCode": "HIGHSTOCK789",
+  "attributeName": "Availability",
+  "attributeValue": "In Stock"
+}
+
+### ProductAttribute create 6
+POST {{host-url}}/api/v1/productAttributes
+Content-Type: application/json
+
+{
+  "productId": 6,
+  "skuCode": "BACKORDER456",
+  "attributeName": "Backorder Availability",
+  "attributeValue": "Estimated shipping in 2-3 weeks."
+}
+
+### ProductAttribute create 7
+POST {{host-url}}/api/v1/productAttributes
+Content-Type: application/json
+
+{
+  "productId": 7,
+  "skuCode": "DISCOUNT123",
+  "attributeName": "Discount Percentage",
+  "attributeValue": "20% off for a limited time."
+}
+
+### ProductAttribute create 8
+POST {{host-url}}/api/v1/productAttributes
+Content-Type: application/json
+
+{
+  "productId": 8,
+  "skuCode": "LONGDESC789",
+  "attributeName": "Description Length",
+  "attributeValue": "This product has an extensive and detailed description."
+}
+
+### ProductAttribute create 9
+POST {{host-url}}/api/v1/productAttributes
+Content-Type: application/json
+
+{
+  "productId": 9,
+  "skuCode": "AFFORD123",
+  "attributeName": "Affordability",
+  "attributeValue": "Budget-friendly price."
+}
+
+### SalesOrder
+# Request to create a new SalesOrder
+POST {{host-url}}/api/v1/salesOrders
+Content-Type: application/json
+
+{
+  "salesOrderSn": "SO123456",
+  "customerId": 1,
+  "orderDate": "2023-11-30T14:30:00",
+  "totalAmount": 199.99,
+  "shippingAddress": "123 Shipping St, Shipping City, Shipping Country",
+  "billingAddress": "456 Billing St, Billing City, Billing Country",
+  "orderStatus": "PROCESSING",
+  "paymentDetails": "Payment method: Credit Card ending in 1234"
+}
+
+### 2
+# Request to create SalesOrder 1
+POST {{host-url}}/api/v1/salesOrders
+Content-Type: application/json
+
+{
+  "salesOrderSn": "SO789012",
+  "customerId": 2,
+  "orderDate": "2023-12-05T10:45:00",
+  "totalAmount": 299.99,
+  "shippingAddress": "789 Shipping St, Shipping City, Shipping Country",
+  "billingAddress": "101 Billing St, Billing City, Billing Country",
+  "orderStatus": "SHIPPED",
+  "paymentDetails": "Payment method: PayPal"
+}
+
+### Request to create SalesOrder 3
+POST {{host-url}}/api/v1/salesOrders
+Content-Type: application/json
+
+{
+  "salesOrderSn": "SO456789",
+  "customerId": 3,
+  "orderDate": "2023-12-10T09:15:00",
+  "totalAmount": 149.99,
+  "shippingAddress": "456 Shipping St, Shipping City, Shipping Country",
+  "billingAddress": "222 Billing St, Billing City, Billing Country",
+  "orderStatus": "DELIVERED",
+  "paymentDetails": "Payment method: Credit Card ending in 5678"
+}
+
+### Request to create SalesOrder 4
+POST {{host-url}}/api/v1/salesOrders
+Content-Type: application/json
+
+{
+  "salesOrderSn": "SO987654",
+  "customerId": 4,
+  "orderDate": "2023-12-15T14:30:00",
+  "totalAmount": 99.99,
+  "shippingAddress": "987 Shipping St, Shipping City, Shipping Country",
+  "billingAddress": "333 Billing St, Billing City, Billing Country",
+  "orderStatus": "PROCESSING",
+  "paymentDetails": "Payment method: Bank Transfer"
+}
+
+### Request to create SalesOrder 5
+POST {{host-url}}/api/v1/salesOrders
+Content-Type: application/json
+
+{
+  "salesOrderSn": "SO345678",
+  "customerId": 5,
+  "orderDate": "2023-12-20T11:30:00",
+  "totalAmount": 449.99,
+  "shippingAddress": "345 Shipping St, Shipping City, Shipping Country",
+  "billingAddress": "444 Billing St, Billing City, Billing Country",
+  "orderStatus": "PROCESSING",
+  "paymentDetails": "Payment method: Credit Card ending in 7890"
+}
+
+
+### Request to create SalesOrder 5
+POST {{host-url}}/api/v1/salesOrders
+Content-Type: application/json
+
+{
+  "salesOrderSn": "SO-1700774896976-2467",
+  "customerId": "11",
+  "orderDate": "2023-11-23T21:27:52.513Z",
+  "totalAmount": 129.99,
+  "shippingAddress": "1010 W Green St",
+  "billingAddress": "1010 W Green St",
+  "orderStatus": "PROCESSING",
+  "paymentMethod": "Stripe",
+  "customerName": "tester1",
+  "customerEmail": "test@test.com",
+  "paymentProcessed": "PENDING"
+}
+
+### Create SalesOrder 6
+POST {{host-url}}/api/v1/salesOrders
+Content-Type: application/json
+
+{
+  "salesOrderSn": "SO567890",
+  "customerId": 6,
+  "orderDate": "2023-12-25T15:45:00",
+  "totalAmount": 199.99,
+  "shippingAddress": "567 Shipping St, Shipping City, Shipping Country",
+  "billingAddress": "555 Billing St, Billing City, Billing Country",
+  "orderStatus": "SHIPPED",
+  "paymentDetails": "Payment method: PayPal"
+}
+
+### Create SalesOrder 7
+POST {{host-url}}/api/v1/salesOrders
+Content-Type: application/json
+
+{
+  "salesOrderSn": "SO123890",
+  "customerId": 7,
+  "orderDate": "2023-12-30T08:30:00",
+  "totalAmount": 299.99,
+  "shippingAddress": "123 Shipping St, Shipping City, Shipping Country",
+  "billingAddress": "777 Billing St, Billing City, Billing Country",
+  "orderStatus": "DELIVERED",
+  "paymentDetails": "Payment method: Bank Transfer"
+}
+
+### Create a SalesOrderDetail ###
+POST {{host-url}}/api/v1/salesOrderDetails
+Content-Type: application/json
+
+{
+  "salesOrderId": 1,
+  "skuId": 12345,
+  "quantity": 2,
+  "unitPrice": 49.99,
+  "lineTotal": 99.98
+}
+
+### Create a SalesOrderDetail ###
+POST {{host-url}}/api/v1/salesOrderDetails
+Content-Type: application/json
+
+{
+  "salesOrderSn": "SO-1700632910535-9907",
+  "skuCode": "CUSTOM123",
+  "quantity": 1,
+  "unitPrice": 129.99,
+  "lineTotal": 129.99
+}
+
+### Create SalesOrderDetail 2 ###
+POST {{host-url}}/api/v1/salesOrderDetails
+Content-Type: application/json
+
+{
+  "salesOrderId": 1,
+  "skuId": 54321,
+  "quantity": 3,
+  "unitPrice": 39.99,
+  "lineTotal": 119.97
+}
+
+### Create SalesOrderDetail 3 ###
+POST {{host-url}}/api/v1/salesOrderDetails
+Content-Type: application/json
+
+{
+  "salesOrderId": 2,
+  "skuId": 98765,
+  "quantity": 1,
+  "unitPrice": 29.99,
+  "lineTotal": 29.99
+}
+
+### Create SalesOrderDetail 3 ###
+POST {{host-url}}/api/v1/salesOrderDetails
+Content-Type: application/json
+
+{
+  "salesOrderId": 2,
+  "skuId": 98765,
+  "quantity": 1,
+  "unitPrice": 29.99,
+  "lineTotal": 29.99
+}
+
+### Create SalesOrderDetail 5 for SalesOrder 2 ###
+POST {{host-url}}/api/v1/salesOrderDetails
+Content-Type: application/json
+
+{
+  "salesOrderId": 2,
+  "skuId": 11111,
+  "quantity": 4,
+  "unitPrice": 9.99,
+  "lineTotal": 39.96
+}
+
+### Create SalesOrderDetail 6 for SalesOrder 3 ###
+POST {{host-url}}/api/v1/salesOrderDetails
+Content-Type: application/json
+
+{
+  "salesOrderId": 3,
+  "skuId": 22222,
+  "quantity": 5,
+  "unitPrice": 29.99,
+  "lineTotal": 149.95
+}
+
+### Create SalesOrderDetail 7 for SalesOrder 4 ###
+POST {{host-url}}/api/v1/salesOrderDetails
+Content-Type: application/json
+
+{
+  "salesOrderId": 4,
+  "skuId": 4444,
+  "quantity": 2,
+  "unitPrice": 19.99,
+  "lineTotal": 39.98
+}
+
+### Create an Invoice with Due Date ###
+POST {{host-url}}/api/v1/invoices
+Content-Type: application/json
+
+{
+  "salesOrderId": 1,
+  "issueDate": "2023-11-01",
+  "dueDate": "2023-11-15",
+  "itemsTotal": 500.00,
+  "itemsDiscount": 50.00,
+  "subTotal": 450.00,
+  "taxAmount": 45.00,
+  "shippingAmount": 10.00,
+  "totalAmount": 505.00,
+  "paidStatus": "UNPAID"
+}
+
+### Create an Invoice without Due Date ###
+POST {{host-url}}/api/v1/invoices
+Content-Type: application/json
+
+{
+  "salesOrderId": 2,
+  "issueDate": "2023-11-05",
+  "itemsTotal": 600.00,
+  "itemsDiscount": 60.00,
+  "subTotal": 540.00,
+  "taxAmount": 54.00,
+  "shippingAmount": 15.00,
+  "totalAmount": 609.00,
+  "paidStatus": "PAID"
+}
+
+### Create an Invoice with Different Amounts ###
+POST {{host-url}}/api/v1/invoices
+Content-Type: application/json
+
+{
+  "salesOrderId": 3,
+  "issueDate": "2023-11-10",
+  "dueDate": "2023-11-24",
+  "itemsTotal": 750.00,
+  "itemsDiscount": 75.00,
+  "subTotal": 675.00,
+  "taxAmount": 67.50,
+  "shippingAmount": 20.00,
+  "totalAmount": 762.50,
+  "paidStatus": "PARTIALLY_PAID"
+}
+
+### Create an Payments with Different Amounts ###
+### create payments
+POST {{host-url}}/api/v1/payments
+Content-Type: application/json
+
+{
+  "invoiceId": 2,
+  "paymentDate": "2023-12-01T14:45:00",
+  "amount": 75.50,
+  "paymentStatus": "PENDING",
+  "paymentMethod": "PayPal"
+}
+
+###
+POST {{host-url}}/api/v1/invoices
+Content-Type: application/json
+
+{
+  "salesOrderId": 1,
+  "issueDate": "2023-12-05",
+  "dueDate": "2024-01-05",
+  "itemsTotal": 250.00,
+  "subTotal": 250.00,
+  "totalAmount": 300.00,
+  "paidStatus": "UNPAID"
+}
+
+###
+POST {{host-url}}/api/v1/invoices
+Content-Type: application/json
+
+{
+  "salesOrderId": 2,
+  "issueDate": "2023-12-10",
+  "dueDate": "2024-01-10",
+  "itemsTotal": 180.50,
+  "subTotal": 180.50,
+  "totalAmount": 210.60,
+  "paidStatus": "UNPAID"
+}
+
+###
+POST {{host-url}}/api/v1/invoices
+Content-Type: application/json
+
+{
+  "salesOrderId": 3,
+  "issueDate": "2023-12-15",
+  "dueDate": "2024-01-15",
+  "itemsTotal": 300.00,
+  "subTotal": 300.00,
+  "totalAmount": 350.00,
+  "paidStatus": "UNPAID"
+}
+
+###
+POST {{host-url}}/api/v1/invoices
+Content-Type: application/json
+
+{
+  "salesOrderId": 4,
+  "issueDate": "2023-12-20",
+  "dueDate": "2024-01-20",
+  "itemsTotal": 150.00,
+  "subTotal": 150.00,
+  "totalAmount": 180.00,
+  "paidStatus": "UNPAID"
+}
+
+###
+POST {{host-url}}/api/v1/invoices
+Content-Type: application/json
+
+{
+  "salesOrderId": 5,
+  "issueDate": "2023-12-25",
+  "dueDate": "2024-01-25",
+  "itemsTotal": 280.00,
+  "subTotal": 280.00,
+  "totalAmount": 320.00,
+  "paidStatus": "UNPAID"
+}
+
+###
+POST {{host-url}}/api/v1/invoices
+Content-Type: application/json
+
+{
+  "salesOrderId": 6,
+  "issueDate": "2023-12-30",
+  "dueDate": "2024-01-30",
+  "itemsTotal": 200.00,
+  "subTotal": 200.00,
+  "totalAmount": 240.00,
+  "paidStatus": "UNPAID"
+}
+
+###
+POST {{host-url}}/api/v1/payments
+Content-Type: application/json
+
+{
+  "invoiceId": 4,
+  "transactionId": "TXN12346",
+  "paymentDate": "2024-01-05T14:30:00",
+  "amount": 180.00,
+  "paymentStatus": "PAID",
+  "paymentMethod": "Credit Card"
+}
+
+###
+POST {{host-url}}/api/v1/payments
+Content-Type: application/json
+
+{
+  "invoiceId": 5,
+  "transactionId": "TXN12347",
+  "paymentDate": "2024-01-10T12:15:00",
+  "amount": 320.00,
+  "paymentStatus": "PAID",
+  "paymentMethod": "PayPal"
+}
+
+###
+POST {{host-url}}/api/v1/payments
+Content-Type: application/json
+
+{
+  "invoiceId": 6,
+  "transactionId": "TXN12348",
+  "paymentDate": "2024-01-15T09:45:00",
+  "amount": 240.00,
+  "paymentStatus": "PAID",
+  "paymentMethod": "Credit Card"
+}
+
+####
+POST {{host-url}}/api/v1/payments
+Content-Type: application/json
+
+{
+  "invoiceId": 1,
+  "transactionId": "TXN12345",
+  "paymentDate": "2023-11-30T10:30:00",
+  "amount": 100.00,
+  "paymentStatus": "PAID",
+  "paymentMethod": "Credit Card"
+}
+###
+POST {{host-url}}/api/v1/payments
+Content-Type: application/json
+
+{
+  "invoiceId": 3,
+  "transactionId": "TXN56789",
+  "paymentDate": "2023-12-02T09:15:00",
+  "amount": 120.75,
+  "paymentStatus": "PAID",
+  "paymentMethod": "Credit Card"
+}
+
+###
+POST {{host-url}}/api/v1/invoices
+Content-Type: application/json
+
+{
+  "salesOrderId": 7,
+  "issueDate": "2024-02-05",
+  "dueDate": "2024-03-05",
+  "itemsTotal": 180.00,
+  "subTotal": 180.00,
+  "totalAmount": 200.00,
+  "paidStatus": "PAID"
+}
+
+###
+POST {{host-url}}/api/v1/payments
+Content-Type: application/json
+
+{
+  "invoiceId": 7,
+  "transactionId": "TXN12349",
+  "paymentDate": "2024-02-10T14:30:00",
+  "amount": 200.00,
+  "paymentStatus": "PAID",
+  "paymentMethod": "Credit Card"
+}
+
+###
+POST {{host-url}}/api/v1/invoices
+Content-Type: application/json
+
+{
+  "salesOrderId": 8,
+  "issueDate": "2024-02-15",
+  "dueDate": "2024-03-15",
+  "itemsTotal": 250.00,
+  "subTotal": 250.00,
+  "totalAmount": 280.00,
+  "paidStatus": "PAID"
+}
+
+###
+POST {{host-url}}/api/v1/payments
+Content-Type: application/json
+
+{
+  "invoiceId": 8,
+  "transactionId": "TXN12350",
+  "paymentDate": "2024-02-20T12:15:00",
+  "amount": 280.00,
+  "paymentStatus": "PAID",
+  "paymentMethod": "PayPal"
+}
+
+###
+POST {{host-url}}/api/v1/invoices
+Content-Type: application/json
+
+{
+  "salesOrderId": 9,
+  "issueDate": "2024-02-25",
+  "dueDate": "2024-03-25",
+  "itemsTotal": 300.00,
+  "subTotal": 300.00,
+  "totalAmount": 320.00,
+  "paidStatus": "PAID"
+}
+
+###
+POST {{host-url}}/api/v1/payments
+Content-Type: application/json
+
+{
+  "invoiceId": 9,
+  "transactionId": "TXN12351",
+  "paymentDate": "2024-02-28T09:45:00",
+  "amount": 320.00,
+  "paymentStatus": "PAID",
+  "paymentMethod": "Credit Card"
+}
+
+
