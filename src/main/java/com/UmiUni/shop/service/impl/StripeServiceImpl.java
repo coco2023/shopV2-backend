@@ -1,5 +1,7 @@
 package com.UmiUni.shop.service.impl;
 
+import com.UmiUni.shop.config.PayPalConfiguration;
+import com.UmiUni.shop.config.StripeConfiguration;
 import com.UmiUni.shop.constant.PaymentStatus;
 import com.UmiUni.shop.entity.Payment;
 import com.UmiUni.shop.entity.SalesOrder;
@@ -8,6 +10,7 @@ import com.UmiUni.shop.repository.PaymentRepository;
 import com.UmiUni.shop.service.StripeService;
 import com.stripe.Stripe;
 import com.stripe.model.Charge;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -18,10 +21,18 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Service
+@Log4j2
 public class StripeServiceImpl implements StripeService {
 
     @Value("${stripe.secret.key}")
     private String apiKey;
+
+//    private final StripeConfiguration stripeConfiguration;
+//
+//    @Autowired
+//    public StripeServiceImpl(StripeConfiguration stripeConfiguration) {
+//        this.stripeConfiguration = stripeConfiguration;
+//    }
 
     @Autowired
     private PaymentRepository paymentRepository;
@@ -31,6 +42,8 @@ public class StripeServiceImpl implements StripeService {
 
         try{
 
+//            Stripe.apiKey = stripeConfiguration.getSecretKey();
+//            log.info("Stripe seceretKey: " + stripeConfiguration.getSecretKey());
             Stripe.apiKey = apiKey;
 
             Map<String, Object> chargeParams = new HashMap<>();

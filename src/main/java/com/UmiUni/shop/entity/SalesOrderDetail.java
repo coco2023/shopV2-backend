@@ -30,5 +30,8 @@ public class SalesOrderDetail {
     private BigDecimal unitPrice;
 
     @Column(nullable = false, precision = 10, scale = 2)
+    private BigDecimal discount;
+
+    @Column(nullable = false, precision = 10, scale = 2)
     private BigDecimal lineTotal;
 }

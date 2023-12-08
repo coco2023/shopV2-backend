@@ -4,20 +4,21 @@ Content-Type: application/json
 
 {
   "productName": "Example Product10",
-  "skuCode": "SKU123464",
+  "skuCode": "SKU123500",
   "categoryId": 1,
-  "categoryName": "Electronics",
+  "categoryName": "test-cat-1",
   "brandId": 2,
-  "brandName": "Brand XYZ",
+  "brandName": "test-brand 1",
   "supplierId": 3,
-  "supplierName": "Supplier ABC",
+  "supplierName": "test supplier",
   "description": "This is an example product description.",
-  "price": 99.99,
+  "price": 1.00,
   "imageUrl": "https://cdn-icons-png.flaticon.com/512/2687/2687160.png?ga=GA1.1.1144698582.1700534973",
-  "stockQuantity": 100,
+  "stockQuantity": 1000,
   "stockStatus": "IN_STOCK",
   "shippingInfo": "Ships within 2-3 business days.",
-  "lastStockUpdate": "2023-11-15T10:00:00"
+  "lastStockUpdate": "2023-11-15T10:00:00",
+  "discount":0
 }
 
 ### 2
@@ -871,3 +872,20 @@ Content-Type: application/json
 }
 
 
+### Payment-PayPal
+POST http://localhost:9001/api/v1/payments/paypal/create
+Content-Type: application/json
+
+{
+  "salesOrderSn": "SO-123456",
+  "customerId": "123",
+  "orderDate": "2023-03-10T14:30:00Z",
+  "totalAmount": 1.10,
+  "shippingAddress": "123 Main St",
+  "billingAddress": "123 Main St",
+  "orderStatus": "PROCESSING",
+  "paymentMethod": "PayPal",
+  "customerName": "John Doe",
+  "customerEmail": "john.doe@example.com",
+  "paymentProcessed": false
+}

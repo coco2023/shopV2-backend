@@ -1,4 +1,6 @@
-# umiuni-shop-backend
+# QuickMall-shop-backend
+1. PayPal: https://developer.paypal.com/braintree/docs/guides/ec-braintree-sdk/server-side/java
+2. https://developer.paypal.com/docs/api/partner-referrals/v2/
 
 ## How to run and build:
 ```
