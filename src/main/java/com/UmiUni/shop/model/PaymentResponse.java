@@ -12,5 +12,4 @@ public class PaymentResponse {
     private String status;
 
     private String transactionId;
-
 }

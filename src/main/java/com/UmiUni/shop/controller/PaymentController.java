@@ -117,24 +117,6 @@ public class PaymentController {
         }
     }
 
-//    @GetMapping("/paypal-return")
-//    public ResponseEntity<String> handlePayPalReturn(@RequestParam("status") String status) {
-//        log.info("return Status: " + status);
-//        if ("success".equals(status)) {
-//            // Payment was successful, handle accordingly
-//            return ResponseEntity.ok("Payment was successful");
-//        } else if ("created".equals(status)) {
-//            // Payment was cancelled by the user, handle accordingly
-//            return ResponseEntity.ok("Payment was created by the user; but haven't been paid yet");
-//        } else if ("cancelled".equals(status)) {
-//            // Payment was cancelled by the user, handle accordingly
-//            return ResponseEntity.ok("Payment was cancelled by the user");
-//        } else {
-//            // Handle other payment statuses as needed
-//            return ResponseEntity.ok("Unknown payment status");
-//        }
-//    }
-
     /**
      * notification for customer exit the payment
      */

@@ -25,8 +25,12 @@ public class PayPalPayment {
     @Column(name = "transactionId_id")
     private String transactionId;
 
+    private String paymentState;
+
+    private String paymentMethod; // e.g., "Credit Card", "PayPal"
+
     private Date createTime;
 
-    private String paymentState;
+    private String updatedAt;
 
 }

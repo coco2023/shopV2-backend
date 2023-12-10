@@ -27,6 +27,7 @@ import org.springframework.util.StringUtils;
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
@@ -129,6 +130,7 @@ public class PayPalServiceImpl implements PayPalService {
                     .transactionId(payPalTransactionId)
                     .paymentState(payPalPaymentState)
                     .createTime(new Date())
+                    .paymentMethod("PayPal")
                     .build();
             payPalPaymentRepository.save(payPalPayment);
             log.info("payPalPayment:" + payPalPayment);
@@ -197,14 +199,16 @@ public class PayPalServiceImpl implements PayPalService {
                 throw new PaymentProcessingException("Payment creation interrupted because the customer exited.");
             }
 
-//            // Condition 4: Simulate a condition that requires payment execution to be interrupted
-//            if (shouldInterruptPaymentExecution()) {
-//                throw new PaymentProcessingException("Payment execution was interrupted.");
-//            }
-
             // EXEC payment
             Payment executedPayment = payment.execute(getAPIContext(), paymentExecution);
             log.info("executedPayment: " + executedPayment);
+
+            // update paypal payment entity status info
+            PayPalPayment payPalPayment = payPalPaymentRepository.findByPaypalToken("EC-" + executedPayment.getCart());
+            payPalPayment.setPaymentState("complete");
+            payPalPayment.setUpdatedAt(executedPayment.getUpdateTime());
+            payPalPaymentRepository.save(payPalPayment);
+            log.info("update PayPalPayment: " + payPalPayment);
 
             PaymentResponse response = new PaymentResponse("success", executedPayment.getId());
             log.info("paymentId: " + paymentId + ", payerId: " + payerId, "complete response: " + response);
@@ -275,16 +279,6 @@ public class PayPalServiceImpl implements PayPalService {
             }
             log.info("PaymentStatusResponse: return null...");
             return new PaymentStatusResponse(payment.getState(), null, amount);
-
-//            PaymentExecution paymentExecution = new PaymentExecution();
-//            paymentExecution.setPayerId(payment.getPayer().getPayerInfo().getPayerId());
-//            log.info("paymentExecution: " + paymentExecution);
-//
-//            Payment executedPayment = payment.execute(apiContext, paymentExecution);
-//            // Creating a response based on the executed payment details
-//            response.setStatus(executedPayment.getState());
-//            response.setAmount(Double.parseDouble(executedPayment.getTransactions().get(0).getAmount().getTotal()));
-//            log.info("cancel response: " + response);
 
         } catch (PaymentProcessingException ex) {
             // Handle other unexpected exceptions
