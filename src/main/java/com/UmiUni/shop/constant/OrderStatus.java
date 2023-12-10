@@ -1,5 +1,9 @@
 package com.UmiUni.shop.constant;
 
 public enum OrderStatus {
-    PENDING, PROCESSING, SHIPPED, DELIVERED, CANCELLED
+    PENDING,
+    PROCESSING,     //PAID
+    SHIPPED,
+    DELIVERED,
+    CANCELLED
 }

@@ -55,10 +55,10 @@ management:
 
 stripe:
   secret:
-    key: ${STRIPE_SECRET_KEY}
+    key: sk_test_HNULuXYU2Y2e6HFczm6E5Nd6
 
 paypal:
   client:
-    id: ${PAYPAL_CLIENT_ID}
-    secret: ${PAYPAL_CLIENT_SECRET}
+    id: ASWE1Q8AfwFxHoTDbB8tanMwQB8qRxb0i72hdPMD23RGzhNqY2DQoClXqQv8ONJWGPi_cy5ro5y_6tHB
+    secret: EAxzPdtbxhyDw3mmSCRvcputnBrx5Ko_7a73fhfXNP5IRCDYoFExYJS5Qi--OhBTdEv0h0Cat7T_IZXj
   mode: 'sandbox'

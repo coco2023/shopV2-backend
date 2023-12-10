@@ -2,9 +2,8 @@ package com.UmiUni.shop.controller;
 
 import com.UmiUni.shop.entity.Payment;
 import com.UmiUni.shop.entity.SalesOrder;
-import com.UmiUni.shop.model.PayPalPaymentResponse;
-import com.UmiUni.shop.model.PaymentResponse;
-import com.UmiUni.shop.model.StripePaymentRequest;
+import com.UmiUni.shop.exception.PaymentProcessingException;
+import com.UmiUni.shop.model.*;
 import com.UmiUni.shop.service.PayPalService;
 import com.UmiUni.shop.service.PaymentService;
 import com.UmiUni.shop.service.StripeService;
@@ -15,6 +14,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 @RestController
@@ -95,5 +95,60 @@ public class PaymentController {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error completing PayPal payment: " + e.getMessage());
         }
     }
+
+    @PostMapping("/paypal-webhook")
+    public ResponseEntity<Void> handlePayPalWebhook(@RequestBody String payload) {
+        // Parse and process the PayPal webhook payload
+        // Implement your logic here to handle payment events
+        // You can log, update your database, or send notifications
+
+        // Return a 200 OK response to PayPal to acknowledge receipt of the webhook
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @GetMapping("/paypal/check-payment-status")
+    public ResponseEntity<PaymentStatusResponse> checkPaymentStatus(@RequestParam("token") String token) {
+        try {
+            PaymentStatusResponse response = payPalService.checkPaymentStatus(token);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            // Handle exceptions
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+        }
+    }
+
+//    @GetMapping("/paypal-return")
+//    public ResponseEntity<String> handlePayPalReturn(@RequestParam("status") String status) {
+//        log.info("return Status: " + status);
+//        if ("success".equals(status)) {
+//            // Payment was successful, handle accordingly
+//            return ResponseEntity.ok("Payment was successful");
+//        } else if ("created".equals(status)) {
+//            // Payment was cancelled by the user, handle accordingly
+//            return ResponseEntity.ok("Payment was created by the user; but haven't been paid yet");
+//        } else if ("cancelled".equals(status)) {
+//            // Payment was cancelled by the user, handle accordingly
+//            return ResponseEntity.ok("Payment was cancelled by the user");
+//        } else {
+//            // Handle other payment statuses as needed
+//            return ResponseEntity.ok("Unknown payment status");
+//        }
+//    }
+
+    /**
+     * notification for customer exit the payment
+     */
+    @PostMapping("/notify-exit")
+    public ResponseEntity<String> notifyExit(@RequestBody ExitNotification exitNotification) {
+        // Log the exit event with a timestamp
+        String exitReason = exitNotification.getExitReason();
+        LocalDateTime exitTime = LocalDateTime.now();
+        log.info("User exited the payment process. Reason: {}. Timestamp: {}", exitReason, exitTime);
+
+//      // Throw a PaymentProcessingException to simulate interruption due to exit
+//        return ResponseEntity.ok("Exit notification received.");
+        throw new PaymentProcessingException("Payment creation interrupted because the customer exited.");
+    }
+
 
 }
