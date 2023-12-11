@@ -136,8 +136,8 @@ public class PayPalServiceImpl implements PayPalService {
                     "token: " + token,
                     "payPalPayment:" + payPalPayment);
 
-            //TODO: update the orderStatus
-            salesOrder.setOrderStatus(OrderStatus.PENDING);
+            //TODO: update the orderStatus?
+//            salesOrder.setOrderStatus(OrderStatus.PENDING);
             salesOrder.setLastUpdated(new Date().toString());
 
             //TODO: Lock the Product Inventory
