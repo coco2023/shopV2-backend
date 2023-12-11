@@ -12,5 +12,5 @@ public interface PayPalService {
 
 //    String getPaymentStatus(String token);
 
-    PaymentStatusResponse checkPaymentStatus(String token) throws PayPalRESTException;
+    PaymentStatusResponse checkPaymentStatus(String token) throws Exception;
 }

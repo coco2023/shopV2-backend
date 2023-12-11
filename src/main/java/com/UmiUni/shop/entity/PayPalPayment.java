@@ -1,10 +1,13 @@
 package com.UmiUni.shop.entity;
 
+import com.paypal.api.payments.Transaction;
+import com.paypal.base.rest.PayPalResource;
 import lombok.*;
 
 import javax.persistence.*;
 import java.time.LocalDateTime;
 import java.util.Date;
+import java.util.List;
 
 @Entity
 @NoArgsConstructor

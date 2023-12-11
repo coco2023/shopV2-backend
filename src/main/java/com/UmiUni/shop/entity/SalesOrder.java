@@ -6,6 +6,7 @@ import lombok.*;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.Date;
 
 @Entity
 @NoArgsConstructor
@@ -54,6 +55,6 @@ public class SalesOrder {
     private Boolean paymentProcessed;
 
     @Column(name = "last_updated")
-    private LocalDateTime lastUpdated;
+    private String lastUpdated;
 
 }

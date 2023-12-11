@@ -7,6 +7,7 @@ import com.UmiUni.shop.model.*;
 import com.UmiUni.shop.service.PayPalService;
 import com.UmiUni.shop.service.PaymentService;
 import com.UmiUni.shop.service.StripeService;
+import com.paypal.base.rest.PayPalRESTException;
 import io.swagger.annotations.Api;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -96,24 +97,19 @@ public class PaymentController {
         }
     }
 
-    @PostMapping("/paypal-webhook")
-    public ResponseEntity<Void> handlePayPalWebhook(@RequestBody String payload) {
-        // Parse and process the PayPal webhook payload
-        // Implement your logic here to handle payment events
-        // You can log, update your database, or send notifications
-
-        // Return a 200 OK response to PayPal to acknowledge receipt of the webhook
-        return ResponseEntity.status(HttpStatus.OK).build();
-    }
-
     @GetMapping("/paypal/check-payment-status")
-    public ResponseEntity<PaymentStatusResponse> checkPaymentStatus(@RequestParam("token") String token) {
+    public ResponseEntity<PaymentStatusResponse> checkPaymentStatus(@RequestParam("token") String token) throws Exception {
         try {
             PaymentStatusResponse response = payPalService.checkPaymentStatus(token);
             return ResponseEntity.ok(response);
+        } catch (PaymentProcessingException e) {
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new PaymentProcessingException(e.getMessage());
+        } catch (PayPalRESTException ex) {
+            throw new PayPalRESTException(ex.getMessage());
         } catch (Exception e) {
-            // Handle exceptions
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+//            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
+            throw new Exception(e.getMessage());
         }
     }
 
@@ -130,6 +126,16 @@ public class PaymentController {
 //      // Throw a PaymentProcessingException to simulate interruption due to exit
 //        return ResponseEntity.ok("Exit notification received.");
         throw new PaymentProcessingException("Payment creation interrupted because the customer exited.");
+    }
+
+    @PostMapping("/paypal-webhook")
+    public ResponseEntity<Void> handlePayPalWebhook(@RequestBody String payload) {
+        // Parse and process the PayPal webhook payload
+        // Implement your logic here to handle payment events
+        // You can log, update your database, or send notifications
+
+        // Return a 200 OK response to PayPal to acknowledge receipt of the webhook
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 
 

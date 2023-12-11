@@ -1,7 +1,7 @@
 package com.UmiUni.shop.service.impl;
 
-import com.UmiUni.shop.config.PayPalConfiguration;
-import com.UmiUni.shop.config.StripeConfiguration;
+import com.UmiUni.shop.constant.OrderStatus;
+import com.UmiUni.shop.constant.PaymentMethod;
 import com.UmiUni.shop.entity.PayPalPayment;
 import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.exception.PaymentProcessingException;
@@ -9,6 +9,7 @@ import com.UmiUni.shop.model.PayPalPaymentResponse;
 import com.UmiUni.shop.model.PaymentResponse;
 import com.UmiUni.shop.model.PaymentStatusResponse;
 import com.UmiUni.shop.repository.PayPalPaymentRepository;
+import com.UmiUni.shop.repository.SalesOrderRepository;
 import com.UmiUni.shop.service.PayPalService;
 import com.paypal.api.payments.*;
 import com.paypal.base.rest.APIContext;
@@ -22,16 +23,12 @@ import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import org.springframework.transaction.support.TransactionTemplate;
-import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -53,6 +50,9 @@ public class PayPalServiceImpl implements PayPalService {
     private PayPalPaymentRepository payPalPaymentRepository;
 
     @Autowired
+    private SalesOrderRepository salesOrderRepository;
+
+    @Autowired
     private TransactionTemplate transactionTemplate; // Inject the TransactionTemplate
 
     private APIContext getAPIContext() {
@@ -64,13 +64,17 @@ public class PayPalServiceImpl implements PayPalService {
     @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
     public PayPalPaymentResponse createPayment(SalesOrder salesOrder) {
 
+        // get salesOrderSn
+        String salesOrderSn = salesOrder.getSalesOrderSn();
+
         // Logic to create a payment
-        // This typically involves setting up a payment amount, redirect URLs, and invoking the PayPal API to create a payment
         Amount amount = new Amount();
         amount.setCurrency("USD");
         amount.setTotal(salesOrder.getTotalAmount().toString());
 
         Transaction transaction = new Transaction();
+        //TODO: save SalesOrderSn
+        transaction.setCustom(salesOrderSn);
         transaction.setDescription("Sales Order Transaction");
         transaction.setAmount(amount);
 
@@ -86,43 +90,35 @@ public class PayPalServiceImpl implements PayPalService {
         payment.setTransactions(transactions);
 
         RedirectUrls redirectUrls = new RedirectUrls();
-        redirectUrls.setCancelUrl("http://localhost:3000/paypal-return");  // cancel  paypal-return
-        redirectUrls.setReturnUrl("http://localhost:3000/paypal-success");
+        redirectUrls.setCancelUrl("http://localhost:3000/paypal-return?salesOrderSn=" + salesOrderSn);
+        redirectUrls.setReturnUrl("http://localhost:3000/paypal-success?salesOrderSn=" + salesOrderSn);
         payment.setRedirectUrls(redirectUrls);
 
         try {
 
-            // Condition 1: Simulate a condition that requires a rollback if the payment amount is negative
             if ( salesOrder.getTotalAmount().compareTo(BigDecimal.ZERO) < 0 ) {
                 throw new PaymentProcessingException("Payment processing failed because the payment amount is negative.");
             }
 
-            // Condition 2: Simulate a condition that requires a rollback if the customer has insufficient funds
             if (customerHasInsufficientFunds(salesOrder.getCustomerId(), salesOrder.getTotalAmount())) {
                 throw new PaymentProcessingException("Payment processing failed due to insufficient funds.");
             }
 
-            // Condition 3: Simulate a condition that requires payment to be interrupted
             if (customerExitsDuringPayment()) {
                 throw new PaymentProcessingException("Payment creation interrupted because the customer exited.");
             }
 
             Payment createdPayment = payment.create(getAPIContext());
-            log.info("createPayment: " + createdPayment);
 
             String payPalTransactionId = extractPaymentId(createdPayment);
-            log.info("payPalTransactionId: " + payPalTransactionId);
 
             String payPalPaymentState = extractPaymentStatus(createdPayment);
-            log.info("payPalPaymentStatus: " + payPalPaymentState);
 
             // Find the approval URL
             String approvalUrl = extractApprovalUrl(createdPayment);
-            log.info("approvalUrl: " + approvalUrl);
 
             // Find the token
             String token = extractToken(approvalUrl);
-            log.info("token: " + token);
 
             // Save the PayPalPaymentEntity
             PayPalPayment payPalPayment = PayPalPayment.builder()
@@ -133,49 +129,47 @@ public class PayPalServiceImpl implements PayPalService {
                     .paymentMethod("PayPal")
                     .build();
             payPalPaymentRepository.save(payPalPayment);
-            log.info("payPalPayment:" + payPalPayment);
+            log.info("createPayment: " + createdPayment,
+                    "payPalTransactionId: " + payPalTransactionId,
+                    "payPalPaymentStatus: " + payPalPaymentState,
+                    "approvalUrl: " + approvalUrl,
+                    "token: " + token,
+                    "payPalPayment:" + payPalPayment);
 
-            PayPalPaymentResponse response = new PayPalPaymentResponse("success create payment!", createdPayment.getId(), approvalUrl);
-            log.info("create response: " + response);
+            //TODO: update the orderStatus
+            salesOrder.setOrderStatus(OrderStatus.PENDING);
+            salesOrder.setLastUpdated(new Date().toString());
 
-            return response;
+            //TODO: Lock the Product Inventory
+
+
+            return new PayPalPaymentResponse("success create payment!", createdPayment.getId(), approvalUrl);
 
         } catch (PaymentProcessingException e) {
             e.printStackTrace();
-            // Handle PayPal API exceptions
             log.error("Error creating payment: " + e.getMessage(), e);
 
-            // If a transaction is active, mark it for rollback
             if (TransactionSynchronizationManager.isActualTransactionActive()) {
-                // Mark the transaction for rollback
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             }
 
-            // The custom exception triggers a rollback
             return new PayPalPaymentResponse("Failed to create payment", null, null);
         } catch (PayPalRESTException e) {
             e.printStackTrace();
-            // Handle PayPal API exceptions
             log.error("Error creating payment: " + e.getMessage(), e);
 
-            // If a transaction is active, mark it for rollback
             if (TransactionSynchronizationManager.isActualTransactionActive()) {
-                // Mark the transaction for rollback
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             }
 
             return new PayPalPaymentResponse("Failed to create payment", null, null);
         } catch (Exception ex) {
-            // Handle other unexpected exceptions
             log.error("Unexpected error creating payment: " + ex.getMessage(), ex);
 
-            // If a transaction is active, mark it for rollback
             if (TransactionSynchronizationManager.isActualTransactionActive()) {
-                // Mark the transaction for rollback
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             }
 
-            // can also rollback the payment or take other appropriate actions here
             return new PayPalPaymentResponse("Unexpected error", null, null);
         }
     }
@@ -194,7 +188,6 @@ public class PayPalServiceImpl implements PayPalService {
 
         try {
 
-            // Condition 3: Simulate a condition that requires payment to be interrupted
             if (customerExitsDuringPayment()) {
                 throw new PaymentProcessingException("Payment creation interrupted because the customer exited.");
             }
@@ -210,55 +203,54 @@ public class PayPalServiceImpl implements PayPalService {
             payPalPaymentRepository.save(payPalPayment);
             log.info("update PayPalPayment: " + payPalPayment);
 
-            PaymentResponse response = new PaymentResponse("success", executedPayment.getId());
-            log.info("paymentId: " + paymentId + ", payerId: " + payerId, "complete response: " + response);
+            // update SalesOrder Info
+            // get the salesOrderSn (customer)
+            String salesOrderSn = extractCustomOrderSn(executedPayment);
+            SalesOrder salesOrder = salesOrderRepository.getSalesOrderBySalesOrderSn(salesOrderSn).get();
+            // Update the orderStatus
+            salesOrder.setOrderStatus(OrderStatus.PROCESSING);
+            salesOrder.setLastUpdated(executedPayment.getUpdateTime());
+            log.info("update salesOrder status: " + salesOrder);
+            salesOrderRepository.save(salesOrder);
 
-            return response;
+            //TODO: Decrease the Product Inventory
+
+            return new PaymentResponse("success", executedPayment.getId());
 
         } catch (PaymentProcessingException e) {
             e.printStackTrace();
-            // Handle PayPal API exceptions
             log.error("Error creating payment: " + e.getMessage(), e);
 
-            // If a transaction is active, mark it for rollback
             if (TransactionSynchronizationManager.isActualTransactionActive()) {
-                // Mark the transaction for rollback
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             }
 
-            // The custom exception triggers a rollback
             return new PaymentResponse("Failed to create payment", null);
         } catch (PayPalRESTException e) {
             e.printStackTrace();
 
-            // If a transaction is active, mark it for rollback
             if (TransactionSynchronizationManager.isActualTransactionActive()) {
-                // Mark the transaction for rollback
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             }
 
             return new PaymentResponse("Failed to execute payment", null);
         } catch (Exception ex) {
-            // Handle other unexpected exceptions
             log.error("Unexpected error executing payment: " + ex.getMessage(), ex);
 
-            // If a transaction is active, mark it for rollback
             if (TransactionSynchronizationManager.isActualTransactionActive()) {
-                // Mark the transaction for rollback
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             }
 
-            // You can also RollBack the payment or take other appropriate actions here
             return new PaymentResponse("Unexpected error", ex.getMessage());
         }
     }
 
     @Override
-    public PaymentStatusResponse checkPaymentStatus(String token) {
+    public PaymentStatusResponse checkPaymentStatus(String token) throws Exception {
 
         PayPalPayment payPalPayment = payPalPaymentRepository.findByPaypalToken(token);
         if (payPalPayment == null) {
-            return new PaymentStatusResponse("Error", "Payment not found for token: " + token, 0);
+            return new PaymentStatusResponse("Error", "Payment not found for token: " + token, 0, PaymentMethod.PAYPAL);
         }
 
         String transactionId = payPalPayment.getTransactionId();
@@ -272,75 +264,42 @@ public class PayPalServiceImpl implements PayPalService {
             Payment payment = Payment.get(apiContext, transactionId);
             double amount = Double.parseDouble(payment.getTransactions().get(0).getAmount().getTotal());
             log.info("check the payment status: " + payment.getState());
-            if (payment.getState().equals("created")) {
+            if (!payment.getState().equals("complete")) {
                 log.info("*ERROR: Payment creation interrupted because the customer exited");
 //                throw new PaymentProcessingException("Payment creation interrupted because the customer exited.");
-                throw new RuntimeException("ERROR: Payment creation interrupted because the customer exited.");
+                throw new PaymentProcessingException("*ERROR: Payment creation interrupted because the customer exited.");
             }
-            log.info("PaymentStatusResponse: return null...");
-            return new PaymentStatusResponse(payment.getState(), null, amount);
+            return new PaymentStatusResponse(payment.getState(), null, amount, PaymentMethod.PAYPAL);
 
         } catch (PaymentProcessingException ex) {
-            // Handle other unexpected exceptions
             log.error("Unexpected error creating payment: " + ex.getMessage(), ex);
 
-            // If a transaction is active, mark it for rollback
             if (TransactionSynchronizationManager.isActualTransactionActive()) {
-                // Mark the transaction for rollback
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             }
 
-            // can also rollback the payment or take other appropriate actions here
-//            throw new PaymentProcessingException(ex.getMessage());
-            return new PaymentStatusResponse("failed to process the payment", ex.getMessage(), 0);
+            throw new PaymentProcessingException(ex.getMessage());
+//            return new PaymentStatusResponse("failed to process the payment", ex.getMessage(), 0, PaymentMethod.PAYPAL);
         } catch (PayPalRESTException ex) {
-            // Log the exception for debugging purposes
-            // e.g., Logger.error("Error processing PayPal payment", e);
             response.setStatus("Error");
             response.setErrorDetails(ex.getMessage());
-            // Log the exception
-            return new PaymentStatusResponse("failed to process the payment", ex.getMessage(), 0);
-//            return new PaymentStatusResponse("Error", e.getMessage(), 0);
+            throw new PayPalRESTException(ex.getMessage());
+//            return new PaymentStatusResponse("failed to process the payment", ex.getMessage(), 0, PaymentMethod.PAYPAL);
         } catch (Exception ex) {
-            // Handle other unexpected exceptions
             log.error("Unexpected error creating payment: " + ex.getMessage(), ex);
 
-            // If a transaction is active, mark it for rollback
             if (TransactionSynchronizationManager.isActualTransactionActive()) {
-                // Mark the transaction for rollback
                 TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
             }
-
-            // can also rollback the payment or take other appropriate actions here
-            return new PaymentStatusResponse("failed to process the payment", ex.getMessage(), 0);
+            throw new Exception(ex.getMessage());
+//            return new PaymentStatusResponse("failed to process the payment", ex.getMessage(), 0, PaymentMethod.PAYPAL);
         }
     }
-
-//    @Override
-//    public String getPaymentStatus(String token) {
-//        // Simulate retrieving the payment status based on the token
-//        // In a real implementation, replace this with actual API calls to your payment gateway or PayPal
-//
-//        // Check if the token is empty or null
-//        if (!StringUtils.hasText(token)) {
-//            return "unknown"; // Unknown status when the token is empty or null
-//        }
-//
-//        // Simulate checking the token prefix for different payment statuses
-//        if (token.startsWith("success")) {
-//            return "completed"; // Payment is completed
-//        } else if (token.startsWith("created")) {
-//            return "cancelled"; // Payment is cancelled
-//        } else {
-//            return "unknown"; // Unknown status for unrecognized token prefixes
-//        }
-//    }
 
     // Additional method to check if the customer has insufficient funds
     private boolean customerHasInsufficientFunds(Long customerId, BigDecimal amount) {
         // Logic to check if the customer's account balance is sufficient for the payment
         // Return true if the customer has insufficient funds, and false otherwise
-        // You should implement this method based on your application's business rules
         // For demonstration purposes, we assume the customer has insufficient funds if the amount is greater than $1000
         return amount.compareTo(new BigDecimal("1000")) > 0;
     }
@@ -349,19 +308,9 @@ public class PayPalServiceImpl implements PayPalService {
     private boolean customerExitsDuringPayment() {
         // Logic to determine if payment creation should be interrupted
         // Return true if payment should be interrupted, and false otherwise
-        // You can implement this method based on your application's needs
         // For demonstration purposes, we assume payment is interrupted if a certain condition is met
         return false;  // true false  Math.random() < 0.9
     }
-
-//    // Additional method to simulate payment execution interruption
-//    private boolean shouldInterruptPaymentExecution() {
-//        // Logic to determine if payment execution should be interrupted
-//        // Return true if payment execution should be interrupted, and false otherwise
-//        // You can implement this method based on your application's needs
-//        // For demonstration purposes, we assume payment execution is interrupted if a certain condition is met
-//        return anotherConditionIsMet;
-//    }
 
     private String extractPaymentId(Payment payment) {
         return payment.getId();
@@ -389,15 +338,20 @@ public class PayPalServiceImpl implements PayPalService {
                     .collect(Collectors.groupingBy(s -> s[0],
                             Collectors.mapping(s -> s.length > 1 ? s[1] : "", Collectors.toList())));
 
-            // Assuming the token parameter is named 'token'
             List<String> tokens = queryPairs.get("token");
             return tokens != null && !tokens.isEmpty() ? tokens.get(0) : null;
         } catch (URISyntaxException e) {
-            // Handle the exception as per your application's error handling policy
-            // For example, log the error and/or return null
             log.error("Error parsing approval URL: ", e);
             return null;
         }
+    }
+
+    private String extractCustomOrderSn(Payment payment) {
+        return payment.getTransactions().stream()
+                .filter(Objects::nonNull)
+                .map(Transaction::getCustom)
+                .findFirst()
+                .orElse(null);
     }
 
 }

@@ -1,6 +1,7 @@
 package com.UmiUni.shop.model;
 
 
+import com.UmiUni.shop.constant.PaymentMethod;
 import lombok.*;
 
 @NoArgsConstructor
@@ -15,4 +16,5 @@ public class PaymentStatusResponse {
 
     private double amount;
 
+    private PaymentMethod paymentMethod;
 }
