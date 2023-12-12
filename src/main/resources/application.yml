@@ -3,11 +3,11 @@ server:
   error:
     path: /error
 
-backend:
-  host: https://v2.quickmall24.com/  # Backend host
-  port: 80         # Backend port
-  error:
-    path: /error
+#backend:
+#  host: https://v2.quickmall24.com/  # Backend host
+#  port: 80         # Backend port
+#  error:
+#    path: /error
 
 spring:
   datasource:

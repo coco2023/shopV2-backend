@@ -46,6 +46,8 @@ public class PayPalServiceImpl implements PayPalService {
     @Value("${paypal.mode}")
     private String mode;
 
+    private String frontendUrl = "https://www.quickmall24.com";
+
     @Autowired
     private PayPalPaymentRepository payPalPaymentRepository;
 
@@ -90,8 +92,8 @@ public class PayPalServiceImpl implements PayPalService {
         payment.setTransactions(transactions);
 
         RedirectUrls redirectUrls = new RedirectUrls();
-        redirectUrls.setCancelUrl("http://localhost:3000/paypal-return?salesOrderSn=" + salesOrderSn);
-        redirectUrls.setReturnUrl("http://localhost:3000/paypal-success?salesOrderSn=" + salesOrderSn);
+        redirectUrls.setCancelUrl(frontendUrl + "/paypal-return?salesOrderSn=`" + salesOrderSn);
+        redirectUrls.setReturnUrl(frontendUrl + "/paypal-success?salesOrderSn=" + salesOrderSn);
         payment.setRedirectUrls(redirectUrls);
 
         try {
