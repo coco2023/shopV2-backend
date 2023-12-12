@@ -19,14 +19,16 @@ public class CorsConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-         config.addAllowedOrigin("https://www.quickmall24.com"); // Replace with the origin of your React app
+        config.addAllowedOrigin("https://www.quickmall24.com"); // Replace with the origin of your React app
+        config.addAllowedOrigin("https://v2.quickmall24.com"); // Replace with the origin of your React app
         config.addAllowedOriginPattern("*");
         config.addAllowedHeader("*");
+        config.addAllowedMethod("*");
         config.addAllowedMethod("OPTIONS");
         config.addAllowedMethod("GET");
         config.addAllowedMethod("POST");
         config.addAllowedMethod("PUT");
-        // config.addAllowedMethod("DELETE"); // No deletion at any time
+         config.addAllowedMethod("DELETE"); // No deletion at any time
         config.addExposedHeader("Access-Control-Allow-Origin");
         config.setMaxAge(3600L);
         source.registerCorsConfiguration("/**", config);

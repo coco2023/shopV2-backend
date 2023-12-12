@@ -30,11 +30,11 @@ springfox:
   documentation:
     swagger:
       ui:
-        base-url: /v2/api-docs
+        base-url: /api-docs
 
 springdoc:
   api-docs:
-    path: /v2/api-docs
+    path: /api-docs
   swagger-ui:
     path: /swagger-ui.html
 management:
