@@ -96,6 +96,7 @@ public class PayPalServiceImpl implements PayPalService {
         redirectUrls.setCancelUrl("https://www.quickmall24.com/paypal-return?salesOrderSn=`" + salesOrderSn);
         redirectUrls.setReturnUrl("https://www.quickmall24.com/paypal-success?salesOrderSn=" + salesOrderSn);
         payment.setRedirectUrls(redirectUrls);
+        log.info("redirectUrls: " + redirectUrls);
 
         try {
 
