@@ -1,7 +1,5 @@
 package com.UmiUni.shop.service.impl;
 
-import com.UmiUni.shop.config.PayPalConfiguration;
-import com.UmiUni.shop.config.StripeConfiguration;
 import com.UmiUni.shop.constant.PaymentStatus;
 import com.UmiUni.shop.entity.Payment;
 import com.UmiUni.shop.entity.SalesOrder;
