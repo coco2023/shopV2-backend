@@ -3,11 +3,11 @@ server:
   error:
     path: /error
 
-backend:
-  host: us.umiuni.com  # Backend host
-  port: 5003         # Backend port
-  error:
-    path: /error
+#backend:
+#  host: us.umiuni.com  # Backend host
+#  port: 5003         # Backend port
+#  error:
+#    path: /error
 
 spring:
   datasource:

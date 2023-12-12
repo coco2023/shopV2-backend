@@ -19,7 +19,7 @@ public class CorsConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
-        // config.addAllowedOrigin("http://localhost:3000"); // Replace with the origin of your React app
+         config.addAllowedOrigin("https://www.quickmall24.com"); // Replace with the origin of your React app
         config.addAllowedOriginPattern("*");
         config.addAllowedHeader("*");
         config.addAllowedMethod("OPTIONS");
