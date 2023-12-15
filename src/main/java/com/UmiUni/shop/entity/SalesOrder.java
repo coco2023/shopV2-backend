@@ -6,6 +6,7 @@ import lombok.*;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Date;
 
 @Entity
@@ -55,6 +56,33 @@ public class SalesOrder {
     private Boolean paymentProcessed;
 
     @Column(name = "last_updated")
-    private String lastUpdated;
+    private LocalDateTime lastUpdated;
+
+    private LocalDateTime expirationDate;
+
+//    public void setOrderDate(Date orderTime) {
+//        this.orderDate = orderTime.toInstant()
+//                .atZone(ZoneId.systemDefault())
+//                .toLocalDateTime();
+//    }
+//
+//    public void setLastUpdated(Date lastUpdateTime) {
+//        this.lastUpdated = lastUpdateTime.toInstant()
+//                .atZone(ZoneId.systemDefault())
+//                .toLocalDateTime();
+//    }
+
+//    public void setExpirationDate(Date time) {
+//        this.expirationDate = time.toInstant()
+//                .atZone(ZoneId.systemDefault())
+//                .toLocalDateTime();
+//    }
+
+//    public Date getOrderDate() {
+//        return Date.from(
+//                orderDate.atZone(
+//                        ZoneId.systemDefault()).toInstant()
+//        );
+//    }
 
 }

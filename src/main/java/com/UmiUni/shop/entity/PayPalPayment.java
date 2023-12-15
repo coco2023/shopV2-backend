@@ -32,8 +32,8 @@ public class PayPalPayment {
 
     private String paymentMethod; // e.g., "Credit Card", "PayPal"
 
-    private Date createTime;
+    private LocalDateTime createTime;
 
-    private String updatedAt;
+    private LocalDateTime updatedAt;
 
 }

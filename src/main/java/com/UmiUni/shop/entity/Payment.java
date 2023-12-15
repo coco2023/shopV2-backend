@@ -20,12 +20,11 @@ public class Payment {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long paymentId;
 
-    @Column(nullable = true)
-    private Long invoiceId; // Assuming InvoiceID is a unique identifier but not a foreign key
+    private String invoiceSn; // Assuming InvoiceSn is a unique identifier but not a foreign key
 
     private String transactionId; // Transaction ID from the payment gateway
 
-//    private Long salesOrderId;    #TODO: can not get salesOrderId yet
+//    private Long salesOrderSn
     private String salesOrderSn;
 
     private LocalDateTime paymentDate;

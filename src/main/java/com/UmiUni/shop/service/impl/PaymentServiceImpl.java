@@ -32,7 +32,7 @@ public class PaymentServiceImpl implements PaymentService {
     @Override
     public Payment updatePayment(Long id, Payment paymentDetails) {
         Payment payment = getPayment(id);
-        payment.setInvoiceId(paymentDetails.getInvoiceId());
+        payment.setInvoiceSn(paymentDetails.getInvoiceSn());
         payment.setTransactionId(paymentDetails.getTransactionId());
         payment.setPaymentDate(paymentDetails.getPaymentDate());
         payment.setAmount(paymentDetails.getAmount());

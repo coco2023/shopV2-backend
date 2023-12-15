@@ -32,7 +32,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Override
     public Invoice updateInvoice(Long id, Invoice invoiceDetails) {
         Invoice invoice = getInvoice(id);
-        invoice.setSalesOrderId(invoiceDetails.getSalesOrderId());
+        invoice.setSalesOrderSn(invoiceDetails.getSalesOrderSn());
         invoice.setIssueDate(invoiceDetails.getIssueDate());
         invoice.setDueDate(invoiceDetails.getDueDate());
         invoice.setItemsTotal(invoiceDetails.getItemsTotal());

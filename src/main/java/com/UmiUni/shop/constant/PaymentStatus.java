@@ -1,5 +1,5 @@
 package com.UmiUni.shop.constant;
 
 public enum PaymentStatus {
-    SUCCESS, FAILED, PENDING, REFUNDED
+    SUCCESS, FAILED, PENDING, REFUNDED, EXPIRED
 }

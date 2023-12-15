@@ -20,8 +20,10 @@ public class Invoice {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long invoiceId;
 
+    private String invoiceSn;
+
     @Column(nullable = false)
-    private Long salesOrderId;  // Assuming SalesOrderID is a unique identifier but not a foreign key
+    private String salesOrderSn;  // Assuming SalesOrderSn is a unique identifier but not a foreign key
 
     @Column(nullable = false)
     private LocalDate issueDate;

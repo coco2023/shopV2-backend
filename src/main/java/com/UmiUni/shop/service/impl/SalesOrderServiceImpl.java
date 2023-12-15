@@ -3,11 +3,17 @@ package com.UmiUni.shop.service.impl;
 import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.repository.SalesOrderRepository;
 import com.UmiUni.shop.service.SalesOrderService;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.util.Date;
 import java.util.List;
 
 @Service
+@Log4j2
 public class SalesOrderServiceImpl implements SalesOrderService {
 
     @Autowired
@@ -15,6 +21,13 @@ public class SalesOrderServiceImpl implements SalesOrderService {
 
     @Override
     public SalesOrder createSalesOrder(SalesOrder salesOrder) {
+        LocalDateTime time = new Date().toInstant()
+                .atZone(ZoneId.systemDefault())
+                .toLocalDateTime();
+        salesOrder.setOrderDate(time);
+        salesOrder.setLastUpdated(time);
+        salesOrder.setExpirationDate(salesOrder.getOrderDate().plusMinutes(2));
+        log.info("***salesOrder: " + salesOrder);
         return salesOrderRepository.save(salesOrder);
     }
 
