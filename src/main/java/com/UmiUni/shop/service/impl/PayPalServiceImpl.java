@@ -51,7 +51,7 @@ public class PayPalServiceImpl implements PayPalService {
     @Value("${paypal.mode}")
     private String mode;
 
-    private String frontendUrl = "http://localhost:3000"; // "https://www.quickmall24.com";
+    private String frontendUrl = "https://www.quickmall24.com"; // "http://localhost:3000";
 
     @Autowired
     private PayPalPaymentRepository payPalPaymentRepository;
@@ -222,7 +222,6 @@ public class PayPalServiceImpl implements PayPalService {
 
             // get expireDate
             String expiredDate = extractDescription(createPayment);
-//            LocalDateTime expiredTime = Instant.parse(expiredDate).atZone(ZoneId.systemDefault()).toLocalDateTime();
             DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
             LocalDateTime expiredTime = LocalDateTime.parse(expiredDate, formatter);
             log.info("this is expiredDate: " + expiredDate);
@@ -335,9 +334,6 @@ public class PayPalServiceImpl implements PayPalService {
             // check if salesOrder is expired
             String expiredTime = extractDescription(payment);
             // convert string into Date time & LocalTime
-//            Date time = Date.from(ZonedDateTime.parse(expiredTime, DateTimeFormatter.ISO_DATE_TIME).toInstant());
-            // LocalDateTime.parse(expiredTime, DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss"));
-//            LocalDateTime time = Instant.parse(expiredTime).atZone(ZoneId.systemDefault()).toLocalDateTime();
             DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
             LocalDateTime time = LocalDateTime.parse(expiredTime, formatter);
 

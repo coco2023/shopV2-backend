@@ -60,29 +60,4 @@ public class SalesOrder {
 
     private LocalDateTime expirationDate;
 
-//    public void setOrderDate(Date orderTime) {
-//        this.orderDate = orderTime.toInstant()
-//                .atZone(ZoneId.systemDefault())
-//                .toLocalDateTime();
-//    }
-//
-//    public void setLastUpdated(Date lastUpdateTime) {
-//        this.lastUpdated = lastUpdateTime.toInstant()
-//                .atZone(ZoneId.systemDefault())
-//                .toLocalDateTime();
-//    }
-
-//    public void setExpirationDate(Date time) {
-//        this.expirationDate = time.toInstant()
-//                .atZone(ZoneId.systemDefault())
-//                .toLocalDateTime();
-//    }
-
-//    public Date getOrderDate() {
-//        return Date.from(
-//                orderDate.atZone(
-//                        ZoneId.systemDefault()).toInstant()
-//        );
-//    }
-
 }
