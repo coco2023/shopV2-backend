@@ -3,6 +3,7 @@ package com.UmiUni.shop.service.impl;
 import com.UmiUni.shop.constant.OrderStatus;
 import com.UmiUni.shop.constant.PaymentMethod;
 import com.UmiUni.shop.constant.PaymentStatus;
+import com.UmiUni.shop.dto.PayPalPaymentResponseDTO;
 import com.UmiUni.shop.entity.PayPalPayment;
 import com.UmiUni.shop.entity.PayPalPaymentResponseEntity;
 import com.UmiUni.shop.entity.SalesOrder;
@@ -385,10 +386,13 @@ public class PayPalServiceImpl implements PayPalService {
     }
 
     @Override
-    public List<PayPalPaymentResponseEntity> getAllPayPalPaymentResponseEntity() {
-        List<PayPalPaymentResponseEntity> payPalPaymentResponseEntity = payPalPaymentResponseRepo.findAll();
-        log.info("payPalPaymentResponseEntity: " + payPalPaymentResponseEntity);
-        return payPalPaymentResponseEntity;
+    public List<PayPalPaymentResponseDTO> getAllPayPalPaymentResponseEntity() {
+        List<PayPalPaymentResponseDTO> payPalPaymentResponseDTOS = payPalPaymentResponseRepo.findAll()
+                .stream()
+                .map(PayPalPaymentResponseDTO::new)
+                .collect(Collectors.toList());
+        log.info("payPalPaymentResponseEntity: " + payPalPaymentResponseDTOS);
+        return payPalPaymentResponseDTOS;
     }
 
     // Additional method to check if the customer has insufficient funds

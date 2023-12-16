@@ -1,5 +1,6 @@
 package com.UmiUni.shop.controller;
 
+import com.UmiUni.shop.dto.PayPalPaymentResponseDTO;
 import com.UmiUni.shop.entity.PayPalPaymentResponseEntity;
 import com.UmiUni.shop.entity.Payment;
 import com.UmiUni.shop.entity.SalesOrder;
@@ -12,6 +13,7 @@ import com.paypal.base.rest.PayPalRESTException;
 import io.swagger.annotations.Api;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -78,9 +80,9 @@ public class PaymentController {
      */
     // get all EXEC paypal records (get PayPalPaymentResponseEntity)
     @GetMapping("/paypal/execute-payment-record/all")
-    // TODO: check the error of ResponseEntity
-    public ResponseEntity<List<PayPalPaymentResponseEntity>> getAllPayPalPaymentResponseEntity() {
-        List<PayPalPaymentResponseEntity> payPalPaymentResponseEntities = payPalService.getAllPayPalPaymentResponseEntity();
+    // need to use DTO data model coz the json is too long
+    public ResponseEntity<List<PayPalPaymentResponseDTO>> getAllPayPalPaymentResponseEntity() {
+        List<PayPalPaymentResponseDTO> payPalPaymentResponseEntities = payPalService.getAllPayPalPaymentResponseEntity();
         log.info("payPalPaymentResponseEntities: " + payPalPaymentResponseEntities);
         return ResponseEntity.ok(payPalPaymentResponseEntities);
     }

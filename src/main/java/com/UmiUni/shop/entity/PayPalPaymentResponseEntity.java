@@ -6,7 +6,8 @@ import lombok.*;
 
 import javax.persistence.*;
 
-@Entity@NoArgsConstructor
+@Entity
+@NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Builder
