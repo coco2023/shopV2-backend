@@ -23,12 +23,10 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
@@ -51,16 +49,13 @@ public class PayPalServiceImpl implements PayPalService {
     @Value("${paypal.mode}")
     private String mode;
 
-    private String frontendUrl = "https://www.quickmall24.com"; // "http://localhost:3000";
+    private String frontendUrl = "http://localhost:3000"; // "http://localhost:3000" https://www.quickmall24.com
 
     @Autowired
     private PayPalPaymentRepository payPalPaymentRepository;
 
     @Autowired
     private SalesOrderRepository salesOrderRepository;
-
-    @Autowired
-    private TransactionTemplate transactionTemplate; // Inject the TransactionTemplate
 
     private APIContext getAPIContext() {
         return new APIContext(clientId, clientSecret, mode);
@@ -77,7 +72,7 @@ public class PayPalServiceImpl implements PayPalService {
 
         // get salesOrderSn
         String salesOrderSn = salesOrder.getSalesOrderSn();
-        // TODO: get salesOrder expiredTime
+        // get salesOrder expiredTime
         LocalDateTime expiredTime = salesOrder.getExpirationDate();
 
         // Logic to create a payment
@@ -89,11 +84,7 @@ public class PayPalServiceImpl implements PayPalService {
         // Save SalesOrderSn
         transaction.setCustom(salesOrderSn);
         transaction.setAmount(amount);
-        // save the expiredTime of SalesOrder
         // convert expiredTime into string and save
-//        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-//        String expirationDateStr = expiredTime.format(formatter);
-//        LocalDateTime time = Instant.parse(expiredTime).atZone(ZoneId.systemDefault()).toLocalDateTime();
         transaction.setDescription(expiredTime.toString());  // save expiredTime as description
 
         List<Transaction> transactions = new ArrayList<>();
@@ -117,6 +108,7 @@ public class PayPalServiceImpl implements PayPalService {
         try {
 
             if ( salesOrder.getTotalAmount().compareTo(BigDecimal.ZERO) < 0 ) {
+                // TODO: save the error logs during PayPal payment action
                 throw new PaymentProcessingException("Payment processing failed because the payment amount is negative.");
             }
 
@@ -149,15 +141,11 @@ public class PayPalServiceImpl implements PayPalService {
                     .paymentMethod("PayPal")
                     .build();
             payPalPaymentRepository.save(payPalPayment);
-            log.info("createPayment: " + createdPayment,
-                    "payPalTransactionId: " + payPalTransactionId,
-                    "payPalPaymentStatus: " + payPalPaymentState,
-                    "approvalUrl: " + approvalUrl,
-                    "token: " + token,
-                    "payPalPayment:" + payPalPayment);
+            log.info("createPayment: " + createdPayment);
+            log.info("payPalPayment: " + payPalPayment);
 
-            //TODO: update the orderStatus?
-//            salesOrder.setOrderStatus(OrderStatus.PENDING);
+            // update the orderStatus
+            salesOrder.setOrderStatus(OrderStatus.PENDING);
             salesOrder.setLastUpdated(
                     new Date()
                             .toInstant()
@@ -213,15 +201,15 @@ public class PayPalServiceImpl implements PayPalService {
 
             // check if payment has been expired
             // Retrieve the payment object from PayPal
-            Payment createPayment = Payment.get(apiContext, paymentId);
-            log.info("Retrieved payment: " + createPayment);
+            Payment getCreatePayment = Payment.get(apiContext, paymentId);
+            log.info("Retrieved payment: " + getCreatePayment);
 
             // get cart(Token)
-            PayPalPayment payPalPayment = payPalPaymentRepository.findByPaypalToken("EC-" + createPayment.getCart());
+            PayPalPayment payPalPayment = payPalPaymentRepository.findByPaypalToken("EC-" + getCreatePayment.getCart());
             log.info("**payPalPayment: " + payPalPayment);
 
             // get expireDate
-            String expiredDate = extractDescription(createPayment);
+            String expiredDate = extractDescription(getCreatePayment);
             DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
             LocalDateTime expiredTime = LocalDateTime.parse(expiredDate, formatter);
             log.info("this is expiredDate: " + expiredDate);
@@ -229,7 +217,7 @@ public class PayPalServiceImpl implements PayPalService {
             if (expiredTime.isBefore(LocalDateTime.now())) {
                 // update SalesOrder Status to EXPIRED
                 // get salesOrderSn
-                String salesOrderSn = extractCustomOrderSn(createPayment);
+                String salesOrderSn = extractCustomOrderSn(getCreatePayment);
                 SalesOrder salesOrder = salesOrderRepository.getSalesOrderBySalesOrderSn(salesOrderSn).get();
                 salesOrder.setOrderStatus(OrderStatus.EXPIRED);
                 salesOrder.setLastUpdated(LocalDateTime.now());
@@ -242,7 +230,8 @@ public class PayPalServiceImpl implements PayPalService {
                 log.info("update payPalPayment: " + payPalPayment);
                 payPalPaymentRepository.save(payPalPayment);
 
-                throw new PaymentProcessingException("*ERROR: Payment has been expired!!");
+//                throw new PaymentProcessingException("*ERROR: Payment has been expired!!");
+                return new PaymentResponse("expired", getCreatePayment.getId());
             }
 
             // Logic to execute a payment after the user approves it on PayPal's end
@@ -337,22 +326,27 @@ public class PayPalServiceImpl implements PayPalService {
             DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
             LocalDateTime time = LocalDateTime.parse(expiredTime, formatter);
 
-            // order.getExpirationDate().isBefore(LocalDateTime.now()) && order.getOrderStatus() != OrderStatus.EXPIRED
+            // check if the payment has expired
             if (time.isBefore(LocalDateTime.now())) {
                 // update SalesOrder Status to EXPIRED
                 // get salesOrderSn
                 String salesOrderSn = extractCustomOrderSn(payment);
                 SalesOrder salesOrder = salesOrderRepository.getSalesOrderBySalesOrderSn(salesOrderSn).get();
+                payment.setState(OrderStatus.EXPIRED.name());
+                payPalPayment.setPaymentState(PaymentStatus.EXPIRED.name());
                 salesOrder.setOrderStatus(OrderStatus.EXPIRED);
+                payPalPaymentRepository.save(payPalPayment);
+                salesOrderRepository.save(salesOrder);
 
-                throw new PaymentProcessingException("*ERROR: Payment has been expired!");
+//                throw new PaymentProcessingException("*ERROR: Payment has been expired!");
+                return new PaymentStatusResponse(payment.getState(), "*ERROR: Payment has been expired!", 0, PaymentMethod.PAYPAL);
             }
 
             double amount = Double.parseDouble(payment.getTransactions().get(0).getAmount().getTotal());
             log.info("check the payment status: " + payment.getState());
             if (!payment.getState().equals("complete")) {
                 log.info("*ERROR: Payment creation interrupted because the customer exited");
-//                throw new PaymentProcessingException("Payment creation interrupted because the customer exited.");
+                // payment rollback, throw the error
                 throw new PaymentProcessingException("*ERROR: Payment creation interrupted because the customer exited.");
             }
             return new PaymentStatusResponse(payment.getState(), null, amount, PaymentMethod.PAYPAL);

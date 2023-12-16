@@ -61,4 +61,9 @@ public class SalesOrderServiceImpl implements SalesOrderService {
     public void deleteSalesOrder(Long id) {
         salesOrderRepository.deleteById(id);
     }
+
+    @Override
+    public SalesOrder getSalesOrderBySalesOrderSn(String salesOrderSn) {
+        return salesOrderRepository.getSalesOrderBySalesOrderSn(salesOrderSn).get();
+    }
 }

@@ -30,6 +30,12 @@ public class SalesOrderController {
         return ResponseEntity.ok(salesOrderService.getSalesOrder(id));
     }
 
+    @GetMapping("/salesOrderSn/{salesOrderSn}")
+    public ResponseEntity<SalesOrder> getSalesOrderBySalesOrderSn(@PathVariable String salesOrderSn) {
+        return ResponseEntity.ok(salesOrderService.getSalesOrderBySalesOrderSn(salesOrderSn));
+    }
+
+
     @GetMapping("/all")
     public List<SalesOrder> getAllSalesOrders() {
         return salesOrderService.getAllSalesOrders();

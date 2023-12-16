@@ -10,4 +10,6 @@ public interface SalesOrderService {
     List<SalesOrder> getAllSalesOrders();
     SalesOrder updateSalesOrder(Long id, SalesOrder salesOrderDetails);
     void deleteSalesOrder(Long id);
+
+    SalesOrder getSalesOrderBySalesOrderSn(String salesOrderSn);
 }
