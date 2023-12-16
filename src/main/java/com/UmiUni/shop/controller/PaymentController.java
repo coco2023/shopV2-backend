@@ -1,5 +1,6 @@
 package com.UmiUni.shop.controller;
 
+import com.UmiUni.shop.entity.PayPalPaymentResponseEntity;
 import com.UmiUni.shop.entity.Payment;
 import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.exception.PaymentProcessingException;
@@ -75,6 +76,15 @@ public class PaymentController {
     /**
      * PayPal
      */
+    // get all EXEC paypal records (get PayPalPaymentResponseEntity)
+    @GetMapping("/paypal/execute-payment-record/all")
+    // TODO: check the error of ResponseEntity
+    public ResponseEntity<List<PayPalPaymentResponseEntity>> getAllPayPalPaymentResponseEntity() {
+        List<PayPalPaymentResponseEntity> payPalPaymentResponseEntities = payPalService.getAllPayPalPaymentResponseEntity();
+        log.info("payPalPaymentResponseEntities: " + payPalPaymentResponseEntities);
+        return ResponseEntity.ok(payPalPaymentResponseEntities);
+    }
+
     // Endpoint to create a payment
     @PostMapping("/paypal/create")
     public ResponseEntity<?> createPayment(@RequestBody SalesOrder salesOrder) {

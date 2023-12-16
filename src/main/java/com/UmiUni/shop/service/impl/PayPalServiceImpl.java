@@ -4,12 +4,14 @@ import com.UmiUni.shop.constant.OrderStatus;
 import com.UmiUni.shop.constant.PaymentMethod;
 import com.UmiUni.shop.constant.PaymentStatus;
 import com.UmiUni.shop.entity.PayPalPayment;
+import com.UmiUni.shop.entity.PayPalPaymentResponseEntity;
 import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.exception.PaymentProcessingException;
 import com.UmiUni.shop.model.PayPalPaymentResponse;
 import com.UmiUni.shop.model.PaymentResponse;
 import com.UmiUni.shop.model.PaymentStatusResponse;
 import com.UmiUni.shop.repository.PayPalPaymentRepository;
+import com.UmiUni.shop.repository.PayPalPaymentResponseRepo;
 import com.UmiUni.shop.repository.SalesOrderRepository;
 import com.UmiUni.shop.service.PayPalService;
 import com.paypal.api.payments.*;
@@ -56,6 +58,9 @@ public class PayPalServiceImpl implements PayPalService {
 
     @Autowired
     private SalesOrderRepository salesOrderRepository;
+
+    @Autowired
+    private PayPalPaymentResponseRepo payPalPaymentResponseRepo;
 
     private APIContext getAPIContext() {
         return new APIContext(clientId, clientSecret, mode);
@@ -202,7 +207,7 @@ public class PayPalServiceImpl implements PayPalService {
             // check if payment has been expired
             // Retrieve the payment object from PayPal
             Payment getCreatePayment = Payment.get(apiContext, paymentId);
-            log.info("Retrieved payment: " + getCreatePayment);
+//            log.info("Retrieved payment: " + getCreatePayment);
 
             // get cart(Token)
             PayPalPayment payPalPayment = payPalPaymentRepository.findByPaypalToken("EC-" + getCreatePayment.getCart());
@@ -245,6 +250,9 @@ public class PayPalServiceImpl implements PayPalService {
             // EXEC payment
             Payment executedPayment = payment.execute(apiContext, paymentExecution);
             log.info("executedPayment: " + executedPayment);
+
+            // save the executedPayment response
+            saveExecutedPayment(executedPayment);
 
             // update paypal payment entity status info
             payPalPayment.setPaymentState("complete");
@@ -376,6 +384,13 @@ public class PayPalServiceImpl implements PayPalService {
         }
     }
 
+    @Override
+    public List<PayPalPaymentResponseEntity> getAllPayPalPaymentResponseEntity() {
+        List<PayPalPaymentResponseEntity> payPalPaymentResponseEntity = payPalPaymentResponseRepo.findAll();
+        log.info("payPalPaymentResponseEntity: " + payPalPaymentResponseEntity);
+        return payPalPaymentResponseEntity;
+    }
+
     // Additional method to check if the customer has insufficient funds
     private boolean customerHasInsufficientFunds(Long customerId, BigDecimal amount) {
         // Logic to check if the customer's account balance is sufficient for the payment
@@ -440,6 +455,94 @@ public class PayPalServiceImpl implements PayPalService {
                 .map(Transaction::getDescription)
                 .findFirst()
                 .orElse(null);
+    }
+
+    private PayPalPaymentResponseEntity saveExecutedPayment(Payment executedPayment) {
+        try{
+            PayPalPaymentResponseEntity paymentEntity = new PayPalPaymentResponseEntity();
+
+            // Basic payment info
+            paymentEntity.setPaymentId(executedPayment.getId());
+            paymentEntity.setIntent(executedPayment.getIntent());
+            paymentEntity.setCart(executedPayment.getCart());
+            paymentEntity.setState(executedPayment.getState());
+            paymentEntity.setCreateTime(executedPayment.getCreateTime());
+            paymentEntity.setUpdateTime(executedPayment.getUpdateTime());
+
+            // Payer info
+            Payer payer = executedPayment.getPayer();
+            PayerInfo payerInfo = payer.getPayerInfo();
+            paymentEntity.setPayerStatus(payer.getStatus());
+            paymentEntity.setPayerEmail(payerInfo.getEmail());
+            paymentEntity.setPayerFirstName(payerInfo.getFirstName());
+            paymentEntity.setPayerLastName(payerInfo.getLastName());
+            paymentEntity.setPayerId(payerInfo.getPayerId());
+            paymentEntity.setPayerCountryCode(payerInfo.getCountryCode());
+
+            // Shipping address
+            if (payerInfo.getShippingAddress() != null) {
+                paymentEntity.setShippingRecipientName(payerInfo.getShippingAddress().getRecipientName());
+                paymentEntity.setShippingLine1(payerInfo.getShippingAddress().getLine1());
+                paymentEntity.setShippingCity(payerInfo.getShippingAddress().getCity());
+                paymentEntity.setShippingState(payerInfo.getShippingAddress().getState());
+                paymentEntity.setShippingCountryCode(payerInfo.getShippingAddress().getCountryCode());
+                paymentEntity.setShippingPostalCode(payerInfo.getShippingAddress().getPostalCode());
+            }
+
+            // Assuming only one transaction for simplicity
+            Transaction transaction = executedPayment.getTransactions().get(0);
+            log.info("transaction: " + transaction + "; custom: " + transaction.getCustom() + "; " + transaction.getDescription());
+            Amount transactionAmount = transaction.getAmount();
+            paymentEntity.setTransactionAmountCurrency(transactionAmount.getCurrency());
+            paymentEntity.setTransactionAmountTotal(Double.parseDouble(transactionAmount.getTotal()));
+            paymentEntity.setTransactionDescription(transaction.getDescription());
+            paymentEntity.setTransactionCustom(transaction.getCustom());
+            paymentEntity.setTransactionSoftDescriptor(transaction.getSoftDescriptor());
+
+            // Payee info
+            Payee payee = transaction.getPayee();
+            paymentEntity.setPayeeEmail(payee.getEmail());
+            paymentEntity.setPayeeMerchantId(payee.getMerchantId());
+
+            // Sale info
+            List<RelatedResources> relatedResources = transaction.getRelatedResources();
+            if (!relatedResources.isEmpty()) {
+                Sale sale = relatedResources.get(0).getSale();
+                paymentEntity.setSaleId(sale.getId());
+                paymentEntity.setSaleState(sale.getState());
+                paymentEntity.setSalePaymentMode(sale.getPaymentMode());
+                paymentEntity.setSaleProtectionEligibility(sale.getProtectionEligibility());
+                paymentEntity.setSaleProtectionEligibilityType(sale.getProtectionEligibilityType());
+                paymentEntity.setSaleCreateTime(sale.getCreateTime());
+                paymentEntity.setSaleUpdateTime(sale.getUpdateTime());
+
+                Amount saleAmount = sale.getAmount();
+                paymentEntity.setSaleAmountCurrency(saleAmount.getCurrency());
+                paymentEntity.setSaleAmountTotal(Double.parseDouble(saleAmount.getTotal()));
+
+                Details details = saleAmount.getDetails();
+                paymentEntity.setSaleAmountDetailsSubtotal(details.getSubtotal());
+                paymentEntity.setSaleAmountDetailsShipping(details.getShipping());
+                paymentEntity.setSaleAmountDetailsHandlingFee(details.getHandlingFee());
+                paymentEntity.setSaleAmountDetailsShippingDiscount(details.getShippingDiscount());
+                paymentEntity.setSaleAmountDetailsInsurance(details.getInsurance());
+
+                if (sale.getTransactionFee() != null) {
+                    paymentEntity.setSaleTransactionFeeCurrency(sale.getTransactionFee().getCurrency());
+                    paymentEntity.setSaleTransactionFeeValue(Double.parseDouble(sale.getTransactionFee().getValue()));
+                }
+            }
+
+            log.info("successfully save the executedPayment!");
+
+            // Save to repository
+            return payPalPaymentResponseRepo.save(paymentEntity);
+
+        } catch (Exception e) {
+            // Handle exceptions
+            e.printStackTrace();
+            return null;
+        }
     }
 
 }
