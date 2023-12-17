@@ -11,5 +11,5 @@ public interface ReconciliationService {
 
     String reconcileBetweenDates(LocalDateTime startDate, LocalDateTime endDate);
 
-    File generateMonthlySalesReport(LocalDateTime startDate, LocalDateTime endDate);
+    File generateMonthlySalesReport(LocalDateTime startDate, LocalDateTime endDate, String type);
 }

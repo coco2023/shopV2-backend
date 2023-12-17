@@ -64,9 +64,9 @@ public class ReconciliationController {
         }
     }
 
-    // http://localhost:9001/api/v1/reconciliation/monthly-sales-report?start=2023/12/16&end=2023/12/17
+    // http://localhost:9001/api/v1/reconciliation/monthly-sales-report?start=2023/12/10&end=2023/12/17&type=JSON
     @GetMapping("/monthly-sales-report")
-    public ResponseEntity<?> getMonthlySalesReport(@RequestParam String start, @RequestParam String end) {
+    public ResponseEntity<?> getMonthlySalesReport(@RequestParam String start, @RequestParam String end, @RequestParam String type) {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
         LocalDate startDateTime  = LocalDate.parse(start, formatter);
         LocalDate endDateTime  = LocalDate.parse(end, formatter);
@@ -74,7 +74,7 @@ public class ReconciliationController {
         LocalDateTime startDate = startDateTime.atStartOfDay();
         LocalDateTime endDate = endDateTime.atTime(23, 59, 59);
 
-        File report = reconciliationService.generateMonthlySalesReport(startDate, endDate);
+        File report = reconciliationService.generateMonthlySalesReport(startDate, endDate, type);
         // Return the report as a file download or as JSON data
         return ResponseEntity.ok(report);
     }

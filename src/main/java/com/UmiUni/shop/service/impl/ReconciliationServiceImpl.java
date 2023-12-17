@@ -7,11 +7,13 @@ import com.UmiUni.shop.model.DailyReport;
 import com.UmiUni.shop.repository.PayPalPaymentRepository;
 import com.UmiUni.shop.repository.SalesOrderRepository;
 import com.UmiUni.shop.service.ReconciliationService;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
 import java.nio.file.Paths;
@@ -88,7 +90,7 @@ public class ReconciliationServiceImpl implements ReconciliationService {
     }
 
     @Override
-    public File generateMonthlySalesReport(LocalDateTime startDate, LocalDateTime endDate) {
+    public File generateMonthlySalesReport(LocalDateTime startDate, LocalDateTime endDate, String type) {
 
         // get the payment list during the date
         List<PayPalPayment> payPalPayments = payPalPaymentRepository.findByCreateTimeBetweenAndPaymentState(startDate, endDate, "complete");
@@ -97,15 +99,36 @@ public class ReconciliationServiceImpl implements ReconciliationService {
         Map<LocalDate, DailyReport> reportMap = calculateDailyTotals(payPalPayments);
         log.info(reportMap);
 
-        return generateCsvFile(reportMap);
+        if ( type.equals("JSON")) {
+            return generateJsonFile(reportMap);
+        } else { // csv
+            return generateCsvFile(reportMap);
+        }
+    }
+
+    private File generateJsonFile(Map<LocalDate, DailyReport> reportMap) {
+        // Define the path to the output directory
+        String outputDir = Paths.get("doc", "report").toString();
+        File jsonOutputFile = new File(outputDir, "monthly_sales_report.json");
+
+        // Use Jackson's ObjectMapper to write the map as JSON to the file
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            // Convert map to JSON and write to the file
+            mapper.writeValue(jsonOutputFile, reportMap);
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
+        return jsonOutputFile;
     }
 
     private File generateCsvFile(Map<LocalDate, DailyReport> reportMap) {
         // Create a temporary file to write the report to
         // Define the path to the resources directory
-        String resourcesDir = Paths.get("doc", "report").toString();
+        String outputDir = Paths.get("doc", "report").toString();
 
-        File csvOutputFile = new File(resourcesDir,"monthly_sales_report.csv");
+        File csvOutputFile = new File(outputDir,"monthly_sales_report.csv");
         try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
             // write the header line
             pw.println("Date,Payments Received,Amount Received,Fees,Net Amount");
