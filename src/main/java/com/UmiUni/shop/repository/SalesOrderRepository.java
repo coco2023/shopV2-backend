@@ -15,4 +15,6 @@ public interface SalesOrderRepository extends JpaRepository<SalesOrder, Long> {
     Optional<SalesOrder> getSalesOrderBySalesOrderSn(String salesOrderSn);
 
     List<SalesOrder> getSalesOrdersByOrderDateAfterAndOrderStatus(LocalDateTime day, OrderStatus orderStatus);
+
+    List<SalesOrder> findByOrderDateBetweenAndOrderStatus(LocalDateTime startDate, LocalDateTime endDate, OrderStatus orderStatus);
 }
