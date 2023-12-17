@@ -83,7 +83,6 @@ public class PaymentController {
     // need to use DTO data model coz the json is too long
     public ResponseEntity<List<PayPalPaymentResponseDTO>> getAllPayPalPaymentResponseEntity() {
         List<PayPalPaymentResponseDTO> payPalPaymentResponseEntities = payPalService.getAllPayPalPaymentResponseEntity();
-        log.info("payPalPaymentResponseEntities: " + payPalPaymentResponseEntities);
         return ResponseEntity.ok(payPalPaymentResponseEntities);
     }
 

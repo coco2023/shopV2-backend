@@ -26,6 +26,9 @@ public class Invoice {
     private String salesOrderSn;  // Assuming SalesOrderSn is a unique identifier but not a foreign key
 
     @Column(nullable = false)
+    private String transactionId;  // Assuming SalesOrderSn is a unique identifier but not a foreign key
+
+    @Column(nullable = false)
     private LocalDate issueDate;
 
     private LocalDate dueDate;

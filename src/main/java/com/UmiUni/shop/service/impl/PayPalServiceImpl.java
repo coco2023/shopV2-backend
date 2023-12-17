@@ -74,12 +74,12 @@ public class PayPalServiceImpl implements PayPalService {
 
         log.info("start create payment");
         SalesOrder salesOrder = salesOrderRepository.getSalesOrderBySalesOrderSn(salesOrderRequest.getSalesOrderSn()).get();
-        log.info(salesOrder.getExpirationDate());
 
         // get salesOrderSn
         String salesOrderSn = salesOrder.getSalesOrderSn();
         // get salesOrder expiredTime
         LocalDateTime expiredTime = salesOrder.getExpirationDate();
+        log.info(expiredTime);
 
         // Logic to create a payment
         Amount amount = new Amount();
@@ -127,6 +127,7 @@ public class PayPalServiceImpl implements PayPalService {
             }
 
             Payment createdPayment = payment.create(getAPIContext());
+            LocalDateTime now = LocalDateTime.now();
 
             String payPalTransactionId = extractPaymentId(createdPayment);
 
@@ -141,9 +142,11 @@ public class PayPalServiceImpl implements PayPalService {
             // Save the PayPalPaymentEntity
             PayPalPayment payPalPayment = PayPalPayment.builder()
                     .paypalToken(token)
+                    .salesOrderSn(salesOrderSn)
                     .transactionId(payPalTransactionId)
                     .paymentState(payPalPaymentState)
-                    .createTime(new Date().toInstant().atZone(ZoneId.systemDefault()).toLocalDateTime())
+                    .createTime(now)
+                    .updatedAt(now)
                     .paymentMethod("PayPal")
                     .build();
             payPalPaymentRepository.save(payPalPayment);
@@ -208,7 +211,6 @@ public class PayPalServiceImpl implements PayPalService {
             // check if payment has been expired
             // Retrieve the payment object from PayPal
             Payment getCreatePayment = Payment.get(apiContext, paymentId);
-//            log.info("Retrieved payment: " + getCreatePayment);
 
             // get cart(Token)
             PayPalPayment payPalPayment = payPalPaymentRepository.findByPaypalToken("EC-" + getCreatePayment.getCart());
@@ -218,21 +220,24 @@ public class PayPalServiceImpl implements PayPalService {
             String expiredDate = extractDescription(getCreatePayment);
             DateTimeFormatter formatter = DateTimeFormatter.ISO_LOCAL_DATE_TIME;
             LocalDateTime expiredTime = LocalDateTime.parse(expiredDate, formatter);
-            log.info("this is expiredDate: " + expiredDate);
+            log.info("this is expiredDate: " + expiredDate + " now: " + LocalDateTime.now());
 
-            if (expiredTime.isBefore(LocalDateTime.now())) {
+            LocalDateTime now = LocalDateTime.now();
+
+            if (expiredTime.isBefore(now)) {
                 // update SalesOrder Status to EXPIRED
                 // get salesOrderSn
                 String salesOrderSn = extractCustomOrderSn(getCreatePayment);
                 SalesOrder salesOrder = salesOrderRepository.getSalesOrderBySalesOrderSn(salesOrderSn).get();
                 salesOrder.setOrderStatus(OrderStatus.EXPIRED);
-                salesOrder.setLastUpdated(LocalDateTime.now());
+                salesOrder.setLastUpdated(now);
                 log.info("update salesOrder: " + salesOrder);
                 salesOrderRepository.save(salesOrder);
 
                 // update PayPalPayment info
                 payPalPayment.setPaymentState(PaymentStatus.EXPIRED.name());
-                payPalPayment.setUpdatedAt(LocalDateTime.now());
+                payPalPayment.setStatus(PaymentStatus.EXPIRED.name());
+                payPalPayment.setUpdatedAt(now);
                 log.info("update payPalPayment: " + payPalPayment);
                 payPalPaymentRepository.save(payPalPayment);
 
@@ -253,14 +258,16 @@ public class PayPalServiceImpl implements PayPalService {
             log.info("executedPayment: " + executedPayment);
 
             // save the executedPayment response
-            saveExecutedPayment(executedPayment);
+            PayPalPaymentResponseEntity paymentResponse = saveExecutedPayment(executedPayment);
 
             // update paypal payment entity status info
             payPalPayment.setPaymentState("complete");
-            payPalPayment.setUpdatedAt(
-                    ZonedDateTime.parse(executedPayment.getUpdateTime(), DateTimeFormatter.ISO_DATE_TIME)
-                            .toLocalDateTime()
-            );
+            payPalPayment.setStatus(PaymentStatus.SUCCESS.name());
+            payPalPayment.setUpdatedAt(now);
+            payPalPayment.setPayPalFee(paymentResponse.getSaleTransactionFeeValue());
+            payPalPayment.setNet(paymentResponse.getSaleAmountTotal() - paymentResponse.getSaleTransactionFeeValue());
+            payPalPayment.setPayerId(paymentResponse.getPayerId());
+            payPalPayment.setMerchantId(paymentResponse.getPayeeMerchantId());
             payPalPaymentRepository.save(payPalPayment);
             log.info("update PayPalPayment: " + payPalPayment);
 
@@ -391,7 +398,6 @@ public class PayPalServiceImpl implements PayPalService {
                 .stream()
                 .map(PayPalPaymentResponseDTO::new)
                 .collect(Collectors.toList());
-        log.info("payPalPaymentResponseEntity: " + payPalPaymentResponseDTOS);
         return payPalPaymentResponseDTOS;
     }
 
@@ -495,7 +501,7 @@ public class PayPalServiceImpl implements PayPalService {
 
             // Assuming only one transaction for simplicity
             Transaction transaction = executedPayment.getTransactions().get(0);
-            log.info("transaction: " + transaction + "; custom: " + transaction.getCustom() + "; " + transaction.getDescription());
+//            log.info("transaction: " + transaction + "; custom: " + transaction.getCustom() + "; " + transaction.getDescription());
             Amount transactionAmount = transaction.getAmount();
             paymentEntity.setTransactionAmountCurrency(transactionAmount.getCurrency());
             paymentEntity.setTransactionAmountTotal(Double.parseDouble(transactionAmount.getTotal()));

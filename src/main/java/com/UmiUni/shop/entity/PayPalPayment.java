@@ -1,5 +1,7 @@
 package com.UmiUni.shop.entity;
 
+import com.UmiUni.shop.constant.OrderStatus;
+import com.UmiUni.shop.constant.PaymentStatus;
 import com.paypal.api.payments.Transaction;
 import com.paypal.base.rest.PayPalResource;
 import lombok.*;
@@ -25,15 +27,31 @@ public class PayPalPayment {
     @Column(name = "paypal_token", unique = true, nullable = false)
     private String paypalToken;
 
+    private String invoiceSn; // Assuming InvoiceSn is a unique identifier but not a foreign key
+
+    private String salesOrderSn;
+
     @Column(name = "transactionId_id")
     private String transactionId;
 
-    private String paymentState;
+    private String paymentState;  // reco
 
-    private String paymentMethod; // e.g., "Credit Card", "PayPal"
+    private String paymentMethod;
+
+    private String status;  // payment status // reco
+
+    private Double payPalFee;  // PayPal service Fee // reco
+
+    private Double net;  // reco
+
+//    private Double totalAmount;
+
+    private String payerId;
+
+    private String merchantId;  // reco
 
     private LocalDateTime createTime;
 
-    private LocalDateTime updatedAt;
+    private LocalDateTime updatedAt; // reco
 
 }

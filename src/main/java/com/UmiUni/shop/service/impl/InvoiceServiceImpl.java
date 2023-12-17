@@ -13,6 +13,7 @@ public class InvoiceServiceImpl implements InvoiceService {
     @Autowired
     private InvoiceRepository invoiceRepository;
 
+    // TODO: create invoice for customer & merchant & platform
     @Override
     public Invoice createInvoice(Invoice invoice) {
         return invoiceRepository.save(invoice);

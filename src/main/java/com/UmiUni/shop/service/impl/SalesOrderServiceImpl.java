@@ -21,12 +21,10 @@ public class SalesOrderServiceImpl implements SalesOrderService {
 
     @Override
     public SalesOrder createSalesOrder(SalesOrder salesOrder) {
-        LocalDateTime time = new Date().toInstant()
-                .atZone(ZoneId.systemDefault())
-                .toLocalDateTime();
+        LocalDateTime time = LocalDateTime.now();
         salesOrder.setOrderDate(time);
         salesOrder.setLastUpdated(time);
-        salesOrder.setExpirationDate(salesOrder.getOrderDate().plusMinutes(2));
+        salesOrder.setExpirationDate(time.plusMinutes(2));
         log.info("***salesOrder: " + salesOrder);
         return salesOrderRepository.save(salesOrder);
     }

@@ -23,7 +23,7 @@ public class SalesOrder {
     private Long salesOrderId;
 
     @Column(unique = true)
-    private String salesOrderSn;
+    private String salesOrderSn;  // reco
 
     @Column(nullable = false)
     private Long customerId;  // Assuming CustomerID is a unique identifier but not a foreign key
@@ -35,10 +35,10 @@ public class SalesOrder {
     private String customerEmail;
 
     @Column(nullable = false)
-    private LocalDateTime orderDate;
+    private LocalDateTime orderDate;  // reco
 
     @Column(nullable = false, precision = 10, scale = 2)
-    private BigDecimal totalAmount;
+    private BigDecimal totalAmount;  // reco
 
     @Column(columnDefinition = "TEXT")
     private String shippingAddress;
@@ -47,7 +47,7 @@ public class SalesOrder {
     private String billingAddress;
 
     @Enumerated(EnumType.STRING)
-    private OrderStatus orderStatus;
+    private OrderStatus orderStatus;  // reco
 
     @Column(columnDefinition = "TEXT")
     private String paymentMethod;
@@ -58,6 +58,6 @@ public class SalesOrder {
     @Column(name = "last_updated")
     private LocalDateTime lastUpdated;
 
-    private LocalDateTime expirationDate;
+    private LocalDateTime expirationDate;  // reco
 
 }
