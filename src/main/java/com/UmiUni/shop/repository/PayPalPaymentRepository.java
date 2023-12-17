@@ -4,6 +4,8 @@ import com.UmiUni.shop.entity.PayPalPayment;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -13,4 +15,6 @@ public interface PayPalPaymentRepository extends JpaRepository<PayPalPayment, Lo
     PayPalPayment findByPaypalToken(String paypalToken);
 
     Optional<PayPalPayment> findBySalesOrderSn(String salesOrderSn);
+
+    List<PayPalPayment> getPayPalPaymentsByCreateTimeAfterAndPaymentState(LocalDateTime day, String status);
 }
