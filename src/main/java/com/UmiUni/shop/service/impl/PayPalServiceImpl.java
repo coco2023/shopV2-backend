@@ -111,6 +111,9 @@ public class PayPalServiceImpl implements PayPalService {
         payment.setRedirectUrls(redirectUrls);
         log.info("redirectUrls: " + redirectUrls);
 
+        Payment createdPayment = null;
+        PayPalPayment payPalPayment = null;
+
         try {
 
             if ( salesOrder.getTotalAmount().compareTo(BigDecimal.ZERO) < 0 ) {
@@ -126,7 +129,7 @@ public class PayPalServiceImpl implements PayPalService {
                 throw new PaymentProcessingException("Payment creation interrupted because the customer exited.");
             }
 
-            Payment createdPayment = payment.create(getAPIContext());
+            createdPayment = payment.create(getAPIContext());
             LocalDateTime now = LocalDateTime.now();
 
             String payPalTransactionId = extractPaymentId(createdPayment);
@@ -140,7 +143,7 @@ public class PayPalServiceImpl implements PayPalService {
             String token = extractToken(approvalUrl);
 
             // Save the PayPalPaymentEntity
-            PayPalPayment payPalPayment = PayPalPayment.builder()
+            payPalPayment = PayPalPayment.builder()
                     .paypalToken(token)
                     .salesOrderSn(salesOrderSn)
                     .transactionId(payPalTransactionId)
@@ -166,11 +169,11 @@ public class PayPalServiceImpl implements PayPalService {
 
             return new PaymentResponse("success create payment!", createdPayment.getId(), null, null, approvalUrl);
         } catch (PaymentProcessingException e) {
-            return  paymentErrorHandlingService.handlePaymentProcessingError(e);
+            return  paymentErrorHandlingService.handlePaymentProcessingError(e, payPalPayment.getTransactionId(), salesOrder.getSalesOrderSn());
         } catch (PayPalRESTException e) {
-            return paymentErrorHandlingService.handlePayPalRESTError(e);
+            return paymentErrorHandlingService.handlePayPalRESTError(e, payPalPayment.getTransactionId(), salesOrder.getSalesOrderSn());
         } catch (Exception ex) {
-            return paymentErrorHandlingService.handleGenericError(ex);
+            return paymentErrorHandlingService.handleGenericError(ex, payPalPayment.getTransactionId(), salesOrder.getSalesOrderSn());
         }
     }
 
@@ -179,6 +182,8 @@ public class PayPalServiceImpl implements PayPalService {
     public PaymentResponse completePayment(String paymentId, String payerId) {
 
         APIContext apiContext = getAPIContext();
+
+        PayPalPayment payPalPayment = null;
 
         try {
 
@@ -191,7 +196,7 @@ public class PayPalServiceImpl implements PayPalService {
             Payment getCreatePayment = Payment.get(apiContext, paymentId);
 
             // get cart(Token)
-            PayPalPayment payPalPayment = payPalPaymentRepository.findByPaypalToken("EC-" + getCreatePayment.getCart());
+            payPalPayment = payPalPaymentRepository.findByPaypalToken("EC-" + getCreatePayment.getCart());
             log.info("**payPalPayment: " + payPalPayment);
 
             // get expireDate
@@ -269,11 +274,11 @@ public class PayPalServiceImpl implements PayPalService {
             return new PaymentResponse("success", executedPayment.getId(), null, null, null);
 
         } catch (PaymentProcessingException e) {
-           return paymentErrorHandlingService.handlePaymentProcessingError(e);
+           return paymentErrorHandlingService.handlePaymentProcessingError(e, payPalPayment.getTransactionId(), payPalPayment.getSalesOrderSn());
         } catch (PayPalRESTException e) {
-            return paymentErrorHandlingService.handlePayPalRESTError(e);
+            return paymentErrorHandlingService.handlePayPalRESTError(e, payPalPayment.getTransactionId(), payPalPayment.getSalesOrderSn());
         } catch (Exception e) {
-            return paymentErrorHandlingService.handleGenericError(e);
+            return paymentErrorHandlingService.handleGenericError(e, payPalPayment.getTransactionId(), payPalPayment.getSalesOrderSn());
         }
     }
 
@@ -288,10 +293,12 @@ public class PayPalServiceImpl implements PayPalService {
         String transactionId = payPalPayment.getTransactionId();
         APIContext apiContext = getAPIContext();
 
+        Payment payment = null;
+
         try {
 
             // get payment through transactionId
-            Payment payment = Payment.get(apiContext, transactionId);
+            payment = Payment.get(apiContext, transactionId);
             log.info("***transactionId: "+ transactionId);
 
             // check if salesOrder is expired
@@ -312,7 +319,6 @@ public class PayPalServiceImpl implements PayPalService {
                 payPalPaymentRepository.save(payPalPayment);
                 salesOrderRepository.save(salesOrder);
 
-//                throw new PaymentProcessingException("*ERROR: Payment has been expired!", ErrorCategory.ORDER_EXPIRED);
                 throw new PaymentExpiredException("ERROR: Payment has been expired!", ErrorCategory.ORDER_EXPIRED);
             }
 
@@ -325,29 +331,13 @@ public class PayPalServiceImpl implements PayPalService {
             return new PaymentResponse(payment.getState(), token, "amount: " + amount, null, null);
 
         } catch (PaymentExpiredException e) {
-            return paymentErrorHandlingService.handlePaymentExpiredError(e);
+            return paymentErrorHandlingService.handlePaymentExpiredError(e, transactionId, payPalPayment.getSalesOrderSn());
         } catch (PaymentProcessingException e) {
-            return paymentErrorHandlingService.handlePaymentProcessingError(e);
-//            log.error("ERROR: Payment creation interrupted because the customer exited.: " + ex.getMessage(), ex);
-//
-//            if (TransactionSynchronizationManager.isActualTransactionActive()) {
-//                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-//            }
-//
-//            return new PaymentStatusResponse("ERROR: Payment creation interrupted because the customer exited.", ex.getMessage(), 0, PaymentMethod.PAYPAL);
+            return paymentErrorHandlingService.handlePaymentProcessingError(e, transactionId, payPalPayment.getSalesOrderSn());
         } catch (PayPalRESTException e) {
-            return paymentErrorHandlingService.handlePayPalRESTError(e);
-//            response.setStatus("Error");
-//            response.setErrorDetails(ex.getMessage());
-//            return new PaymentStatusResponse("failed to process the payment", ex.getMessage(), 0, PaymentMethod.PAYPAL);
+            return paymentErrorHandlingService.handlePayPalRESTError(e, transactionId, payPalPayment.getSalesOrderSn());
         } catch (Exception e) {
-            return paymentErrorHandlingService.handleGenericError(e);
-//            log.error("Unexpected error creating payment: " + ex.getMessage(), ex);
-//
-//            if (TransactionSynchronizationManager.isActualTransactionActive()) {
-//                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-//            }
-//            return new PaymentStatusResponse("failed to process the payment", ex.getMessage(), 0, PaymentMethod.PAYPAL);
+            return paymentErrorHandlingService.handleGenericError(e, transactionId, payPalPayment.getSalesOrderSn());
         }
     }
 

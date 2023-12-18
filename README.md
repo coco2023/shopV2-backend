@@ -3,6 +3,11 @@
 2. https://developer.paypal.com/docs/api/partner-referrals/v2/
 3. https://chat.openai.com/share/1d431841-65cc-4937-98d3-2540b637d1ff [Payment-RollBack realted]
 
+# create payment Log_ERROR_DB
+create payment Log_ERROR_DB to save every error/interrupts occur during payment process.
+
+![payment Log_ERROR_DB.png](doc/img/payment_ERROR_Log_database.png)
+
 # add TransactionTemplate to payment process for payment rollback
  If you are facing difficulties using `TransactionSynchronizationManager` and it's not resolving the `getCurrentTransactionStatus` method, here's an alternative approach to handle transaction rollback programmatically:
 

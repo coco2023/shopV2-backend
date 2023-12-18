@@ -15,6 +15,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.interceptor.TransactionAspectSupport;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.time.LocalDateTime;
 
 
@@ -26,34 +28,49 @@ public class PaymentErrorHandlingService {
 
     private static final Logger log = LoggerFactory.getLogger(PaymentErrorHandlingService.class);
 
-    public PaymentResponse handlePaymentExpiredError(PaymentExpiredException e ) {
-        logError(e, "ERROR: Payment has been expired!");
+    public PaymentResponse handlePaymentExpiredError(PaymentExpiredException e,
+                                                     String transactionId,
+                                                     String salesOrderId
+    ) {
+        logError(e, "ERROR: Payment has been expired!", transactionId, salesOrderId);
         return new PaymentResponse(PaymentStatus.EXPIRED.name(), null, "payment expired", e.getMessage(), null);
     }
 
-    public PaymentResponse handlePaymentProcessingError(PaymentProcessingException e) {
-        logError(e, "Error during payment processing: user exist!");
+    public PaymentResponse handlePaymentProcessingError(PaymentProcessingException e,
+                                                        String transactionId,
+                                                        String salesOrderId
+    ) {
+        logError(e, "Error during payment processing: user exist!", transactionId, salesOrderId);
         // Additional logic for PaymentProcessingException
         return new PaymentResponse(PaymentStatus.FAILED.name(), null, "Payment processing failed", e.getMessage(), null);
     }
 
-    public PaymentResponse handlePayPalRESTError(PayPalRESTException e) {
-        logError(e, "PayPal payment execution error");
+    public PaymentResponse handlePayPalRESTError(PayPalRESTException e,
+                                                 String transactionId,
+                                                 String salesOrderId
+    ) {
+        logError(e, "PayPal payment execution error", transactionId, salesOrderId);
         return new PaymentResponse(PaymentStatus.FAILED.name(), e.getMessage(), null, "PayPal payment failed", null);
     }
 
-    public PaymentResponse handleGenericError(Exception e) {
-        logError(e, "Unexpected error during payment");
+    public PaymentResponse handleGenericError(Exception e,
+                                              String transactionId,
+                                              String salesOrderId
+    ) {
+        logError(e, "Unexpected error during payment", transactionId, salesOrderId);
         return new PaymentResponse("Unexpected error", e.getMessage(), null, "Unexpected error", null);
     }
-    private void logError(Exception e, String message) {
+    private void logError(Exception e, String message,
+                          String transactionId,
+                          String salesOrderId
+    ) {
         e.printStackTrace();
         log.error(message + ": " + e.getMessage(), e);
 
         ErrorCategory category = determineErrorCategory(e);
         // Log the error with its category
         log.error("Error Category: {}, {} : {}", category, message, e.getMessage(), e);
-        saveErrorToDatabase(e, message, "SO-TEST-12345", category);
+        saveErrorToDatabase(e, message, transactionId, salesOrderId, category);
 
 //        handleCategorySpecificActions(category, e);
 
@@ -107,7 +124,10 @@ public class PaymentErrorHandlingService {
     }
 
     // save log to database
-    private void saveErrorToDatabase(Exception e, String transactionSn, String salesOrderSn, ErrorCategory category) {
+    private void saveErrorToDatabase(Exception e, String description, String transactionSn, String salesOrderSn, ErrorCategory category) {
+
+        String stackTrace = getStackTraceAsString(e);
+
         PaymentErrorLog errorLog = PaymentErrorLog.builder()
                 .errorCode(e.getClass().getSimpleName())
                 .errorMessage(e.getMessage())
@@ -115,8 +135,45 @@ public class PaymentErrorHandlingService {
                 .transactionSn(transactionSn)
                 .salesOrderSn(salesOrderSn)
                 .errorType(category)
+                .stackTrace(stackTrace)
+                .description(description)
                 .build();
         paymentErrorLogRepo.save(errorLog);
+    }
+
+    private String getStackTraceAsString(Exception e) {
+        StringWriter stringWriter = new StringWriter();
+        PrintWriter printWriter = new PrintWriter(stringWriter);
+        e.printStackTrace(printWriter);
+        String fullStackTrace = stringWriter.toString();
+
+//        // method 1: limit the text size
+//        return truncateStack(fullStackTrace);
+
+        // method 2: extract the error
+        return extractSummary(fullStackTrace);
+
+    }
+
+    private String truncateStack(String fullStackTrace) {
+        // Truncate the stack trace if it's too long
+        int maxStackTraceLength = 3000;
+        return fullStackTrace.length() > maxStackTraceLength ?
+                fullStackTrace.substring(0, maxStackTraceLength) :
+                fullStackTrace;
+    }
+
+    private String extractSummary(String stackTrace) {
+        // Extract the first few lines or key parts of the stack trace
+        int maxLines = 10; // Number of lines to include in the summary
+        String[] lines = stackTrace.split("\n");
+        StringBuilder summary = new StringBuilder();
+
+        for (int i = 0; i < Math.min(lines.length, maxLines); i++) {
+            summary.append(lines[i]).append("\n");
+        }
+
+        return summary.toString();
     }
 
     // Methods for alerting, retry logic, user communication, etc., can be added here

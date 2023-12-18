@@ -24,16 +24,19 @@ public class PaymentErrorLog {
 
     private String errorMessage;
 
+    @Column(columnDefinition = "TEXT")
     private String stackTrace;
 
-    private Long paymentId;
+//    private Long paymentId;
 
     private String transactionSn;
 
     private String salesOrderSn;
 
-    private Long customerId;
+//    private Long customerId;
 
     private ErrorCategory errorType;
+
+    private String description;
 
 }
