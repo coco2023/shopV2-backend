@@ -90,7 +90,7 @@ public class PaymentController {
     @PostMapping("/paypal/create")
     public ResponseEntity<?> createPayment(@RequestBody SalesOrder salesOrder) {
         try {
-            PayPalPaymentResponse paymentResponse = payPalService.createPayment(salesOrder);
+            PaymentResponse paymentResponse = payPalService.createPayment(salesOrder);
             return ResponseEntity.ok(paymentResponse);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating PayPal payment: " + e.getMessage());
@@ -109,9 +109,9 @@ public class PaymentController {
     }
 
     @GetMapping("/paypal/check-payment-status")
-    public ResponseEntity<PaymentStatusResponse> checkPaymentStatus(@RequestParam("token") String token) throws Exception {
+    public ResponseEntity<?> checkPaymentStatus(@RequestParam("token") String token) throws Exception {
         try {
-            PaymentStatusResponse response = payPalService.checkPaymentStatus(token);
+            PaymentResponse response = payPalService.checkPaymentStatus(token);
             return ResponseEntity.ok(response);
         } catch (PaymentProcessingException e) {
 //            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

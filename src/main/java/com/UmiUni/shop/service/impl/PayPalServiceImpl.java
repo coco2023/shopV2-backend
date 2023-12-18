@@ -1,20 +1,20 @@
 package com.UmiUni.shop.service.impl;
 
+import com.UmiUni.shop.constant.ErrorCategory;
 import com.UmiUni.shop.constant.OrderStatus;
-import com.UmiUni.shop.constant.PaymentMethod;
 import com.UmiUni.shop.constant.PaymentStatus;
 import com.UmiUni.shop.dto.PayPalPaymentResponseDTO;
 import com.UmiUni.shop.entity.PayPalPayment;
 import com.UmiUni.shop.entity.PayPalPaymentResponseEntity;
 import com.UmiUni.shop.entity.SalesOrder;
+import com.UmiUni.shop.exception.PaymentExpiredException;
 import com.UmiUni.shop.exception.PaymentProcessingException;
-import com.UmiUni.shop.model.PayPalPaymentResponse;
 import com.UmiUni.shop.model.PaymentResponse;
-import com.UmiUni.shop.model.PaymentStatusResponse;
 import com.UmiUni.shop.repository.PayPalPaymentRepository;
 import com.UmiUni.shop.repository.PayPalPaymentResponseRepo;
 import com.UmiUni.shop.repository.SalesOrderRepository;
 import com.UmiUni.shop.service.PayPalService;
+import com.UmiUni.shop.service.PaymentErrorHandlingService;
 import com.paypal.api.payments.*;
 import com.paypal.base.rest.APIContext;
 import com.paypal.base.rest.PayPalRESTException;
@@ -24,15 +24,12 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.annotation.Isolation;
-import org.springframework.transaction.interceptor.TransactionAspectSupport;
-import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.math.BigDecimal;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
-import java.time.ZonedDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
@@ -52,7 +49,7 @@ public class PayPalServiceImpl implements PayPalService {
     @Value("${paypal.mode}")
     private String mode;
 
-    private String frontendUrl = "https://www.quickmall24.com"; // "http://localhost:3000" https://www.quickmall24.com
+    private String frontendUrl = "http://localhost:3000"; // "http://localhost:3000" https://www.quickmall24.com
 
     @Autowired
     private PayPalPaymentRepository payPalPaymentRepository;
@@ -63,6 +60,9 @@ public class PayPalServiceImpl implements PayPalService {
     @Autowired
     private PayPalPaymentResponseRepo payPalPaymentResponseRepo;
 
+    @Autowired
+    private PaymentErrorHandlingService paymentErrorHandlingService;
+
     private APIContext getAPIContext() {
         return new APIContext(clientId, clientSecret, mode);
 
@@ -70,7 +70,7 @@ public class PayPalServiceImpl implements PayPalService {
 
     @Override
     @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
-    public PayPalPaymentResponse createPayment(SalesOrder salesOrderRequest) {
+    public PaymentResponse createPayment(SalesOrder salesOrderRequest) {
 
         log.info("start create payment");
         SalesOrder salesOrder = salesOrderRepository.getSalesOrderBySalesOrderSn(salesOrderRequest.getSalesOrderSn()).get();
@@ -164,35 +164,13 @@ public class PayPalServiceImpl implements PayPalService {
 
             //TODO: Lock the Product Inventory
 
-
-            return new PayPalPaymentResponse("success create payment!", createdPayment.getId(), approvalUrl);
-
+            return new PaymentResponse("success create payment!", createdPayment.getId(), null, null, approvalUrl);
         } catch (PaymentProcessingException e) {
-            e.printStackTrace();
-            log.error("Error creating payment: " + e.getMessage(), e);
-
-            if (TransactionSynchronizationManager.isActualTransactionActive()) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            }
-
-            return new PayPalPaymentResponse("Failed to create payment", null, null);
+            return  paymentErrorHandlingService.handlePaymentProcessingError(e);
         } catch (PayPalRESTException e) {
-            e.printStackTrace();
-            log.error("Error creating payment: " + e.getMessage(), e);
-
-            if (TransactionSynchronizationManager.isActualTransactionActive()) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            }
-
-            return new PayPalPaymentResponse("Failed to create payment", null, null);
+            return paymentErrorHandlingService.handlePayPalRESTError(e);
         } catch (Exception ex) {
-            log.error("Unexpected error creating payment: " + ex.getMessage(), ex);
-
-            if (TransactionSynchronizationManager.isActualTransactionActive()) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            }
-
-            return new PayPalPaymentResponse("Unexpected error", null, null);
+            return paymentErrorHandlingService.handleGenericError(ex);
         }
     }
 
@@ -242,7 +220,7 @@ public class PayPalServiceImpl implements PayPalService {
                 payPalPaymentRepository.save(payPalPayment);
 
 //                throw new PaymentProcessingException("*ERROR: Payment has been expired!!");
-                return new PaymentResponse("expired", getCreatePayment.getId());
+                return new PaymentResponse("expired", getCreatePayment.getId(), null, null, null);
             }
 
             // Logic to execute a payment after the user approves it on PayPal's end
@@ -288,53 +266,33 @@ public class PayPalServiceImpl implements PayPalService {
 
             //TODO: Decrease the Product Inventory
 
-            return new PaymentResponse("success", executedPayment.getId());
+            return new PaymentResponse("success", executedPayment.getId(), null, null, null);
 
         } catch (PaymentProcessingException e) {
-            e.printStackTrace();
-            log.error("Error creating payment: " + e.getMessage(), e);
-
-            if (TransactionSynchronizationManager.isActualTransactionActive()) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            }
-
-            return new PaymentResponse("Failed to create payment", null);
+           return paymentErrorHandlingService.handlePaymentProcessingError(e);
         } catch (PayPalRESTException e) {
-            e.printStackTrace();
-
-            if (TransactionSynchronizationManager.isActualTransactionActive()) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            }
-
-            return new PaymentResponse("Failed to execute payment", null);
-        } catch (Exception ex) {
-            log.error("Unexpected error executing payment: " + ex.getMessage(), ex);
-
-            if (TransactionSynchronizationManager.isActualTransactionActive()) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            }
-
-            return new PaymentResponse("Unexpected error", ex.getMessage());
+            return paymentErrorHandlingService.handlePayPalRESTError(e);
+        } catch (Exception e) {
+            return paymentErrorHandlingService.handleGenericError(e);
         }
     }
 
     @Override
-    public PaymentStatusResponse checkPaymentStatus(String token) throws Exception {
+    public PaymentResponse checkPaymentStatus(String token) throws Exception {
 
         PayPalPayment payPalPayment = payPalPaymentRepository.findByPaypalToken(token);
         if (payPalPayment == null) {
-            return new PaymentStatusResponse("Error", "Payment not found for token: " + token, 0, PaymentMethod.PAYPAL);
+            return new PaymentResponse("Error", token, "Payment not found for token", null, null);
         }
 
         String transactionId = payPalPayment.getTransactionId();
-        PaymentStatusResponse response = new PaymentStatusResponse();
+        APIContext apiContext = getAPIContext();
 
         try {
 
-            APIContext apiContext = getAPIContext();
-
             // get payment through transactionId
             Payment payment = Payment.get(apiContext, transactionId);
+            log.info("***transactionId: "+ transactionId);
 
             // check if salesOrder is expired
             String expiredTime = extractDescription(payment);
@@ -354,40 +312,41 @@ public class PayPalServiceImpl implements PayPalService {
                 payPalPaymentRepository.save(payPalPayment);
                 salesOrderRepository.save(salesOrder);
 
-//                throw new PaymentProcessingException("*ERROR: Payment has been expired!");
-                return new PaymentStatusResponse(payment.getState(), "*ERROR: Payment has been expired!", 0, PaymentMethod.PAYPAL);
+//                throw new PaymentProcessingException("*ERROR: Payment has been expired!", ErrorCategory.ORDER_EXPIRED);
+                throw new PaymentExpiredException("ERROR: Payment has been expired!", ErrorCategory.ORDER_EXPIRED);
             }
 
             double amount = Double.parseDouble(payment.getTransactions().get(0).getAmount().getTotal());
-            log.info("check the payment status: " + payment.getState());
+
             if (!payment.getState().equals("complete")) {
-                log.info("*ERROR: Payment creation interrupted because the customer exited");
                 // payment rollback, throw the error
-                throw new PaymentProcessingException("*ERROR: Payment creation interrupted because the customer exited.");
+                throw new PaymentProcessingException("*ERROR: Payment creation interrupted because the customer exited.", ErrorCategory.CLIENT_EXIT);
             }
-            return new PaymentStatusResponse(payment.getState(), null, amount, PaymentMethod.PAYPAL);
+            return new PaymentResponse(payment.getState(), token, "amount: " + amount, null, null);
 
-        } catch (PaymentProcessingException ex) {
-            log.error("Unexpected error creating payment: " + ex.getMessage(), ex);
-
-            if (TransactionSynchronizationManager.isActualTransactionActive()) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            }
-
-            throw new PaymentProcessingException(ex.getMessage());
+        } catch (PaymentExpiredException e) {
+            return paymentErrorHandlingService.handlePaymentExpiredError(e);
+        } catch (PaymentProcessingException e) {
+            return paymentErrorHandlingService.handlePaymentProcessingError(e);
+//            log.error("ERROR: Payment creation interrupted because the customer exited.: " + ex.getMessage(), ex);
+//
+//            if (TransactionSynchronizationManager.isActualTransactionActive()) {
+//                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+//            }
+//
+//            return new PaymentStatusResponse("ERROR: Payment creation interrupted because the customer exited.", ex.getMessage(), 0, PaymentMethod.PAYPAL);
+        } catch (PayPalRESTException e) {
+            return paymentErrorHandlingService.handlePayPalRESTError(e);
+//            response.setStatus("Error");
+//            response.setErrorDetails(ex.getMessage());
 //            return new PaymentStatusResponse("failed to process the payment", ex.getMessage(), 0, PaymentMethod.PAYPAL);
-        } catch (PayPalRESTException ex) {
-            response.setStatus("Error");
-            response.setErrorDetails(ex.getMessage());
-            throw new PayPalRESTException(ex.getMessage());
-//            return new PaymentStatusResponse("failed to process the payment", ex.getMessage(), 0, PaymentMethod.PAYPAL);
-        } catch (Exception ex) {
-            log.error("Unexpected error creating payment: " + ex.getMessage(), ex);
-
-            if (TransactionSynchronizationManager.isActualTransactionActive()) {
-                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
-            }
-            throw new Exception(ex.getMessage());
+        } catch (Exception e) {
+            return paymentErrorHandlingService.handleGenericError(e);
+//            log.error("Unexpected error creating payment: " + ex.getMessage(), ex);
+//
+//            if (TransactionSynchronizationManager.isActualTransactionActive()) {
+//                TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+//            }
 //            return new PaymentStatusResponse("failed to process the payment", ex.getMessage(), 0, PaymentMethod.PAYPAL);
         }
     }

@@ -25,13 +25,6 @@ public class StripeServiceImpl implements StripeService {
     @Value("${stripe.secret.key}")
     private String apiKey;
 
-//    private final StripeConfiguration stripeConfiguration;
-//
-//    @Autowired
-//    public StripeServiceImpl(StripeConfiguration stripeConfiguration) {
-//        this.stripeConfiguration = stripeConfiguration;
-//    }
-
     @Autowired
     private PaymentRepository paymentRepository;
 
@@ -40,8 +33,6 @@ public class StripeServiceImpl implements StripeService {
 
         try{
 
-//            Stripe.apiKey = stripeConfiguration.getSecretKey();
-//            log.info("Stripe seceretKey: " + stripeConfiguration.getSecretKey());
             Stripe.apiKey = apiKey;
 
             Map<String, Object> chargeParams = new HashMap<>();
@@ -50,11 +41,9 @@ public class StripeServiceImpl implements StripeService {
             chargeParams.put("source", token); // Token obtained from Stripe.js on the frontend
             chargeParams.put("description", "Charge for order " + salesOrder.getSalesOrderSn());
             chargeParams.put("receipt_email", salesOrder.getCustomerEmail()); // Customer's email
-//            chargeParams.put("customer", salesOrder.getCustomerName());
 
             // Optional: Add metadata for tracking
             Map<String, Object> metadata = new HashMap<>();
-//            metadata.put("sales_order_id", salesOrder.getSalesOrderId().toString());
             metadata.put("sales_order", salesOrder);
             metadata.put("customer_id", salesOrder.getCustomerId().toString());
             metadata.put("shipping_address", salesOrder.getShippingAddress());
@@ -65,9 +54,7 @@ public class StripeServiceImpl implements StripeService {
 
             // Save or update payment details in the database
             Payment payment = new Payment();
-//            payment.setInvoiceId(salesOrder.getSalesOrderId()); // Assuming salesOrderId is used as invoiceId
             payment.setTransactionId(charge.getId());
-//            payment.setSalesOrderId(salesOrder.getSalesOrderId());
             payment.setSalesOrderSn(salesOrder.getSalesOrderSn());
             payment.setCurrency("USD");
             payment.setPaymentDate(LocalDateTime.now());
@@ -81,11 +68,11 @@ public class StripeServiceImpl implements StripeService {
             payment.setErrorMessage(charge.getFailureMessage()); // In case of failure
             paymentRepository.save(payment);
 
-            return new PaymentResponse(charge.getStatus(), charge.getId());
+            return new PaymentResponse(charge.getStatus(), charge.getId(), null, null, null );
 
         } catch (Exception e) {
             e.printStackTrace();
-            return new PaymentResponse("failed", e.getMessage());
+            return new PaymentResponse("failed", null, null, e.getMessage(), null);
         }
     }
 
