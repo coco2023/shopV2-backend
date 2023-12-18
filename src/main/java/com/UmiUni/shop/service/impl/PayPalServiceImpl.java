@@ -49,7 +49,7 @@ public class PayPalServiceImpl implements PayPalService {
     @Value("${paypal.mode}")
     private String mode;
 
-    private String frontendUrl = "http://localhost:3000"; // "http://localhost:3000" https://www.quickmall24.com
+    private String frontendUrl = "https://www.quickmall24.com"; // "http://localhost:3000" https://www.quickmall24.com
 
     @Autowired
     private PayPalPaymentRepository payPalPaymentRepository;
