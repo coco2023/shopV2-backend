@@ -6,12 +6,14 @@ import com.UmiUni.shop.constant.PaymentStatus;
 import com.UmiUni.shop.dto.PayPalPaymentResponseDTO;
 import com.UmiUni.shop.entity.PayPalPayment;
 import com.UmiUni.shop.entity.PayPalPaymentResponseEntity;
+import com.UmiUni.shop.entity.PaymentErrorLog;
 import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.exception.PaymentExpiredException;
 import com.UmiUni.shop.exception.PaymentProcessingException;
 import com.UmiUni.shop.model.PaymentResponse;
 import com.UmiUni.shop.repository.PayPalPaymentRepository;
 import com.UmiUni.shop.repository.PayPalPaymentResponseRepo;
+import com.UmiUni.shop.repository.PaymentErrorLogRepo;
 import com.UmiUni.shop.repository.SalesOrderRepository;
 import com.UmiUni.shop.service.PayPalService;
 import com.UmiUni.shop.service.PaymentErrorHandlingService;
@@ -62,6 +64,9 @@ public class PayPalServiceImpl implements PayPalService {
 
     @Autowired
     private PaymentErrorHandlingService paymentErrorHandlingService;
+
+    @Autowired
+    private PaymentErrorLogRepo paymentErrorLogRepo;
 
     private APIContext getAPIContext() {
         return new APIContext(clientId, clientSecret, mode);
@@ -348,6 +353,11 @@ public class PayPalServiceImpl implements PayPalService {
                 .map(PayPalPaymentResponseDTO::new)
                 .collect(Collectors.toList());
         return payPalPaymentResponseDTOS;
+    }
+
+    @Override
+    public List<PaymentErrorLog> getPaymentErrorLog() {
+        return paymentErrorLogRepo.findAll();
     }
 
     // Additional method to check if the customer has insufficient funds

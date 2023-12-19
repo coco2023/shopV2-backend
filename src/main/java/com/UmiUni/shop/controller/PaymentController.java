@@ -3,6 +3,7 @@ package com.UmiUni.shop.controller;
 import com.UmiUni.shop.dto.PayPalPaymentResponseDTO;
 import com.UmiUni.shop.entity.PayPalPaymentResponseEntity;
 import com.UmiUni.shop.entity.Payment;
+import com.UmiUni.shop.entity.PaymentErrorLog;
 import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.exception.PaymentProcessingException;
 import com.UmiUni.shop.model.*;
@@ -122,6 +123,16 @@ public class PaymentController {
 //            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
             throw new Exception(e.getMessage());
         }
+    }
+
+    /**
+     * get payment error logs and deliver to frontend page
+     */
+    @GetMapping("/get-payment-error-logs/all")
+    public ResponseEntity<List<PaymentErrorLog>> getPaymentErrorLog() {
+        List<PaymentErrorLog> paymentErrorLogs = payPalService.getPaymentErrorLog();
+//        log.info("paymentErrorLogs: " + paymentErrorLogs);
+        return ResponseEntity.ok(paymentErrorLogs);
     }
 
     /**

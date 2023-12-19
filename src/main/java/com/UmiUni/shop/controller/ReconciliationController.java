@@ -88,9 +88,9 @@ public class ReconciliationController {
      */
     @PostMapping("/upload")
     public ResponseEntity<List<?>> uploadFile(@RequestParam("file") MultipartFile file) {
-        List<ReconcileResult> transactions = reconciliationService.readTransactions(file);
-        log.info("file: " + transactions);
-        return ResponseEntity.ok(transactions);
+        List<ReconcileResult> reconcileResults = reconciliationService.readTransactions(file);
+        log.info("file: " + reconcileResults);
+        return ResponseEntity.ok(reconcileResults);
     }
 
 

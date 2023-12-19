@@ -1,6 +1,7 @@
 package com.UmiUni.shop.model;
 
 import com.UmiUni.shop.entity.PayPalPayment;
+import com.UmiUni.shop.entity.ReconcileErrorLog;
 import lombok.*;
 
 @NoArgsConstructor
@@ -10,7 +11,9 @@ import lombok.*;
 @ToString
 public class ReconcileResult {
 
-    private PayPalPayment payment;
+    private PayPalPayment paypalDBPaymentRecord;
 
     private PaypalTransactionRecord paypalTransactionRecord;
+
+    private ReconcileErrorLog reconcileErrorLog;
 }

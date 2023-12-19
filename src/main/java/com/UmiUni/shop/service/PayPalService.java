@@ -1,6 +1,7 @@
 package com.UmiUni.shop.service;
 
 import com.UmiUni.shop.dto.PayPalPaymentResponseDTO;
+import com.UmiUni.shop.entity.PaymentErrorLog;
 import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.model.PaymentResponse;
 
@@ -16,4 +17,6 @@ public interface PayPalService {
     PaymentResponse checkPaymentStatus(String token) throws Exception;
 
     List<PayPalPaymentResponseDTO> getAllPayPalPaymentResponseEntity();
+
+    List<PaymentErrorLog> getPaymentErrorLog();
 }

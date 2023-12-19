@@ -1,6 +1,7 @@
 package com.UmiUni.shop.service;
 
 import com.UmiUni.shop.entity.Payment;
+import com.UmiUni.shop.entity.PaymentErrorLog;
 
 import java.util.List;
 

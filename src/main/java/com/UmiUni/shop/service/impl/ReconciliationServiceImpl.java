@@ -3,6 +3,7 @@ package com.UmiUni.shop.service.impl;
 import com.UmiUni.shop.constant.ErrorCategory;
 import com.UmiUni.shop.constant.OrderStatus;
 import com.UmiUni.shop.entity.PayPalPayment;
+import com.UmiUni.shop.entity.ReconcileErrorLog;
 import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.exception.DBPaymentNotExitException;
 import com.UmiUni.shop.exception.PaymentRecordNotMatchException;
@@ -155,7 +156,7 @@ public class ReconciliationServiceImpl implements ReconciliationService {
 
             try {
                 if (payPalPayment == null) {
-                    reconcileResult.setPayment(null);
+                    reconcileResult.setPaypalDBPaymentRecord(null);
                     log.info("transactionRecord does not match!");
                     throw new DBPaymentNotExitException("DB does not include the payment record", ErrorCategory.PAYMENT_NOT_EXIT_IN_DB, salesOrderSn);
                 }
@@ -163,15 +164,17 @@ public class ReconciliationServiceImpl implements ReconciliationService {
 
                 // reconcile db and transactionRecord
                 if (!isReconciliationWithPayPalSuccessful(transactionRecord, payPalPayment)) {
-                    reconcileResult.setPayment(payPalPayment);
+                    reconcileResult.setPaypalDBPaymentRecord(payPalPayment);
                     throw new PaymentRecordNotMatchException("transaction and payment db Records does not match!", ErrorCategory.PAYMENT_RECORDS_NOT_MATCH, salesOrderSn, payPalPayment.getTransactionId());
                 }
-                reconcileResult.setPayment(payPalPayment);
+                reconcileResult.setPaypalDBPaymentRecord(payPalPayment);
                 log.info("match!");
             } catch (DBPaymentNotExitException e) {
-                reconcileErrorLogService.logError(e, "ERROR: no such payment exit");
+                ReconcileErrorLog errorLog = reconcileErrorLogService.logError(e, "ERROR: no such payment exit");
+                reconcileResult.setReconcileErrorLog(errorLog);
             } catch (PaymentRecordNotMatchException e) {
-                reconcileErrorLogService.logError(e, "ERROR: Payment Records Do Not Match!");
+                ReconcileErrorLog errorLog = reconcileErrorLogService.logError(e, "ERROR: Payment Records Do Not Match!");
+                reconcileResult.setReconcileErrorLog(errorLog);
             } catch (NoSuchElementException e) {
                 throw new RuntimeException("no such payment exit: " + e.getMessage());
             } finally {

@@ -4,6 +4,7 @@ import com.UmiUni.shop.constant.ErrorCategory;
 import com.UmiUni.shop.entity.ReconcileErrorLog;
 import com.UmiUni.shop.exception.DBPaymentNotExitException;
 import com.UmiUni.shop.exception.PaymentRecordNotMatchException;
+import com.UmiUni.shop.repository.PayPalPaymentRepository;
 import com.UmiUni.shop.repository.ReconcileErrorLogRepo;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +20,10 @@ public class ReconcileErrorLogService {
     @Autowired
     private ReconcileErrorLogRepo reconcileErrorLogRepo;
 
-    public void logError(Exception e, String message) {
+    @Autowired
+    private PayPalPaymentRepository payPalPaymentRepository;
+
+    public ReconcileErrorLog logError(Exception e, String message) {
         e.printStackTrace();
         log.error(message + ": " + e.getMessage(), e);
 
@@ -30,11 +34,17 @@ public class ReconcileErrorLogService {
 
         String transactionId = determineTransactionId(e);
 
-        saveErrorToDataBase(e, message, category, salesOrderSn, transactionId);
+        ReconcileErrorLog reconcileErrorLog = saveErrorToDataBase(e, message, category, salesOrderSn, transactionId);
+
+        return reconcileErrorLog;
     }
 
-    private void saveErrorToDataBase(Exception e, String message, ErrorCategory category, String salesOrderId, String transactionId) {
+    private ReconcileErrorLog saveErrorToDataBase(Exception e, String message, ErrorCategory category, String salesOrderId, String transactionId) {
         String stackTrace = getStackTraceAsString(e);
+
+//        // check if the paypal payment with the salesOrderSn is Empty
+//        boolean isEmpty = payPalPaymentRepository.findBySalesOrderSn(salesOrderId).isEmpty();
+//        log.info(payPalPaymentRepository.findBySalesOrderSn(salesOrderId) + "isEmpty: " + isEmpty);
 
         ReconcileErrorLog errorLog = ReconcileErrorLog.builder()
                 .errorCode(e.getClass().getSimpleName())
@@ -47,6 +57,7 @@ public class ReconcileErrorLogService {
                 .timestamp(LocalDateTime.now())
                 .build();
         reconcileErrorLogRepo.save(errorLog);
+        return errorLog;
     }
 
     private String getStackTraceAsString(Exception e) {
