@@ -7,4 +7,7 @@ public enum ErrorCategory {
     SERVER_ERROR, // e.g., database failures
     CRITICAL, // e.g., security issues or major failures
     ORDER_EXPIRED,
+    PAYMENT_NOT_EXIT_IN_DB,
+    PAYMENT_RECORDS_NOT_MATCH,
+    OTHER_RECONCILE_ERROR,
 }

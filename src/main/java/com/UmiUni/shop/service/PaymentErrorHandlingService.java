@@ -60,6 +60,7 @@ public class PaymentErrorHandlingService {
         logError(e, "Unexpected error during payment", transactionId, salesOrderId);
         return new PaymentResponse("Unexpected error", e.getMessage(), null, "Unexpected error", null);
     }
+
     private void logError(Exception e, String message,
                           String transactionId,
                           String salesOrderId
@@ -73,7 +74,6 @@ public class PaymentErrorHandlingService {
         saveErrorToDatabase(e, message, transactionId, salesOrderId, category);
 
 //        handleCategorySpecificActions(category, e);
-
         rollbackTransactionIfNeeded();
     }
 
@@ -152,7 +152,6 @@ public class PaymentErrorHandlingService {
 
         // method 2: extract the error
         return extractSummary(fullStackTrace);
-
     }
 
     private String truncateStack(String fullStackTrace) {

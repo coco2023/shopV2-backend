@@ -3,6 +3,9 @@
 2. https://developer.paypal.com/docs/api/partner-referrals/v2/
 3. https://chat.openai.com/share/1d431841-65cc-4937-98d3-2540b637d1ff [Payment-RollBack realted]
 
+# create Reconcile Log_ERROR_DB
+![Reconcile Log_ERROR_DB](doc/img/reconcile_ERROR_Log_database.png)
+
 # create payment Log_ERROR_DB
 create payment Log_ERROR_DB to save every error/interrupts occur during payment process.
 

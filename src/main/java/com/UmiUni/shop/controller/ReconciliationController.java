@@ -1,16 +1,20 @@
 package com.UmiUni.shop.controller;
 
+import com.UmiUni.shop.model.PaypalTransactionRecord;
+import com.UmiUni.shop.model.ReconcileResult;
 import com.UmiUni.shop.service.ReconciliationService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/reconciliation")
@@ -78,5 +82,16 @@ public class ReconciliationController {
         // Return the report as a file download or as JSON data
         return ResponseEntity.ok(report);
     }
+
+    /**
+     * upload paypal csv file to parse
+     */
+    @PostMapping("/upload")
+    public ResponseEntity<List<?>> uploadFile(@RequestParam("file") MultipartFile file) {
+        List<ReconcileResult> transactions = reconciliationService.readTransactions(file);
+        log.info("file: " + transactions);
+        return ResponseEntity.ok(transactions);
+    }
+
 
 }
