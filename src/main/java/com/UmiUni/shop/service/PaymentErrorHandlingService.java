@@ -3,8 +3,10 @@ package com.UmiUni.shop.service;
 import com.UmiUni.shop.constant.ErrorCategory;
 import com.UmiUni.shop.constant.PaymentStatus;
 import com.UmiUni.shop.entity.PaymentErrorLog;
+import com.UmiUni.shop.exception.InsufficientStockException;
 import com.UmiUni.shop.exception.PaymentExpiredException;
 import com.UmiUni.shop.exception.PaymentProcessingException;
+import com.UmiUni.shop.exception.ProductNotFoundException;
 import com.UmiUni.shop.model.PaymentResponse;
 import com.UmiUni.shop.repository.PaymentErrorLogRepo;
 import com.paypal.base.rest.PayPalRESTException;
@@ -114,6 +116,18 @@ public class PaymentErrorHandlingService {
             // Add any additional logging or handling here
             return ErrorCategory.SERVER_ERROR;
         }
+
+        if (e instanceof ProductNotFoundException) {
+            ProductNotFoundException pre = (ProductNotFoundException) e;
+            log.error("ProductNotFoundException: " + pre.getMessage());
+            return ErrorCategory.PRODUCT_NOT_FOUND;
+        }
+
+        if (e instanceof InsufficientStockException) {
+            InsufficientStockException ie = (InsufficientStockException) e;
+            log.error("InsufficientStockException: " + ie.getMessage());
+            return ErrorCategory.INSUFFICIENT_STOCK;
+        }
         return  ErrorCategory.CRITICAL;
     }
 
@@ -173,6 +187,39 @@ public class PaymentErrorHandlingService {
         }
 
         return summary.toString();
+    }
+
+    public void handleProductNotFoundException(Exception e, String skuCode, String message) {
+        logProductError(e, skuCode, message);
+    }
+
+    public void handleInsufficientStockException(Exception e, String skuCode, String message) {
+        logProductError(e, skuCode, message);
+    }
+
+    private void logProductError(Exception e, String skuCode, String message) {
+        e.printStackTrace();
+        log.error(message + ": " + e.getMessage(), e);
+
+        ErrorCategory category = determineErrorCategory(e);
+        // Log the error with its category
+        log.error("Error Category: {}, {} : {}", category, message, e.getMessage(), e);
+        saveProductErrorToDatabase(e, message, skuCode, category);
+        rollbackTransactionIfNeeded();
+    }
+
+    private void saveProductErrorToDatabase(Exception e, String message, String skuCode, ErrorCategory category) {
+        String stackTrace = getStackTraceAsString(e);
+
+        PaymentErrorLog errorLog = PaymentErrorLog.builder()
+                .errorCode(e.getClass().getSimpleName())
+                .errorMessage(e.getMessage())
+                .timestamp(LocalDateTime.now())
+                .errorType(category)
+                .stackTrace(stackTrace)
+                .description("skuCode: " + skuCode + "," + message)
+                .build();
+        paymentErrorLogRepo.save(errorLog);
     }
 
     // Methods for alerting, retry logic, user communication, etc., can be added here

@@ -250,8 +250,8 @@ public class PayPalServiceImpl implements PayPalService {
                 log.info("update payPalPayment: " + payPalPayment);
                 payPalPaymentRepository.save(payPalPayment);
 
-//                throw new PaymentProcessingException("*ERROR: Payment has been expired!!");
-                return new PaymentResponse("expired", getCreatePayment.getId(), null, null, null);
+                throw new PaymentExpiredException("*ERROR: Payment has been expired!!");
+//                return new PaymentResponse("expired", getCreatePayment.getId(), null, null, null);
             }
 
             // Logic to execute a payment after the user approves it on PayPal's end
@@ -313,6 +313,8 @@ public class PayPalServiceImpl implements PayPalService {
 
             return new PaymentResponse("success", executedPayment.getId(), null, null, null);
 
+        } catch (PaymentExpiredException e) {
+            return paymentErrorHandlingService.handlePaymentExpiredError(e, payPalPayment.getTransactionId(), payPalPayment.getSalesOrderSn());
         } catch (PaymentProcessingException e) {
            return paymentErrorHandlingService.handlePaymentProcessingError(e, payPalPayment.getTransactionId(), payPalPayment.getSalesOrderSn());
         } catch (PayPalRESTException e) {
