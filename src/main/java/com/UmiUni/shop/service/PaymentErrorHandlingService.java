@@ -3,10 +3,8 @@ package com.UmiUni.shop.service;
 import com.UmiUni.shop.constant.ErrorCategory;
 import com.UmiUni.shop.constant.PaymentStatus;
 import com.UmiUni.shop.entity.PaymentErrorLog;
-import com.UmiUni.shop.exception.InsufficientStockException;
-import com.UmiUni.shop.exception.PaymentExpiredException;
-import com.UmiUni.shop.exception.PaymentProcessingException;
-import com.UmiUni.shop.exception.ProductNotFoundException;
+import com.UmiUni.shop.exception.*;
+import com.UmiUni.shop.model.InventoryUpdateMessage;
 import com.UmiUni.shop.model.PaymentResponse;
 import com.UmiUni.shop.repository.PaymentErrorLogRepo;
 import com.paypal.base.rest.PayPalRESTException;
@@ -128,6 +126,12 @@ public class PaymentErrorHandlingService {
             log.error("InsufficientStockException: " + ie.getMessage());
             return ErrorCategory.INSUFFICIENT_STOCK;
         }
+
+        if (e instanceof AmqpException) {
+            AmqpException ae = (AmqpException) e;
+            log.error("AmqpException: " + ae.getMessage());
+            return ErrorCategory.AMQP_ERROR;
+        }
         return  ErrorCategory.CRITICAL;
     }
 
@@ -220,6 +224,29 @@ public class PaymentErrorHandlingService {
                 .description("skuCode: " + skuCode + "," + message)
                 .build();
         paymentErrorLogRepo.save(errorLog);
+    }
+
+    public void handleAmqpException(AmqpException e, InventoryUpdateMessage message) {
+        e.printStackTrace();
+        log.error(message + ": " + e.getMessage(), e);
+
+        ErrorCategory category = determineErrorCategory(e);
+        // Log the error with its category
+        log.error("Error Category: {}, {} : {}", category, message, e.getMessage(), e);
+
+        // save error to db
+        String stackTrace = getStackTraceAsString(e);
+
+        PaymentErrorLog errorLog = PaymentErrorLog.builder()
+                .errorCode(e.getClass().getSimpleName())
+                .errorMessage(e.getMessage())
+                .timestamp(LocalDateTime.now())
+                .errorType(category)
+                .stackTrace(stackTrace)
+                .description("AMQP sender error" + message)
+                .build();
+        paymentErrorLogRepo.save(errorLog);
+
     }
 
     // Methods for alerting, retry logic, user communication, etc., can be added here
