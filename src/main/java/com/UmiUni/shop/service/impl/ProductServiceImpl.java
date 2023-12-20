@@ -6,13 +6,16 @@ import com.UmiUni.shop.model.ProductWithAttributes;
 import com.UmiUni.shop.repository.ProductAttributeRepository;
 import com.UmiUni.shop.repository.ProductRepository;
 import com.UmiUni.shop.service.ProductService;
+import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
+@Log4j2
 public class ProductServiceImpl implements ProductService {
 
     @Autowired
@@ -102,5 +105,53 @@ public class ProductServiceImpl implements ProductService {
     public Product findBySkuCode(String skuCode) {
         return productRepository.findBySkuCode(skuCode)
                 .orElseThrow(() -> new RuntimeException("Product not found with skuCode: " + skuCode));
+    }
+
+    @Transactional
+    @Override
+    public void reduceProductInventory(String skuCode, int quantity) {
+        Product product = productRepository.findBySkuCode(skuCode)
+                .orElseThrow(() -> new RuntimeException("Product not found"));
+
+        log.info(quantity + " reduceProductInventory product Info: " + product.getSkuCode() + " " + product.getStockQuantity() + " " + product.getLockedStockQuantity());
+
+        // Check if enough locked stock is available to reduce
+        if (product.getStockQuantity() == null || product.getLockedStockQuantity() < quantity) {
+            throw new RuntimeException("Insufficient locked stock to complete the transaction");
+        }
+
+        // Reduce the locked stock quantity
+        product.setLockedStockQuantity(product.getLockedStockQuantity() - quantity);
+
+        // Reduce the actual stock quantity
+        product.setStockQuantity(product.getStockQuantity() - quantity);
+
+        // increase salesAmount
+        product.setSalesAmount(product.getSalesAmount() + quantity);
+
+        log.info("reduceProductInventory update product: " + product.getStockQuantity() + " " + product.getLockedStockQuantity() + " " + quantity + " " + product.getSalesAmount());
+
+        productRepository.save(product);
+    }
+
+    @Override
+    public void lockInventory(String skuCode, int quantity) {
+        Product product = productRepository.findBySkuCode(skuCode)
+                .orElseThrow(() -> new RuntimeException("Product not found"));  // ProductNotFoundException
+        log.info(quantity + " lockInventory product Info: " + product.getSkuCode() + " " + product.getStockQuantity());
+
+        int availableQuantity = product.getStockQuantity() - (product.getLockedStockQuantity() != null ? -product.getLockedStockQuantity() : 0);
+        log.info("availableQuantity: " + availableQuantity);
+        if (availableQuantity < quantity) {
+            throw new RuntimeException("Insufficient available stock for product"); // InsufficientStockException
+        }
+
+        int newLockedQuantity = (product.getLockedStockQuantity() != null ? product.getLockedStockQuantity() : 0) + quantity;
+        log.info("newLockedQuantity: " + newLockedQuantity + " " + product.getLockedStockQuantity() + " " + quantity);
+        product.setLockedStockQuantity(newLockedQuantity);
+
+        productRepository.save(product);
+
+        log.info("lockInventory update product: " + product.getLockedStockQuantity());
     }
 }

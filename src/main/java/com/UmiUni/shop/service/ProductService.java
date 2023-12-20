@@ -15,4 +15,8 @@ public interface ProductService {
     ProductWithAttributes getProductWithAttributes(Long productId);
 
     Product findBySkuCode(String skuCode);
+
+    public void reduceProductInventory(String skuCode, int quantity);
+
+    public void lockInventory(String skuCode, int quantity);
 }

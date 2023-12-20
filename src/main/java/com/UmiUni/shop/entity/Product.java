@@ -60,4 +60,8 @@ public class Product {
 
     private LocalDateTime lastStockUpdate;
 
+    private Integer lockedStockQuantity; // to track locked (reserved) inventory
+
+//    @Version
+//    private Long version; // for optimistic locking
 }

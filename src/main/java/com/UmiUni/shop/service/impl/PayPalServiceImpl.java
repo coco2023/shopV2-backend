@@ -4,20 +4,19 @@ import com.UmiUni.shop.constant.ErrorCategory;
 import com.UmiUni.shop.constant.OrderStatus;
 import com.UmiUni.shop.constant.PaymentStatus;
 import com.UmiUni.shop.dto.PayPalPaymentResponseDTO;
-import com.UmiUni.shop.entity.PayPalPayment;
-import com.UmiUni.shop.entity.PayPalPaymentResponseEntity;
-import com.UmiUni.shop.entity.PaymentErrorLog;
-import com.UmiUni.shop.entity.SalesOrder;
+import com.UmiUni.shop.entity.*;
 import com.UmiUni.shop.exception.PaymentExpiredException;
 import com.UmiUni.shop.exception.PaymentProcessingException;
+import com.UmiUni.shop.model.InventoryUpdateMessage;
 import com.UmiUni.shop.model.PaymentResponse;
-import com.UmiUni.shop.repository.PayPalPaymentRepository;
-import com.UmiUni.shop.repository.PayPalPaymentResponseRepo;
-import com.UmiUni.shop.repository.PaymentErrorLogRepo;
-import com.UmiUni.shop.repository.SalesOrderRepository;
+import com.UmiUni.shop.mq.RabbitMQSender;
+import com.UmiUni.shop.repository.*;
 import com.UmiUni.shop.service.PayPalService;
 import com.UmiUni.shop.service.PaymentErrorHandlingService;
+import com.UmiUni.shop.service.ProductService;
+import com.UmiUni.shop.service.SalesOrderDetailService;
 import com.paypal.api.payments.*;
+import com.paypal.api.payments.Payment;
 import com.paypal.base.rest.APIContext;
 import com.paypal.base.rest.PayPalRESTException;
 import lombok.extern.log4j.Log4j2;
@@ -67,6 +66,15 @@ public class PayPalServiceImpl implements PayPalService {
 
     @Autowired
     private PaymentErrorLogRepo paymentErrorLogRepo;
+
+    @Autowired
+    private RabbitMQSender rabbitMQSender;
+
+    @Autowired
+    private ProductService productService;
+
+    @Autowired
+    private SalesOrderDetailRepository salesOrderDetailRepository;
 
     private APIContext getAPIContext() {
         return new APIContext(clientId, clientSecret, mode);
@@ -170,7 +178,20 @@ public class PayPalServiceImpl implements PayPalService {
                             .toLocalDateTime()
             );
 
-            //TODO: Lock the Product Inventory
+            // Lock the Product Inventory
+            // get order by salesOrderSn
+            List<SalesOrderDetail> salesOrderDetailList = salesOrderDetailRepository.findSalesOrderDetailsBySalesOrderSn(salesOrderSn);
+            for (SalesOrderDetail salesOrderDetail : salesOrderDetailList) {
+                String skuCode = salesOrderDetail.getSkuCode();
+                int quantity = salesOrderDetail.getQuantity();
+                log.info("create: salesOrderDetails product Info: " + skuCode + " " + quantity);
+
+                // Lock inventory - part of the database transaction
+                productService.lockInventory(skuCode, quantity);
+
+                // After successful transaction, send message to RabbitMQ
+                rabbitMQSender.sendInventoryLock(new InventoryUpdateMessage(skuCode, quantity));
+            }
 
             return new PaymentResponse("success create payment!", createdPayment.getId(), null, null, approvalUrl);
         } catch (PaymentProcessingException e) {
@@ -274,7 +295,21 @@ public class PayPalServiceImpl implements PayPalService {
             log.info("update salesOrder status: " + salesOrder);
             salesOrderRepository.save(salesOrder);
 
-            //TODO: Decrease the Product Inventory
+            // Decrease the Product Inventory
+            // Reduce inventory - part of the database transaction
+            // get order by salesOrderSn
+            List<SalesOrderDetail> salesOrderDetailList = salesOrderDetailRepository.findSalesOrderDetailsBySalesOrderSn(salesOrderSn);
+            for (SalesOrderDetail salesOrderDetail : salesOrderDetailList) {
+                String skuCode = salesOrderDetail.getSkuCode();
+                int quantity = salesOrderDetail.getQuantity();
+                log.info("complete: salesOrderDetails product Info: " + skuCode + " " + quantity);
+
+                // Reduce inventory - part of the database transaction
+                productService.reduceProductInventory(skuCode, quantity);
+
+                // After successful transaction, send message to RabbitMQ
+                rabbitMQSender.sendInventoryReduction(new InventoryUpdateMessage(skuCode, quantity));
+            }
 
             return new PaymentResponse("success", executedPayment.getId(), null, null, null);
 

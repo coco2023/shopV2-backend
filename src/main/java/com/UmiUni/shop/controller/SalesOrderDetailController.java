@@ -40,4 +40,10 @@ public class SalesOrderDetailController {
         salesOrderDetailService.deleteSalesOrderDetail(id);
         return ResponseEntity.ok().build();
     }
+
+    @GetMapping("/salesOrderSn/{salesOrderSn}")
+    public ResponseEntity<List<SalesOrderDetail>> getSalesOrderDetailsBySalesOrderSn(@PathVariable String salesOrderSn) {
+        List<SalesOrderDetail> salesOrderDetailList = salesOrderDetailService.getSalesOrderDetailsBySalesOrderSn(salesOrderSn);
+        return ResponseEntity.ok(salesOrderDetailList);
+    }
 }
