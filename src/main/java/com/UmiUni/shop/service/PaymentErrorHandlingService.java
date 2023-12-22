@@ -126,10 +126,14 @@ public class PaymentErrorHandlingService {
         if (e instanceof DBPaymentNotExitException) {
             DBPaymentNotExitException de = (DBPaymentNotExitException) e;
             log.error("DBPaymentNotExitException: " + de.getMessage());
-            return ErrorCategory.PAYMENT_NOT_EXIT_IN_DB;
+            return ErrorCategory.RECONCILE_PAYMENT_NOT_EXIT_IN_DB;
         }
 
-        if (e instanceof PaymentRecordNotMatchException)
+        if (e instanceof PaymentRecordNotMatchException) {
+            PaymentRecordNotMatchException nme = (PaymentRecordNotMatchException) e;
+            log.error("PaymentRecordNotMatchException details: " + nme.getMessage());
+            return ErrorCategory.RECONCILE_PAYMENT_RECORDS_NOT_MATCH;
+        }
 
         if (e instanceof PaymentExpiredException) {
             PaymentExpiredException pe = (PaymentExpiredException) e;
@@ -148,6 +152,7 @@ public class PaymentErrorHandlingService {
             log.error("AmqpException: " + ae.getMessage());
             return ErrorCategory.AMQP_ERROR;
         }
+
         return  ErrorCategory.CRITICAL;
     }
 

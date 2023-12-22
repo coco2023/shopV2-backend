@@ -1,6 +1,7 @@
 package com.UmiUni.shop.model;
 
 import com.UmiUni.shop.entity.PayPalPayment;
+import com.UmiUni.shop.entity.PaymentErrorLog;
 import com.UmiUni.shop.entity.ReconcileErrorLog;
 import lombok.*;
 
@@ -16,4 +17,6 @@ public class ReconcileResult {
     private PaypalTransactionRecord paypalTransactionRecord;
 
     private ReconcileErrorLog reconcileErrorLog;
+//    private PaymentErrorLog reconcileErrorLog;
 }
+

@@ -1,7 +1,6 @@
 package com.UmiUni.shop.controller;
 
 import com.UmiUni.shop.dto.PayPalPaymentResponseDTO;
-import com.UmiUni.shop.entity.PayPalPaymentResponseEntity;
 import com.UmiUni.shop.entity.Payment;
 import com.UmiUni.shop.entity.PaymentErrorLog;
 import com.UmiUni.shop.entity.SalesOrder;
@@ -14,7 +13,6 @@ import com.paypal.base.rest.PayPalRESTException;
 import io.swagger.annotations.Api;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.domain.PageRequest;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;

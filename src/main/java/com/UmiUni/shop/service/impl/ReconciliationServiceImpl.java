@@ -3,6 +3,7 @@ package com.UmiUni.shop.service.impl;
 import com.UmiUni.shop.constant.ErrorCategory;
 import com.UmiUni.shop.constant.OrderStatus;
 import com.UmiUni.shop.entity.PayPalPayment;
+import com.UmiUni.shop.entity.PaymentErrorLog;
 import com.UmiUni.shop.entity.ReconcileErrorLog;
 import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.exception.DBPaymentNotExitException;
@@ -12,27 +13,20 @@ import com.UmiUni.shop.model.PaypalTransactionRecord;
 import com.UmiUni.shop.model.ReconcileOrderAndPayment;
 import com.UmiUni.shop.model.ReconcileResult;
 import com.UmiUni.shop.repository.PayPalPaymentRepository;
-import com.UmiUni.shop.repository.ReconcileErrorLogRepo;
 import com.UmiUni.shop.repository.SalesOrderRepository;
 import com.UmiUni.shop.service.ReconcileErrorLogService;
 import com.UmiUni.shop.service.ReconciliationService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.*;
 import java.math.BigDecimal;
-import java.nio.file.Paths;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
-import java.time.format.DateTimeParseException;
 import java.util.*;
 
 @Service
@@ -104,13 +98,13 @@ public class ReconciliationServiceImpl implements ReconciliationService {
             PayPalPayment payment = payPalPaymentRepository.findBySalesOrderSn(order.getSalesOrderSn())
                     .orElseThrow(() -> new PaymentRecordNotMatchException(
                             "PayPal Payment is None! SalesOrderSn: " + order.getSalesOrderSn(),
-                            ErrorCategory.PAYMENT_NOT_EXIT_IN_DB,
+                            ErrorCategory.RECONCILE_PAYMENT_NOT_EXIT_IN_DB,
                             order.getSalesOrderSn(),
                             null
                     ));
             if (!isReconciliationSuccessful(order, payment)) {
                 throw new PaymentRecordNotMatchException("SalesOrder and PayPal Payment do not match! payment transactionId : " + payment.getTransactionId() + "; SalesOrderSn: " + order.getSalesOrderSn(),
-                        ErrorCategory.PAYMENT_RECORDS_NOT_MATCH,
+                        ErrorCategory.RECONCILE_PAYMENT_RECORDS_NOT_MATCH,
                         order.getSalesOrderSn(),
                         null);
             }
@@ -166,24 +160,6 @@ public class ReconciliationServiceImpl implements ReconciliationService {
         return reportMap;
     }
 
-    private ArrayList<LocalDateTime> convertStartAndEndDateFormat(String start, String end) {
-
-        ArrayList<LocalDateTime> dates = new ArrayList<>();
-        try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
-            LocalDate startDateTime = LocalDate.parse(start, formatter);
-            LocalDate endDateTime = LocalDate.parse(end, formatter);
-
-            LocalDateTime startDate = startDateTime.atStartOfDay();
-            LocalDateTime endDate = endDateTime.atTime(23, 59, 59);
-            dates.add(startDate);
-            dates.add(endDate);
-        }  catch (DateTimeParseException e) {
-            log.error("Invalid date format: " + e.getMessage());
-        }
-        return dates;
-    }
-
     /**
      * reconcile every transaction
      * @param file
@@ -226,14 +202,14 @@ public class ReconciliationServiceImpl implements ReconciliationService {
                 if (payPalPayment == null) {
                     reconcileResult.setPaypalDBPaymentRecord(null);
                     log.info("transactionRecord does not match!");
-                    throw new DBPaymentNotExitException("DB does not include the payment record", ErrorCategory.PAYMENT_NOT_EXIT_IN_DB, salesOrderSn);
+                    throw new DBPaymentNotExitException("DB does not include the payment record", ErrorCategory.RECONCILE_PAYMENT_NOT_EXIT_IN_DB, salesOrderSn);
                 }
                 log.info("paypal db records: " + payPalPayment);
 
                 // reconcile db and transactionRecord
                 if (!isReconciliationWithPayPalSuccessful(transactionRecord, payPalPayment)) {
                     reconcileResult.setPaypalDBPaymentRecord(payPalPayment);
-                    throw new PaymentRecordNotMatchException("transaction and payment db Records does not match!", ErrorCategory.PAYMENT_RECORDS_NOT_MATCH, salesOrderSn, payPalPayment.getTransactionId());
+                    throw new PaymentRecordNotMatchException("transaction and payment db Records does not match!", ErrorCategory.RECONCILE_PAYMENT_RECORDS_NOT_MATCH, salesOrderSn, payPalPayment.getTransactionId());
                 }
                 reconcileResult.setPaypalDBPaymentRecord(payPalPayment);
                 log.info("match!");
@@ -244,9 +220,9 @@ public class ReconciliationServiceImpl implements ReconciliationService {
                 ReconcileErrorLog errorLog = reconcileErrorLogService.logError(e, "ERROR: Payment Records Do Not Match!");
                 reconcileResult.setReconcileErrorLog(errorLog);
             } catch (NoSuchElementException e) {
-                throw new RuntimeException("no such payment exit: " + e.getMessage());
+                ReconcileErrorLog errorLog = reconcileErrorLogService.logError(e, "no such payment exit: " + e.getMessage());
+                reconcileResult.setReconcileErrorLog(errorLog);
             } finally {
-                // This block will execute whether or not an exception occurred
                 reconcileResultList.add(reconcileResult);
             }
         }

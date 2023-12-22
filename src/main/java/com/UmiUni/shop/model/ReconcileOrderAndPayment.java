@@ -1,7 +1,6 @@
 package com.UmiUni.shop.model;
 
 import com.UmiUni.shop.entity.PayPalPayment;
-import com.UmiUni.shop.entity.ReconcileErrorLog;
 import com.UmiUni.shop.entity.SalesOrder;
 import lombok.*;
 

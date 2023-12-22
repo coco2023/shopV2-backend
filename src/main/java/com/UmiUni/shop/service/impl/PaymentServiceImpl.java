@@ -1,7 +1,6 @@
 package com.UmiUni.shop.service.impl;
 
 import com.UmiUni.shop.entity.Payment;
-import com.UmiUni.shop.entity.PaymentErrorLog;
 import com.UmiUni.shop.repository.PaymentRepository;
 import com.UmiUni.shop.service.PaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
