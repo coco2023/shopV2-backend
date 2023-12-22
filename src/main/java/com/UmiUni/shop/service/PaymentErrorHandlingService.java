@@ -19,6 +19,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.LocalDateTime;
 
+import static com.UmiUni.shop.utils.ExtractSummary.extractSummaryToGetString;
+
 
 @Service
 public class PaymentErrorHandlingService {
@@ -121,6 +123,20 @@ public class PaymentErrorHandlingService {
             return ErrorCategory.PRODUCT_NOT_FOUND;
         }
 
+        if (e instanceof DBPaymentNotExitException) {
+            DBPaymentNotExitException de = (DBPaymentNotExitException) e;
+            log.error("DBPaymentNotExitException: " + de.getMessage());
+            return ErrorCategory.PAYMENT_NOT_EXIT_IN_DB;
+        }
+
+        if (e instanceof PaymentRecordNotMatchException)
+
+        if (e instanceof PaymentExpiredException) {
+            PaymentExpiredException pe = (PaymentExpiredException) e;
+            log.error("PaymentExpiredException: " + pe.getMessage());
+            return ErrorCategory.ORDER_EXPIRED;
+        }
+
         if (e instanceof InsufficientStockException) {
             InsufficientStockException ie = (InsufficientStockException) e;
             log.error("InsufficientStockException: " + ie.getMessage());
@@ -182,15 +198,7 @@ public class PaymentErrorHandlingService {
 
     private String extractSummary(String stackTrace) {
         // Extract the first few lines or key parts of the stack trace
-        int maxLines = 10; // Number of lines to include in the summary
-        String[] lines = stackTrace.split("\n");
-        StringBuilder summary = new StringBuilder();
-
-        for (int i = 0; i < Math.min(lines.length, maxLines); i++) {
-            summary.append(lines[i]).append("\n");
-        }
-
-        return summary.toString();
+        return extractSummaryToGetString(stackTrace);
     }
 
     public void handleProductNotFoundException(Exception e, String skuCode, String message) {

@@ -9,6 +9,7 @@ import com.UmiUni.shop.exception.DBPaymentNotExitException;
 import com.UmiUni.shop.exception.PaymentRecordNotMatchException;
 import com.UmiUni.shop.model.DailyReport;
 import com.UmiUni.shop.model.PaypalTransactionRecord;
+import com.UmiUni.shop.model.ReconcileOrderAndPayment;
 import com.UmiUni.shop.model.ReconcileResult;
 import com.UmiUni.shop.repository.PayPalPaymentRepository;
 import com.UmiUni.shop.repository.ReconcileErrorLogRepo;
@@ -20,6 +21,7 @@ import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -30,6 +32,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.*;
 
 @Service
@@ -45,75 +48,140 @@ public class ReconciliationServiceImpl implements ReconciliationService {
     @Autowired
     private ReconcileErrorLogService reconcileErrorLogService;
 
-    public String reconcilePaymentViaSalesOrderSn(String salesOrderSn) {
+    public ReconcileOrderAndPayment reconcilePaymentViaSalesOrderSn(String salesOrderSn) {
         Optional<SalesOrder> salesOrderOpt = salesOrderRepository.getSalesOrderBySalesOrderSn(salesOrderSn);
         Optional<PayPalPayment> payPalPaymentOpt = payPalPaymentRepository.findBySalesOrderSn(salesOrderSn);
 
-        if( salesOrderOpt.isPresent() && payPalPaymentOpt.isPresent() ) {
-            SalesOrder salesOrder = salesOrderOpt.get();
-            PayPalPayment payPalPayment = payPalPaymentOpt.get();
-            log.info("salesOrder: " + salesOrder.getOrderStatus() + " payPalPayment: " + payPalPayment.getPaymentState());
+        try {
+            if (salesOrderOpt.isPresent() && payPalPaymentOpt.isPresent()) {
+                SalesOrder salesOrder = salesOrderOpt.get();
+                PayPalPayment payPalPayment = payPalPaymentOpt.get();
+                log.info("salesOrder: " + salesOrder.getOrderStatus() + " payPalPayment: " + payPalPayment.getPaymentState());
 
-            if (isReconciliationSuccessful(salesOrder, payPalPayment)) {
-                return "Reconciliation successful";
+                if (isReconciliationSuccessful(salesOrder, payPalPayment)) {
+                    ReconcileOrderAndPayment reconcileResult = ReconcileOrderAndPayment.builder()
+                            .payPalPayment(payPalPayment)
+                            .salesOrder(salesOrder)
+                            .reconcileErrorLog(null)
+                            .build();
+                    return reconcileResult; //"Reconciliation successful";
+                } else {
+                    throw new RuntimeException("Reconciliation failed!");
+                }
             } else {
-                // Handle or log the error
-                return "Reconciliation failed";
+                throw new RuntimeException("SalesOrder or PayPalPayment not found!");
             }
-        } else {
-            return "SalesOrder or PayPalPayment not found";
+        }catch (Exception e) {
+            ReconcileOrderAndPayment reconcileResult = ReconcileOrderAndPayment.builder()
+                    .payPalPayment(null)
+                    .salesOrder(null)
+                    .reconcileErrorLog(e.getMessage())
+                    .build();
+            log.error(e.getMessage() + " " + reconcileResult);
+            return reconcileResult;
         }
-
     }
 
     @Override
-    public String reconcilePastDays(int days) {
+    public List<ReconcileOrderAndPayment> reconcilePastDays(int days) {
+
+        List<ReconcileOrderAndPayment> reconcileResult = new ArrayList<>();
 
         LocalDateTime daysBefore = LocalDateTime.now().minusDays(days);
-        log.info("daysBefore: " + daysBefore);
         List<SalesOrder> recentSalesOrders = salesOrderRepository.getSalesOrdersByOrderDateAfterAndOrderStatus(daysBefore, OrderStatus.PROCESSING);
-        List<PayPalPayment> recentPayments = payPalPaymentRepository.getPayPalPaymentsByCreateTimeAfterAndPaymentState(daysBefore, "complete");
-//        log.info("recentSalesOrders: " + recentSalesOrders);
-//        log.info("recentPayments: " + recentPayments);
+//        List<PayPalPayment> recentPayments = payPalPaymentRepository.getPayPalPaymentsByCreateTimeAfterAndPaymentState(daysBefore, "complete");
 
         for (SalesOrder order : recentSalesOrders) {
-            for (PayPalPayment payment : recentPayments) {
-                    isReconciliationSuccessful(order, payment);
-            }
+            ReconcileOrderAndPayment reconcile = processSingleOrder(order);
+            reconcileResult.add(reconcile);
         }
-        return "Reconciliation for past days completed!";
+
+        return reconcileResult;
+    }
+
+    private ReconcileOrderAndPayment processSingleOrder(SalesOrder order) {
+        try {
+            PayPalPayment payment = payPalPaymentRepository.findBySalesOrderSn(order.getSalesOrderSn())
+                    .orElseThrow(() -> new PaymentRecordNotMatchException(
+                            "PayPal Payment is None! SalesOrderSn: " + order.getSalesOrderSn(),
+                            ErrorCategory.PAYMENT_NOT_EXIT_IN_DB,
+                            order.getSalesOrderSn(),
+                            null
+                    ));
+            if (!isReconciliationSuccessful(order, payment)) {
+                throw new PaymentRecordNotMatchException("SalesOrder and PayPal Payment do not match! payment transactionId : " + payment.getTransactionId() + "; SalesOrderSn: " + order.getSalesOrderSn(),
+                        ErrorCategory.PAYMENT_RECORDS_NOT_MATCH,
+                        order.getSalesOrderSn(),
+                        null);
+            }
+            return createReconciliationEntry(order, payment, null);
+        } catch (PaymentRecordNotMatchException e) {
+            SalesOrder salesOrder = salesOrderRepository.getSalesOrderBySalesOrderSn(e.getSalesOrderSn()).get();
+            return createReconciliationEntry(salesOrder, null, e.getMessage());
+        } catch (Exception e) {
+            return createReconciliationEntry(null, null, e.getMessage());
+        }
+    }
+
+    private ReconcileOrderAndPayment createReconciliationEntry(SalesOrder salesOrder, PayPalPayment payPalPayment, String errorMessage) {
+        return ReconcileOrderAndPayment.builder()
+                .salesOrder(salesOrder)
+                .payPalPayment(payPalPayment)
+                .reconcileErrorLog(errorMessage)
+                .build();
     }
 
     @Override
-    public String reconcileBetweenDates(LocalDateTime startDate, LocalDateTime endDate) {
+    public List<ReconcileOrderAndPayment> reconcileBetweenDates(LocalDateTime startDate, LocalDateTime endDate) {
+        List<ReconcileOrderAndPayment> reconcileResult = new ArrayList<>();
 
         //get all the order & payment records between these days with valid status
         List<SalesOrder> salesOrders = salesOrderRepository.findByOrderDateBetweenAndOrderStatus(startDate, endDate, OrderStatus.PROCESSING);
-        List<PayPalPayment> payPalPayments = payPalPaymentRepository.findByCreateTimeBetweenAndPaymentState(startDate, endDate, "complete");
 
         for (SalesOrder order : salesOrders) {
-            for (PayPalPayment payment : payPalPayments) {
-                isReconciliationSuccessful(order, payment);
-            }
+            ReconcileOrderAndPayment reconcile = processSingleOrder(order);
+            reconcileResult.add(reconcile);
         }
-        return "Reconciliation from " + startDate + " to " + endDate + " is completed!";
+
+        return reconcileResult;
     }
 
     @Override
-    public File generateMonthlySalesReport(LocalDateTime startDate, LocalDateTime endDate, String type) {
+    public Map<LocalDate, DailyReport> generateMonthlySalesReport(LocalDateTime startDate, LocalDateTime endDate, String type) {
 
         // get the payment list during the date
         List<PayPalPayment> payPalPayments = payPalPaymentRepository.findByCreateTimeBetweenAndPaymentState(startDate, endDate, "complete");
 
         // generate report
-        Map<LocalDate, DailyReport> reportMap = calculateDailyTotals(payPalPayments);
-        log.info(reportMap);
-
-        if ( type.equals("JSON")) {
-            return generateJsonFile(reportMap);
-        } else { // csv
-            return generateCsvFile(reportMap);
+        Map<LocalDate, DailyReport> reportMap = new HashMap<>();
+        for ( PayPalPayment payment : payPalPayments ) {
+            LocalDate date = payment.getUpdatedAt().toLocalDate();
+            DailyReport dailyReport = calculateDailyTotals(
+                    reportMap.getOrDefault(date, new DailyReport()),
+                    payment);
+            reportMap.put(date, dailyReport);
         }
+
+        log.info(reportMap);
+        return reportMap;
+    }
+
+    private ArrayList<LocalDateTime> convertStartAndEndDateFormat(String start, String end) {
+
+        ArrayList<LocalDateTime> dates = new ArrayList<>();
+        try {
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+            LocalDate startDateTime = LocalDate.parse(start, formatter);
+            LocalDate endDateTime = LocalDate.parse(end, formatter);
+
+            LocalDateTime startDate = startDateTime.atStartOfDay();
+            LocalDateTime endDate = endDateTime.atTime(23, 59, 59);
+            dates.add(startDate);
+            dates.add(endDate);
+        }  catch (DateTimeParseException e) {
+            log.error("Invalid date format: " + e.getMessage());
+        }
+        return dates;
     }
 
     /**
@@ -185,72 +253,12 @@ public class ReconciliationServiceImpl implements ReconciliationService {
         return reconcileResultList;
     }
 
-    private File generateJsonFile(Map<LocalDate, DailyReport> reportMap) {
-        // Define the path to the output directory
-        String outputDir = Paths.get("doc", "report").toString();
-        File jsonOutputFile = new File(outputDir, "monthly_sales_report.json");
-
-        // Use Jackson's ObjectMapper to write the map as JSON to the file
-        ObjectMapper mapper = new ObjectMapper();
-        try {
-            // Convert map to JSON and write to the file
-            mapper.writeValue(jsonOutputFile, reportMap);
-        } catch (IOException e) {
-            e.printStackTrace();
-            return null;
-        }
-        return jsonOutputFile;
-    }
-
-    private File generateCsvFile(Map<LocalDate, DailyReport> reportMap) {
-        // Create a temporary file to write the report to
-        // Define the path to the resources directory
-        String outputDir = Paths.get("doc", "report").toString();
-
-        File csvOutputFile = new File(outputDir,"monthly_sales_report.csv");
-        try (PrintWriter pw = new PrintWriter(csvOutputFile)) {
-            // write the header line
-            pw.println("Date,Payments Received,Amount Received,Fees,Net Amount");
-
-            // Write each line of the report
-            DateTimeFormatter dateFormatter = DateTimeFormatter.ofPattern("MM/dd/yyyy");
-            reportMap.forEach((date, report) -> {
-                String line = String.join(",",
-                        dateFormatter.format(date),
-                        String.valueOf(report.getPaymentsReceived()),
-                        report.getTotalAmountReceived().toString(),
-                        report.getFees().toString(),
-                        report.getNetAmount().toString()
-                        );
-                pw.println(line);
-            });
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            return null;
-        }
-        // Return the path to the generated file
-        return csvOutputFile;
-    }
-
-    public Map<LocalDate, DailyReport> calculateDailyTotals(List<PayPalPayment> payPalPayments) {
-        Map<LocalDate, DailyReport> reportMap = new HashMap<>();
-
-        for ( PayPalPayment payment : payPalPayments ) {
-
-            LocalDate date = payment.getUpdatedAt().toLocalDate();
-
-            DailyReport dailyReport = reportMap.getOrDefault(date, new DailyReport());
-
-            dailyReport.setPaymentsReceived(dailyReport.getPaymentsReceived() + 1);
-            dailyReport.setFees(dailyReport.getFees().add(BigDecimal.valueOf(payment.getPayPalFee())));
-            dailyReport.setNetAmount(dailyReport.getNetAmount().add(BigDecimal.valueOf(payment.getNet())));
-            dailyReport.setTotalAmountReceived(dailyReport.getNetAmount().add(dailyReport.getFees()));
-
-            reportMap.put(date, dailyReport);
-        }
-
-        return reportMap;
+    public DailyReport calculateDailyTotals(DailyReport dailyReport, PayPalPayment payment) {
+        dailyReport.setPaymentsReceived(dailyReport.getPaymentsReceived() + 1);
+        dailyReport.setFees(dailyReport.getFees().add(BigDecimal.valueOf(payment.getPayPalFee())));
+        dailyReport.setNetAmount(dailyReport.getNetAmount().add(BigDecimal.valueOf(payment.getNet())));
+        dailyReport.setTotalAmountReceived(dailyReport.getNetAmount().add(dailyReport.getFees()));
+        return dailyReport;
     }
 
     /**
@@ -262,13 +270,14 @@ public class ReconciliationServiceImpl implements ReconciliationService {
      */
     private boolean isReconciliationSuccessful(SalesOrder salesOrder, PayPalPayment payPalPayment) {
         boolean isPaymentStateComplete = "complete".equalsIgnoreCase(payPalPayment.getPaymentState());
+        boolean isSalesOrderSnMatch = salesOrder.getSalesOrderSn().equals(payPalPayment.getSalesOrderSn());
         boolean isOrderStateProcessing = "PROCESSING".equalsIgnoreCase(salesOrder.getOrderStatus().name());
         Double totalPayPalAmount = payPalPayment.getPayPalFee() + payPalPayment.getNet();
         boolean isAmountMatching = totalPayPalAmount.equals(salesOrder.getTotalAmount().doubleValue());
         boolean isPaymentWithinExpiration = payPalPayment.getUpdatedAt().isBefore(salesOrder.getExpirationDate());
 //        log.info(isOrderStateProcessing + " " + isOrderStateProcessing + " "  +  isAmountMatching + " " + isPaymentWithinExpiration);
 
-        return isPaymentStateComplete && isOrderStateProcessing && isAmountMatching && isPaymentWithinExpiration;
+        return isPaymentStateComplete && isOrderStateProcessing && isAmountMatching && isPaymentWithinExpiration && isSalesOrderSnMatch;
     }
 
     private boolean isReconciliationWithPayPalSuccessful(PaypalTransactionRecord transactionRecord, PayPalPayment payPalPayment) {

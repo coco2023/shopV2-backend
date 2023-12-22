@@ -14,6 +14,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.time.LocalDateTime;
 
+import static com.UmiUni.shop.utils.ExtractSummary.extractSummaryToGetString;
+
 @Service
 @Log4j2
 public class ReconcileErrorLogService {
@@ -69,14 +71,7 @@ public class ReconcileErrorLogService {
     }
 
     private String extractSummary(String stackTrace) {
-        int maxLines = 10; // Number of lines to include in the summary
-        String[] lines = stackTrace.split("\n");
-        StringBuilder summary = new StringBuilder();
-
-        for (int i = 0; i < Math.min(lines.length, maxLines); i++) {
-            summary.append(lines[i]).append("\n");
-        }
-        return summary.toString();
+        return extractSummaryToGetString(stackTrace);
     }
 
     private String determineTransactionId(Exception e) {
@@ -91,7 +86,7 @@ public class ReconcileErrorLogService {
     private String determineSalesOrderId(Exception e) {
         if (e instanceof DBPaymentNotExitException) {
             DBPaymentNotExitException de = (DBPaymentNotExitException) e;
-            return ((DBPaymentNotExitException) e).getSalesOrderSn();
+            return de.getSalesOrderSn();
         }
 
         if (e instanceof PaymentRecordNotMatchException) {
