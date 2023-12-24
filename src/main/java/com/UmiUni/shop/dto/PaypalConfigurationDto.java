@@ -1,23 +1,16 @@
-package com.UmiUni.shop.entity;
+package com.UmiUni.shop.dto;
 
 import lombok.*;
 
-import javax.persistence.*;
-
-@Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Builder
 @ToString
-@Table(name = "Suppliers")
-public class Supplier {
+public class PaypalConfigurationDto {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long supplierId;
 
-    @Column(nullable = false)
     private String supplierName;
 
     private String contactInfo;
@@ -28,7 +21,6 @@ public class Supplier {
 
     private String paypalClientId;
 
-    @Column(length = 500)
     private String paypalClientSecret; // Ensure this is stored securely
 
     private String paypalRedirectUri;

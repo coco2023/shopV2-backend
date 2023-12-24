@@ -26,7 +26,7 @@ spring:
     init:
       platform: mysql
   rabbitmq:
-    host: ec2-54-234-75-153.compute-1.amazonaws.com #127.0.0.1
+    host: 127.0.0.1 #ec2-54-234-75-153.compute-1.amazonaws.com #127.0.0.1
     port: 5672
     username: guest
     password: guest
@@ -67,6 +67,8 @@ paypal:
     id: ASWE1Q8AfwFxHoTDbB8tanMwQB8qRxb0i72hdPMD23RGzhNqY2DQoClXqQv8ONJWGPi_cy5ro5y_6tHB
     secret: EAxzPdtbxhyDw3mmSCRvcputnBrx5Ko_7a73fhfXNP5IRCDYoFExYJS5Qi--OhBTdEv0h0Cat7T_IZXj
   mode: 'sandbox'
+  redirect:
+    uri: http://localhost:9001/api/v1/suppliers/paypal/callback
 
 # Define the names of your RabbitMQ queues
 inventory:
@@ -78,3 +80,4 @@ inventory:
   reduce:
     queue:
       name: inventory_reduction_queue
+

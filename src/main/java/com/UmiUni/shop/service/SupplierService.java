@@ -4,36 +4,23 @@ import com.UmiUni.shop.entity.Supplier;
 import com.UmiUni.shop.repository.SupplierRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+
+import java.io.UnsupportedEncodingException;
 import java.util.List;
 
-@Service
-public class SupplierService {
+public interface SupplierService {
 
-    @Autowired
-    private SupplierRepository supplierRepository;
+    Supplier createSupplier(Supplier supplier);
 
-    public Supplier createSupplier(Supplier supplier) {
-        return supplierRepository.save(supplier);
-    }
+    Supplier getSupplier(Long id);
 
-    public Supplier getSupplier(Long id) {
-        return supplierRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Supplier not found with id: " + id));
-    }
+    List<Supplier> getAllSuppliers();
 
-    public List<Supplier> getAllSuppliers() {
-        return supplierRepository.findAll();
-    }
+    Supplier updateSupplier(Long id, Supplier supplierDetails);
 
-    public Supplier updateSupplier(Long id, Supplier supplierDetails) {
-        Supplier supplier = getSupplier(id);
-        supplier.setSupplierName(supplierDetails.getSupplierName());
-        supplier.setContactInfo(supplierDetails.getContactInfo());
-        // other updates as needed
-        return supplierRepository.save(supplier);
-    }
+    void deleteSupplier(Long id);
 
-    public void deleteSupplier(Long id) {
-        supplierRepository.deleteById(id);
-    }
+    String initiatePaypalAuthorization(Long supplierId);
+
+    String completePaypalAuthorization(String code, String state);
 }
