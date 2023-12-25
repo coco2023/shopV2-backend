@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 
 import java.io.UnsupportedEncodingException;
 import java.util.List;
+import java.util.Optional;
 
 public interface SupplierService {
 
@@ -23,4 +24,8 @@ public interface SupplierService {
     String initiatePaypalAuthorization(Long supplierId);
 
     String completePaypalAuthorization(String code, String state);
+
+    void updatePaypalAccessToken(Long supplierId, String accessToken);
+
+    Optional<Object> getPayPalInfo(String accessToken);
 }

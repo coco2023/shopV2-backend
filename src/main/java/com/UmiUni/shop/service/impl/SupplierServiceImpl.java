@@ -1,6 +1,9 @@
 package com.UmiUni.shop.service.impl;
 
 import com.UmiUni.shop.entity.Supplier;
+import com.UmiUni.shop.entity.SupplierPayPalAuth;
+import com.UmiUni.shop.model.PayPalInfo;
+import com.UmiUni.shop.repository.SupplierPayPalAuthRepo;
 import com.UmiUni.shop.repository.SupplierRepository;
 import com.UmiUni.shop.service.SupplierService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -12,13 +15,10 @@ import org.springframework.web.client.RestTemplate;
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.Collections;
+import java.util.*;
 import java.net.URLEncoder;
 
 import org.springframework.http.*;
-import java.util.List;
-import java.util.Map;
 
 @Service
 @Log4j2
@@ -26,6 +26,9 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Autowired
     private SupplierRepository supplierRepository;
+
+    @Autowired
+    private SupplierPayPalAuthRepo supplierPayPalRootRepo;
 
     public Supplier createSupplier(Supplier supplier) {
         return supplierRepository.save(supplier);
@@ -56,29 +59,26 @@ public class SupplierServiceImpl implements SupplierService {
 
     @Override
     public String initiatePaypalAuthorization(Long supplierId) {
-        Supplier supplier = supplierRepository.findById(supplierId).orElse(null);
-        if (supplier == null) {
+        SupplierPayPalAuth supplierPayPalRoot = supplierPayPalRootRepo.findById(1L).orElse(null);
+        if (supplierPayPalRoot == null) {
             throw new IllegalArgumentException("Supplier not found");
         }
 
-        String baseRedirectUri = "https://aee2-66-253-183-231.ngrok-free.app/api/v1/suppliers/v2/callback";
-//        String baseRedirectUri = "localhost:9001/api/v1/suppliers/v2/callback";
+        String baseRedirectUri = "https://3665-66-253-183-231.ngrok-free.app/api/v1/suppliers/v2/callback";
 
         String redirectUri = baseRedirectUri; // + supplierId;
         String encodedRedirectUri = URLEncoder.encode(redirectUri, StandardCharsets.UTF_8);
         log.info("redirectUri: " + redirectUri);
 
-        supplier.setPaypalRedirectUri(redirectUri);
-        supplierRepository.save(supplier);
+        supplierPayPalRoot.setPaypalRedirectUri(redirectUri);
+        supplierPayPalRootRepo.save(supplierPayPalRoot);
 
-        String state = encryptOrEncodeSupplierId(supplierId); // Your method to encrypt or encode the supplier ID
+        String state = encryptOrEncodeSupplierId(supplierId); // method to encrypt or encode the supplier ID
         String authUrl = "https://www.sandbox.paypal.com/signin/authorize?client_id="
-                + supplier.getPaypalClientId()
+                + supplierPayPalRoot.getPaypalClientId()
                 + "&response_type=code"
-//                + "&scope=openid%20email%20profile"
-//                + "scope=openid%20https://uri.paypal.com/services/payments/realtimepayment"
-//                + "scope=https://uri.paypal.com/services/invoicing https://uri.paypal.com/services/disputes/read-buyer https://uri.paypal.com/services/payments/realtimepayment https://uri.paypal.com/services/disputes/update-seller https://uri.paypal.com/services/payments/payment/authcapture openid https://uri.paypal.com/services/disputes/read-seller https://uri.paypal.com/services/payments/refund https://api-m.paypal.com/v1/vault/credit-card https://api-m.paypal.com/v1/payments/.* https://uri.paypal.com/payments/payouts https://api-m.paypal.com/v1/vault/credit-card/.* https://uri.paypal.com/services/subscriptions https://uri.paypal.com/services/applications/webhooks"
                 + "&redirect_uri=" + encodedRedirectUri
+                + "&scope=openid profile email"
                 + "&state=" + state;
 
         log.info("authUrl: " + authUrl);
@@ -90,21 +90,21 @@ public class SupplierServiceImpl implements SupplierService {
             String authorizationCode, String state) {
 
         Long supplierId = decryptOrDecodeSupplierId(state);
-        Supplier supplier = supplierRepository.findById(supplierId).orElse(null);
-        if (supplier == null) {
+        SupplierPayPalAuth supplierPayPalRoot = supplierPayPalRootRepo.findById(1L).orElse(null);
+        if (supplierPayPalRoot == null) {
             throw new IllegalArgumentException("Supplier not found");
         }
 
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
-        headers.setBasicAuth(supplier.getPaypalClientId(), supplier.getPaypalClientSecret());
+        headers.setBasicAuth(supplierPayPalRoot.getPaypalClientId(), supplierPayPalRoot.getPaypalClientSecret());
         headers.setContentType(MediaType.APPLICATION_FORM_URLENCODED);
         headers.setAccept(Collections.singletonList(MediaType.APPLICATION_JSON));
 
         String requestBody = null;
         try {
             requestBody = "grant_type=authorization_code&code=" + authorizationCode
-                    + "&redirect_uri=" + URLEncoder.encode(supplier.getPaypalRedirectUri(), "UTF-8");
+                    + "&redirect_uri=" + URLEncoder.encode(supplierPayPalRoot.getPaypalRedirectUri(), "UTF-8");
         } catch (UnsupportedEncodingException e) {
             throw new RuntimeException(e);
         }
@@ -120,6 +120,34 @@ public class SupplierServiceImpl implements SupplierService {
             return extractAccessToken(response.getBody());
         } else {
             throw new RuntimeException("Failed to exchange authorization code");
+        }
+    }
+
+    @Override
+    public void updatePaypalAccessToken(Long supplierId, String accessToken) {
+        Supplier supplier = supplierRepository.findById(supplierId)
+                .orElseThrow(() -> new RuntimeException("Supplier not found with id: " + supplierId));
+        supplier.setPaypalAccessToken(accessToken);
+        supplierRepository.save(supplier);
+    }
+
+    @Override
+    public Optional<Object> getPayPalInfo(String accessToken) {
+        RestTemplate restTemplate = new RestTemplate();
+        HttpHeaders headers = new HttpHeaders();
+        headers.setBearerAuth(accessToken);
+        HttpEntity<String> entity = new HttpEntity<>(headers);
+
+        String url = "https://api-m.sandbox.paypal.com/v1/identity/openidconnect/userinfo?schema=openid";
+
+        try {
+            ResponseEntity<PayPalInfo> response = restTemplate.exchange(url, HttpMethod.GET, entity, PayPalInfo.class);
+            log.info("response: " + response.getBody());
+            return Optional.ofNullable(response.getBody());
+        } catch (Exception e) {
+            // Log the exception
+            log.error("ERROR when getting paypal info!!", e.getMessage());
+            return Optional.empty();
         }
     }
 
@@ -140,6 +168,5 @@ public class SupplierServiceImpl implements SupplierService {
     public Long decryptOrDecodeSupplierId(String encodedId) {
         return Long.parseLong(new String(Base64.getUrlDecoder().decode(encodedId)));
     }
-
 
 }

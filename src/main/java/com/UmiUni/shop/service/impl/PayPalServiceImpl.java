@@ -270,6 +270,7 @@ public class PayPalServiceImpl implements PayPalService {
             PayPalPaymentResponseEntity paymentResponse = saveExecutedPayment(executedPayment);
 
             // update paypal payment entity status info
+            //TODO: 校验state
             payPalPayment.setPaymentState("complete");
             payPalPayment.setStatus(PaymentStatus.SUCCESS.name());
             payPalPayment.setUpdatedAt(now);

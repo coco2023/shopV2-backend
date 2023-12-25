@@ -52,54 +52,54 @@ public class SupplierController {
         return ResponseEntity.ok().build();
     }
 
-    // http://localhost:9001/api/v1/suppliers/paypal/authorize/1/update-default-RedirectUri
-    @PostMapping("/paypal/authorize/{supplierId}/update-default-RedirectUri")
-    public ResponseEntity<?> updateSupplierRedirectUri(@PathVariable Long supplierId) {
-        Supplier supplier = supplierService.getSupplier(supplierId);
-        if (supplier == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Supplier not found");
-        }
-        supplier.setPaypalRedirectUri(defaultRedirectUri);
-        supplierService.createSupplier(supplier);
-        return ResponseEntity.ok("Redirect URI updated successfully");
-    }
-
     /**
      * v2
      */
-    // http://localhost:9001/api/v1/suppliers/v2/suppliers/configure-paypal/1
-    // set the PaypalClientId and the PaypalClientSecret
-    @PostMapping("/v2/suppliers/configure-paypal/{supplierId}")
-    public ResponseEntity<?> configurePaypal(@PathVariable Long supplierId,
-                                             @RequestBody PaypalConfigurationDto configuration) {
-        Supplier supplier = supplierService.getSupplier(supplierId);
-        if (supplier == null) {
-            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Supplier not found");
-        }
+//    // http://localhost:9001/api/v1/suppliers/v2/suppliers/configure-paypal/1
+//    // set the PaypalClientId and the PaypalClientSecret
+//    @PostMapping("/v2/suppliers/configure-paypal/{supplierId}")
+//    public ResponseEntity<?> configurePaypal(@PathVariable Long supplierId,
+//                                             @RequestBody PaypalConfigurationDto configuration) {
+//        Supplier supplier = supplierService.getSupplier(supplierId);
+//        if (supplier == null) {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Supplier not found");
+//        }
+//
+//        supplier.setPaypalClientId(configuration.getPaypalClientId());
+//        supplier.setPaypalClientSecret(configuration.getPaypalClientSecret()); // Encrypt this
+//        supplier.setPaypalRedirectUri(configuration.getPaypalRedirectUri());
+//
+//        supplierService.createSupplier(supplier);
+//        return ResponseEntity.ok("PayPal configuration updated successfully");
+//    }
+//
+//    // http://localhost:9001/api/v1/suppliers/v2/authorize/1
+//    @GetMapping("/v2/authorize/{supplierId}")
+//    public ResponseEntity<?> initiateAuthorization(@PathVariable Long supplierId, HttpServletResponse response) throws IOException {
+//        String redirectUrl = supplierService.initiatePaypalAuthorization(supplierId);
+//        response.sendRedirect(redirectUrl);
+//        log.info("response: " + response);
+//        return ResponseEntity.status(HttpStatus.SEE_OTHER).body("Redirecting to PayPal...");
+//    }
+//
+//    // http://localhost:9001/api/v1/suppliers/v2/callback/1
+//    @GetMapping("/v2/callback")
+//    public ResponseEntity<?> completeAuthorization(@RequestParam("code") String code, @RequestParam("state") String state) {
+//        String accessToken = supplierService.completePaypalAuthorization(code, state);
+//        log.info("Authorization completed. Access Token for supplier : " +  " " + accessToken);
+//        return ResponseEntity.ok("Authorization completed. Access Token for supplier : " +  " " + accessToken);
+//    }
+//    // http://localhost:9001/api/v1/suppliers/paypal/authorize/1/update-default-RedirectUri
+//    @PostMapping("/paypal/authorize/{supplierId}/update-default-RedirectUri")
+//    public ResponseEntity<?> updateSupplierRedirectUri(@PathVariable Long supplierId) {
+//        Supplier supplier = supplierService.getSupplier(supplierId);
+//        if (supplier == null) {
+//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Supplier not found");
+//        }
+//        supplier.setPaypalRedirectUri(defaultRedirectUri);
+//        supplierService.createSupplier(supplier);
+//        return ResponseEntity.ok("Redirect URI updated successfully");
+//    }
 
-        supplier.setPaypalClientId(configuration.getPaypalClientId());
-        supplier.setPaypalClientSecret(configuration.getPaypalClientSecret()); // Encrypt this
-        supplier.setPaypalRedirectUri(configuration.getPaypalRedirectUri());
-
-        supplierService.createSupplier(supplier);
-        return ResponseEntity.ok("PayPal configuration updated successfully");
-    }
-
-    // http://localhost:9001/api/v1/suppliers/v2/authorize/1
-    @GetMapping("/v2/authorize/{supplierId}")
-    public ResponseEntity<?> initiateAuthorization(@PathVariable Long supplierId, HttpServletResponse response) throws IOException {
-        String redirectUrl = supplierService.initiatePaypalAuthorization(supplierId);
-        response.sendRedirect(redirectUrl);
-        log.info("response: " + response);
-        return ResponseEntity.status(HttpStatus.SEE_OTHER).body("Redirecting to PayPal...");
-    }
-
-    // http://localhost:9001/api/v1/suppliers/v2/callback/1
-    @GetMapping("/v2/callback")
-    public ResponseEntity<?> completeAuthorization(@RequestParam("code") String code, @RequestParam("state") String state) {
-        String accessToken = supplierService.completePaypalAuthorization(code, state);
-        log.info("Authorization completed. Access Token for supplier : " +  " " + accessToken);
-        return ResponseEntity.ok("Authorization completed. Access Token for supplier : " +  " " + accessToken);
-    }
 
 }
