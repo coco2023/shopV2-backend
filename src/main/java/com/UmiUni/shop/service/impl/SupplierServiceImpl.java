@@ -64,7 +64,7 @@ public class SupplierServiceImpl implements SupplierService {
             throw new IllegalArgumentException("Supplier not found");
         }
 
-        String baseRedirectUri = "https://3665-66-253-183-231.ngrok-free.app/api/v1/suppliers/v2/callback";
+        String baseRedirectUri = "https://f197-66-253-183-231.ngrok-free.app/api/v1/suppliers/v2/callback";
 
         String redirectUri = baseRedirectUri; // + supplierId;
         String encodedRedirectUri = URLEncoder.encode(redirectUri, StandardCharsets.UTF_8);

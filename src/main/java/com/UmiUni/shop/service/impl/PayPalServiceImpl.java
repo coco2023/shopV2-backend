@@ -76,10 +76,21 @@ public class PayPalServiceImpl implements PayPalService {
     @Autowired
     private SalesOrderDetailRepository salesOrderDetailRepository;
 
-    private APIContext getAPIContext() {
-        return new APIContext(clientId, clientSecret, mode);
+//    private APIContext getAPIContext() {
+//        return new APIContext(clientId, clientSecret, mode);
+//
+//    }
 
-    }
+    String supplierPaypalAccessToken = "A23AAJRl72it4dOY4_bURnJx7s8wkX5M3bDZ9GWNdE5iJaXRhVj596I-V6gZgLvC6cpBltBJl31VH4C7cUgmPUrZDXx4WQRRw";
+
+    APIContext apiContext = new APIContext(supplierPaypalAccessToken);
+//    private APIContext getAPIContext(String accessToken) {
+//        APIContext apiContext = new APIContext();
+//        apiContext.setAccessToken(accessToken); // Set the supplier's access token
+//        apiContext.setMode(mode); // Mode is either sandbox or live
+//        return apiContext;
+//    }
+
 
     @Override
     @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
@@ -142,7 +153,7 @@ public class PayPalServiceImpl implements PayPalService {
                 throw new PaymentProcessingException("Payment creation interrupted because the customer exited.");
             }
 
-            createdPayment = payment.create(getAPIContext());
+            createdPayment = payment.create(apiContext); // (getAPIContext());
             LocalDateTime now = LocalDateTime.now();
 
             String payPalTransactionId = extractPaymentId(createdPayment);
@@ -207,7 +218,7 @@ public class PayPalServiceImpl implements PayPalService {
     @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
     public PaymentResponse completePayment(String paymentId, String payerId) {
 
-        APIContext apiContext = getAPIContext();
+//        APIContext apiContext = getAPIContext();
 
         PayPalPayment payPalPayment = null;
 
@@ -334,7 +345,7 @@ public class PayPalServiceImpl implements PayPalService {
         }
 
         String transactionId = payPalPayment.getTransactionId();
-        APIContext apiContext = getAPIContext();
+//        APIContext apiContext = getAPIContext();
 
         Payment payment = null;
 
