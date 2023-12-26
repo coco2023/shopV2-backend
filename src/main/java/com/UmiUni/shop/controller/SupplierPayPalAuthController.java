@@ -45,7 +45,7 @@ public class SupplierPayPalAuthController {
         supplierService.updatePaypalAccessToken(supplierId, accessToken);
 
         try {
-            response.sendRedirect("http://localhost:3000/supplier/" + supplierId);
+            response.sendRedirect("http://localhost:3000/supplier/" + supplierId + "?success=true");
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -66,7 +66,7 @@ public class SupplierPayPalAuthController {
         // Retrieve the access token for the supplier
         String accessToken = supplierService.getSupplier(supplierId).getPaypalAccessToken();
 
-        return supplierService.getPayPalInfo(accessToken)
+        return supplierService.getPayPalInfo(accessToken, supplierId)
                 .map(ResponseEntity::ok)
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }

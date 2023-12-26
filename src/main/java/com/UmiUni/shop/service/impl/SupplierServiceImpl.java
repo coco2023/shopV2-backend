@@ -132,7 +132,7 @@ public class SupplierServiceImpl implements SupplierService {
     }
 
     @Override
-    public Optional<Object> getPayPalInfo(String accessToken) {
+    public Optional<Object> getPayPalInfo(String accessToken, Long supplierId) {
         RestTemplate restTemplate = new RestTemplate();
         HttpHeaders headers = new HttpHeaders();
         headers.setBearerAuth(accessToken);
@@ -143,6 +143,13 @@ public class SupplierServiceImpl implements SupplierService {
         try {
             ResponseEntity<PayPalInfo> response = restTemplate.exchange(url, HttpMethod.GET, entity, PayPalInfo.class);
             log.info("response: " + response.getBody());
+
+            // update Supplier Entity to add Paypal info
+            Supplier supplier = supplierRepository.findById(supplierId).orElseThrow();
+            supplier.setPaypalEmail(response.getBody().getEmail());
+            supplier.setPaypalName(response.getBody().getName());
+            supplierRepository.save(supplier);
+
             return Optional.ofNullable(response.getBody());
         } catch (Exception e) {
             // Log the exception

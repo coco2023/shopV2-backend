@@ -27,5 +27,5 @@ public interface SupplierService {
 
     void updatePaypalAccessToken(Long supplierId, String accessToken);
 
-    Optional<Object> getPayPalInfo(String accessToken);
+    Optional<Object> getPayPalInfo(String accessToken, Long supplierId);
 }

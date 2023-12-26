@@ -24,6 +24,8 @@ public class Supplier {
 
     private String paypalEmail; // PayPal account email
 
+    private String paypalName; // PayPal account email
+
     private String paypalAccessToken; // Store PayPal access token
 
 //    private String paypalClientId;
