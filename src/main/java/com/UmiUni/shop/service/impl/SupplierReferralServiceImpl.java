@@ -32,11 +32,6 @@ public class SupplierReferralServiceImpl implements SupplierReferralService {
         this.restTemplate = restTemplate;
     }
 
-    private APIContext getAPIContext() {
-        return new APIContext(clientId, clientSecret, mode);
-
-    }
-
     @Override
     public String createPartnerReferral() {
 //        String url = baseUrl + "/v2/customer/partner-referrals";

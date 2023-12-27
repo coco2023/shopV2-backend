@@ -13,6 +13,9 @@ import org.springframework.web.bind.annotation.RestController;
 @Log4j2
 public class SupplierReferralController {
 
+    /**
+     * only for referral aims
+     */
     @Autowired
     private SupplierReferralService partnerReferralService;
 

@@ -1,5 +1,6 @@
 package com.UmiUni.shop.service.impl;
 
+import com.UmiUni.shop.dto.PaypalConfigurationDto;
 import com.UmiUni.shop.entity.Supplier;
 import com.UmiUni.shop.entity.SupplierPayPalAuth;
 import com.UmiUni.shop.model.PayPalInfo;
@@ -57,6 +58,11 @@ public class SupplierServiceImpl implements SupplierService {
         supplierRepository.deleteById(id);
     }
 
+    /**
+     * current Receiving money (merchant) account does not connect to the PayPal Oauth login account.
+     * @param supplierId
+     * @return
+     */
     @Override
     public String initiatePaypalAuthorization(Long supplierId) {
         SupplierPayPalAuth supplierPayPalRoot = supplierPayPalRootRepo.findById(1L).orElse(null);
@@ -64,7 +70,7 @@ public class SupplierServiceImpl implements SupplierService {
             throw new IllegalArgumentException("Supplier not found");
         }
 
-        String baseRedirectUri = "https://f197-66-253-183-231.ngrok-free.app/api/v1/suppliers/v2/callback";
+        String baseRedirectUri = "https://fb88-66-253-183-231.ngrok-free.app/api/v1/suppliers/v2/callback";
 
         String redirectUri = baseRedirectUri; // + supplierId;
         String encodedRedirectUri = URLEncoder.encode(redirectUri, StandardCharsets.UTF_8);
@@ -156,6 +162,18 @@ public class SupplierServiceImpl implements SupplierService {
             log.error("ERROR when getting paypal info!!", e.getMessage());
             return Optional.empty();
         }
+    }
+
+    @Override
+    public void updateClientIdAndSecret(Long supplierId, PaypalConfigurationDto configuration) {
+        Supplier supplier = supplierRepository.findById(supplierId)
+                .orElseThrow();
+
+        supplier.setPaypalClientId(configuration.getPaypalClientId());
+        supplier.setPaypalClientSecret(configuration.getPaypalClientSecret()); // Encrypt this
+
+        supplierRepository.save(supplier);
+
     }
 
     private String extractAccessToken(String responseBody) {

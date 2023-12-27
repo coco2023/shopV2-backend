@@ -1,5 +1,6 @@
 package com.UmiUni.shop.controller;
 
+import com.UmiUni.shop.dto.PaypalConfigurationDto;
 import com.UmiUni.shop.service.SupplierService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -71,24 +72,21 @@ public class SupplierPayPalAuthController {
                 .orElseGet(() -> ResponseEntity.notFound().build());
     }
 
+    /**
+     * update supplier ClientId and ClientSecret
+     * @param supplierId
+     * @param configuration
+     * @return
+     */
     // http://localhost:9001/api/v1/suppliers/v2/suppliers/configure-paypal/1
     // set the PaypalClientId and the PaypalClientSecret
-//    @PostMapping("/v2/suppliers/configure-paypal/{supplierId}")
-//    public ResponseEntity<?> configurePaypal(@PathVariable Long supplierId,
-//                                             @RequestBody PaypalConfigurationDto configuration) {
-//        Supplier supplier = supplierService.getSupplier(supplierId);
-//        if (supplier == null) {
-//            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Supplier not found");
-//        }
-//
-//        supplier.setPaypalClientId(configuration.getPaypalClientId());
-//        supplier.setPaypalClientSecret(configuration.getPaypalClientSecret()); // Encrypt this
-//        supplier.setPaypalRedirectUri(configuration.getPaypalRedirectUri());
-//
-//        supplierService.createSupplier(supplier);
-//        return ResponseEntity.ok("PayPal configuration updated successfully");
-//    }
+    @PostMapping("/v2/suppliers/configure-paypal/{supplierId}")
+    public ResponseEntity<?> configurePaypal(@PathVariable Long supplierId,
+                                             @RequestBody PaypalConfigurationDto configuration) {
+        supplierService.updateClientIdAndSecret(supplierId, configuration);
 
+        return ResponseEntity.ok("PayPal configuration updated successfully");
+    }
 
 
 }

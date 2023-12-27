@@ -128,6 +128,8 @@ public class ProductServiceImpl implements ProductService {
         } catch (InsufficientStockException e) {
             return;
         }
+
+        // TODO: how to deal with the error this part?
         // Reduce the locked stock quantity
         product.setLockedStockQuantity(product.getLockedStockQuantity() - quantity);
 

@@ -98,9 +98,9 @@ public class PaymentController {
 
     // Endpoint to complete a payment
     @PostMapping("/paypal/complete")
-    public ResponseEntity<?> completePayment(@RequestParam("paymentId") String paymentId, @RequestParam("PayerID") String payerId) {
+    public ResponseEntity<?> completePayment(@RequestParam("paymentId") String paymentId, @RequestParam("PayerID") String payerId, @RequestParam("SupplierId") String supplierId) {
         try {
-            PaymentResponse paymentResponse = payPalService.completePayment(paymentId, payerId);
+            PaymentResponse paymentResponse = payPalService.completePayment(paymentId, payerId, supplierId);
             return ResponseEntity.ok(paymentResponse);
         } catch (Exception e) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error completing PayPal payment: " + e.getMessage());
@@ -108,9 +108,9 @@ public class PaymentController {
     }
 
     @GetMapping("/paypal/check-payment-status")
-    public ResponseEntity<?> checkPaymentStatus(@RequestParam("token") String token) throws Exception {
+    public ResponseEntity<?> checkPaymentStatus(@RequestParam("token") String token, @RequestParam("supplierId") String supplierId) throws Exception {
         try {
-            PaymentResponse response = payPalService.checkPaymentStatus(token);
+            PaymentResponse response = payPalService.checkPaymentStatus(token, supplierId);
             return ResponseEntity.ok(response);
         } catch (PaymentProcessingException e) {
 //            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();

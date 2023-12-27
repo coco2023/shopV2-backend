@@ -76,21 +76,23 @@ public class PayPalServiceImpl implements PayPalService {
     @Autowired
     private SalesOrderDetailRepository salesOrderDetailRepository;
 
-//    private APIContext getAPIContext() {
-//        return new APIContext(clientId, clientSecret, mode);
-//
-//    }
+    @Autowired
+    private SupplierRepository supplierRepository;
 
-    String supplierPaypalAccessToken = "A23AAJRl72it4dOY4_bURnJx7s8wkX5M3bDZ9GWNdE5iJaXRhVj596I-V6gZgLvC6cpBltBJl31VH4C7cUgmPUrZDXx4WQRRw";
+    private APIContext getAPIContext() {
+        return new APIContext(clientId, clientSecret, mode);
 
-    APIContext apiContext = new APIContext(supplierPaypalAccessToken);
-//    private APIContext getAPIContext(String accessToken) {
-//        APIContext apiContext = new APIContext();
-//        apiContext.setAccessToken(accessToken); // Set the supplier's access token
-//        apiContext.setMode(mode); // Mode is either sandbox or live
-//        return apiContext;
-//    }
+    }
 
+    private APIContext createApiContextForSupplier(Long supplierId) {
+        Supplier supplier = supplierRepository.findById(supplierId)
+                .orElseThrow();
+        String supplierClientId = supplier.getPaypalClientId();
+        String supplierSecret = supplier.getPaypalClientSecret();
+
+        APIContext apiContext = new APIContext(supplierClientId, supplierSecret, "sandbox");
+        return apiContext;
+    }
 
     @Override
     @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
@@ -98,6 +100,10 @@ public class PayPalServiceImpl implements PayPalService {
 
         log.info("start create payment");
         SalesOrder salesOrder = salesOrderRepository.getSalesOrderBySalesOrderSn(salesOrderRequest.getSalesOrderSn()).get();
+
+        // TODO: get clientId and secret of the current supplier and create a new apiContext
+//        APIContext apiContext = getAPIContext();
+        APIContext apiContext = createApiContextForSupplier(salesOrder.getSupplierId());
 
         // get salesOrderSn
         String salesOrderSn = salesOrder.getSalesOrderSn();
@@ -130,8 +136,8 @@ public class PayPalServiceImpl implements PayPalService {
 
 
         RedirectUrls redirectUrls = new RedirectUrls();
-        redirectUrls.setCancelUrl(frontendUrl + "/paypal-return?salesOrderSn=" + salesOrderSn);
-        redirectUrls.setReturnUrl(frontendUrl + "/paypal-success?salesOrderSn=" + salesOrderSn);
+        redirectUrls.setCancelUrl(frontendUrl + "/paypal-return?salesOrderSn=" + salesOrderSn + "&supplierId=" + salesOrder.getSupplierId());
+        redirectUrls.setReturnUrl(frontendUrl + "/paypal-success?salesOrderSn=" + salesOrderSn + "&supplierId=" + salesOrder.getSupplierId());
         payment.setRedirectUrls(redirectUrls);
         log.info("redirectUrls: " + redirectUrls);
 
@@ -153,7 +159,7 @@ public class PayPalServiceImpl implements PayPalService {
                 throw new PaymentProcessingException("Payment creation interrupted because the customer exited.");
             }
 
-            createdPayment = payment.create(apiContext); // (getAPIContext());
+            createdPayment = payment.create(apiContext);
             LocalDateTime now = LocalDateTime.now();
 
             String payPalTransactionId = extractPaymentId(createdPayment);
@@ -216,9 +222,10 @@ public class PayPalServiceImpl implements PayPalService {
 
     @Override
     @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
-    public PaymentResponse completePayment(String paymentId, String payerId) {
+    public PaymentResponse completePayment(String paymentId, String payerId, String supplierId) {
 
 //        APIContext apiContext = getAPIContext();
+        APIContext apiContext = createApiContextForSupplier(Long.valueOf(supplierId));
 
         PayPalPayment payPalPayment = null;
 
@@ -337,7 +344,7 @@ public class PayPalServiceImpl implements PayPalService {
     }
 
     @Override
-    public PaymentResponse checkPaymentStatus(String token) throws Exception {
+    public PaymentResponse checkPaymentStatus(String token, String supplierId) throws Exception {
 
         PayPalPayment payPalPayment = payPalPaymentRepository.findByPaypalToken(token);
         if (payPalPayment == null) {
@@ -346,6 +353,7 @@ public class PayPalServiceImpl implements PayPalService {
 
         String transactionId = payPalPayment.getTransactionId();
 //        APIContext apiContext = getAPIContext();
+        APIContext apiContext = createApiContextForSupplier(Long.valueOf(supplierId));
 
         Payment payment = null;
 

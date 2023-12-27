@@ -28,6 +28,8 @@ public class SalesOrder {
     @Column(nullable = false)
     private Long customerId;  // Assuming CustomerID is a unique identifier but not a foreign key
 
+    private Long supplierId;
+
     @Column(nullable = false)
     private String customerName;
 

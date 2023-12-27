@@ -10,11 +10,11 @@ import java.util.List;
 public interface PayPalService {
     PaymentResponse createPayment(SalesOrder salesOrder);
 
-    PaymentResponse completePayment(String paymentId, String payerId);
+    PaymentResponse completePayment(String paymentId, String payerId, String supplierId);
 
 //    String getPaymentStatus(String token);
 
-    PaymentResponse checkPaymentStatus(String token) throws Exception;
+    PaymentResponse checkPaymentStatus(String token, String supplierId) throws Exception;
 
     List<PayPalPaymentResponseDTO> getAllPayPalPaymentResponseEntity();
 

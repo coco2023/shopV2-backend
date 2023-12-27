@@ -28,11 +28,11 @@ public class Supplier {
 
     private String paypalAccessToken; // Store PayPal access token
 
-//    private String paypalClientId;
-//
-//    @Column(length = 500)
-//    private String paypalClientSecret; // Ensure this is stored securely
-//
-//    private String paypalRedirectUri;
+    private String paypalClientId;
+
+    @Column(length = 500)
+    private String paypalClientSecret; // Ensure this is stored securely
+
+    private String paypalRedirectUri;
 
 }

@@ -23,6 +23,8 @@ public class SalesOrderDetail {
     @Column(nullable = false)
     private String skuCode;  // Assuming skuCode is a unique identifier but not a foreign key
 
+    private Long supplierId;
+
     @Column(nullable = false)
     private Integer quantity;
 

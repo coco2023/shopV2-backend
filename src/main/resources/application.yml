@@ -64,11 +64,13 @@ stripe:
 
 paypal:
   client:
-    id: ASWE1Q8AfwFxHoTDbB8tanMwQB8qRxb0i72hdPMD23RGzhNqY2DQoClXqQv8ONJWGPi_cy5ro5y_6tHB
-    secret: EAxzPdtbxhyDw3mmSCRvcputnBrx5Ko_7a73fhfXNP5IRCDYoFExYJS5Qi--OhBTdEv0h0Cat7T_IZXj
+    id: AWhLD4_pmHlrCpHJSSKobJ4nwbwy_e16mcgbtrL_M5DzBaJk9zj84QYazMoy5TB7htSmjry7_ArOE9yU
+    secret: EGVLVd0YufvNfz8ID2uN_mGRubofoTt2oZNy7CaYLGx2vHPCryZ5PuIve7LpLXxKQ7tDClvFePHBS7lN
   mode: 'sandbox'
   redirect:
     uri: http://localhost:9001/api/v1/suppliers/paypal/callback
+#    id: ASWE1Q8AfwFxHoTDbB8tanMwQB8qRxb0i72hdPMD23RGzhNqY2DQoClXqQv8ONJWGPi_cy5ro5y_6tHB
+#    secret: EAxzPdtbxhyDw3mmSCRvcputnBrx5Ko_7a73fhfXNP5IRCDYoFExYJS5Qi--OhBTdEv0h0Cat7T_IZXj
 
 # Define the names of your RabbitMQ queues
 inventory:
