@@ -64,7 +64,7 @@ paypal:
   mode: 'sandbox'
   redirect:
     uri: ${prod-backend}/api/v1/suppliers/v2/callback
-    test: https://692a-66-253-183-231.ngrok-free.app/api/v1/suppliers/v2/callback
+    test: https://ec2-54-234-75-153.compute-1.amazonaws.com/api/v1/suppliers/v2/callback
   frontend:
     base:
       uri: ${prod-frontend}
