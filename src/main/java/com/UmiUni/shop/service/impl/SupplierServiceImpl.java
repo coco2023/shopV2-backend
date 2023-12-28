@@ -11,6 +11,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -26,7 +27,7 @@ import org.springframework.http.*;
 @Log4j2
 public class SupplierServiceImpl implements SupplierService {
 
-    @Value("${paypal.redirect.uri}")
+    @Value("${paypal.redirect.uri}") // paypal.redirect.uri  // paypal.redirect.test
     private String baseRedirectUri;
 
     @Autowired
@@ -74,7 +75,8 @@ public class SupplierServiceImpl implements SupplierService {
             throw new IllegalArgumentException("Supplier not found");
         }
 
-//        String baseRedirectUri = "https://fb88-66-253-183-231.ngrok-free.app/api/v1/suppliers/v2/callback";
+        // update the redirect uri of Default Application [sb-mhmy628874237@business.example.com]
+//        String baseRedirectUri = "https://692a-66-253-183-231.ngrok-free.app/api/v1/suppliers/v2/callback";
 
         String redirectUri = baseRedirectUri; // + supplierId;
         String encodedRedirectUri = URLEncoder.encode(redirectUri, StandardCharsets.UTF_8);
@@ -126,7 +128,10 @@ public class SupplierServiceImpl implements SupplierService {
         log.info("PayPal OAuth token exchange request: " + request + "; response: " + response);
 
         if (response.getStatusCode() == HttpStatus.OK) {
-            // Extract and return the access token from the response
+            // Extract and update the access token from the response
+            String accessToken = extractAccessToken(response.getBody());
+            log.info("Authorization completed. Access Token for supplier : " +  " " + accessToken);
+            updatePaypalAccessToken(supplierId, accessToken);
             return extractAccessToken(response.getBody());
         } else {
             throw new RuntimeException("Failed to exchange authorization code");
@@ -155,10 +160,7 @@ public class SupplierServiceImpl implements SupplierService {
             log.info("response: " + response.getBody());
 
             // update Supplier Entity to add Paypal info
-            Supplier supplier = supplierRepository.findById(supplierId).orElseThrow();
-            supplier.setPaypalEmail(response.getBody().getEmail());
-            supplier.setPaypalName(response.getBody().getName());
-            supplierRepository.save(supplier);
+            updatePayPalNameAndEmail(supplierId, response.getBody());
 
             return Optional.ofNullable(response.getBody());
         } catch (Exception e) {
@@ -166,6 +168,20 @@ public class SupplierServiceImpl implements SupplierService {
             e.printStackTrace();
 //            return Optional.empty();
             return Optional.of("Error when retrieving PayPal information: " + e.getMessage());
+        }
+    }
+
+    // update Supplier Entity to add Paypal info
+    private void updatePayPalNameAndEmail(Long supplierId, PayPalInfo body) {
+        try {
+            Supplier supplier = supplierRepository.findById(supplierId).orElseThrow();
+            supplier.setPaypalEmail(body.getEmail());
+            supplier.setPaypalName(body.getName());
+            supplierRepository.save(supplier);
+        } catch (DataIntegrityViolationException e) {
+//            e.printStackTrace();
+//            log.error("Error: Duplicate name or email. Please use unique values.");
+            throw new DataIntegrityViolationException("Error: Duplicate name or email. Please use unique values.");
         }
     }
 

@@ -5,6 +5,7 @@ import com.UmiUni.shop.entity.Supplier;
 import com.UmiUni.shop.service.SupplierService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,6 +22,9 @@ public class SupplierPayPalAuthController {
     @Autowired
     private SupplierService supplierService;
 
+    @Value("${paypal.frontend.redirect.uri}") // paypal.frontend.redirect.uri // paypal.frontend.redirect.test
+    private String frontendRedirectUri;
+
     /**
      * Oauth of paypal to the platform
      */
@@ -33,7 +37,7 @@ public class SupplierPayPalAuthController {
         return ResponseEntity.status(HttpStatus.SEE_OTHER).body("Redirecting to PayPal...");
     }
 
-    // http://localhost:9001/api/v1/suppliers/v2/callback/1
+    // http://localhost:9001/api/v1/suppliers/v2/callback
     @GetMapping("/v2/callback")
     public ResponseEntity<?> completeAuthorization(
             @RequestParam("code") String code,
@@ -43,12 +47,13 @@ public class SupplierPayPalAuthController {
         Long supplierId = decryptOrDecodeSupplierId(state);
 
         String accessToken = supplierService.completePaypalAuthorization(code, state);
-        log.info("Authorization completed. Access Token for supplier : " +  " " + accessToken);
-        supplierService.updatePaypalAccessToken(supplierId, accessToken);
+//        supplierService.updatePaypalAccessToken(supplierId, accessToken);
 
         try {
 //            response.sendRedirect("http://localhost:3000/supplier/" + supplierId + "?success=true");
-            response.sendRedirect("http://localhost:3000/supplier/" + supplierId);
+//            response.sendRedirect("http://localhost:3000/supplier-ims/" + supplierId);
+            response.sendRedirect(frontendRedirectUri + supplierId);
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

@@ -10,18 +10,12 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.net.URLEncoder;
 import java.util.List;
 
 @RestController
 @RequestMapping("/api/v1/suppliers")
 @Log4j2
 public class SupplierController {
-
-    @Value("${paypal.redirect.uri}")
-    private String defaultRedirectUri;
 
     @Autowired
     private SupplierService supplierService;
