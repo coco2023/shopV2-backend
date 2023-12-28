@@ -10,6 +10,7 @@ import com.UmiUni.shop.service.SupplierService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
 
@@ -24,6 +25,9 @@ import org.springframework.http.*;
 @Service
 @Log4j2
 public class SupplierServiceImpl implements SupplierService {
+
+    @Value("${paypal.redirect.uri}")
+    private String baseRedirectUri;
 
     @Autowired
     private SupplierRepository supplierRepository;
@@ -70,7 +74,7 @@ public class SupplierServiceImpl implements SupplierService {
             throw new IllegalArgumentException("Supplier not found");
         }
 
-        String baseRedirectUri = "https://fb88-66-253-183-231.ngrok-free.app/api/v1/suppliers/v2/callback";
+//        String baseRedirectUri = "https://fb88-66-253-183-231.ngrok-free.app/api/v1/suppliers/v2/callback";
 
         String redirectUri = baseRedirectUri; // + supplierId;
         String encodedRedirectUri = URLEncoder.encode(redirectUri, StandardCharsets.UTF_8);

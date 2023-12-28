@@ -23,7 +23,10 @@ public class SupplierReferralServiceImpl implements SupplierReferralService {
     @Value("${paypal.mode}")
     private String mode;
 
-    private String baseUrl = "http:localhost:9011/api/v1/suppliers/refer";
+    @Value("${paypal.referral.uri}")
+    private String baseUrl;
+
+//    private String baseUrl = "http:localhost:9011/api/v1/suppliers/refer";
 
     private final RestTemplate restTemplate;
 
