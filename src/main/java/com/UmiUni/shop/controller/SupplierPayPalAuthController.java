@@ -1,6 +1,7 @@
 package com.UmiUni.shop.controller;
 
 import com.UmiUni.shop.dto.PaypalConfigurationDto;
+import com.UmiUni.shop.entity.Supplier;
 import com.UmiUni.shop.service.SupplierService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -46,7 +47,8 @@ public class SupplierPayPalAuthController {
         supplierService.updatePaypalAccessToken(supplierId, accessToken);
 
         try {
-            response.sendRedirect("http://localhost:3000/supplier/" + supplierId + "?success=true");
+//            response.sendRedirect("http://localhost:3000/supplier/" + supplierId + "?success=true");
+            response.sendRedirect("http://localhost:3000/supplier/" + supplierId);
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
@@ -61,15 +63,33 @@ public class SupplierPayPalAuthController {
     /**
      * get paypal info of the supplier
      */
+    // check if accessToken exit
+    // http://localhost:9001/api/v1/suppliers/v2/paypal-info/accessTokenExit/${supplierId}
+    @GetMapping("/v2/paypal-info/accessTokenExit/{supplierId}")
+    public ResponseEntity<Boolean> checkAccessTokenExit(@PathVariable Long supplierId) {
+        // Retrieve the access token for the supplier
+        Supplier supplier = supplierService.getSupplier(supplierId);
+        String accessToken = supplier.getPaypalAccessToken();
+        if (accessToken == null) {
+            return ResponseEntity.ok(false);
+        }
+        return ResponseEntity.ok(true);
+    }
+
     // http://localhost:9001/api/v1/suppliers/v2/paypal-info/${supplierId}
     @GetMapping("/v2/paypal-info/{supplierId}")
     public ResponseEntity<?> getSupplierPaypalInfo(@PathVariable Long supplierId) {
         // Retrieve the access token for the supplier
-        String accessToken = supplierService.getSupplier(supplierId).getPaypalAccessToken();
+        Supplier supplier = supplierService.getSupplier(supplierId);
+        String accessToken = supplier.getPaypalAccessToken();
+        if (accessToken == null) {
+            return ResponseEntity.notFound().build();
+        }
 
-        return supplierService.getPayPalInfo(accessToken, supplierId)
-                .map(ResponseEntity::ok)
-                .orElseGet(() -> ResponseEntity.notFound().build());
+//        return supplierService.getPayPalInfo(accessToken, supplierId)
+//                .map(ResponseEntity::ok)
+//                .orElseGet(() -> ResponseEntity.notFound().build());
+        return ResponseEntity.ok(supplierService.getPayPalInfo(accessToken, supplierId));
     }
 
     /**

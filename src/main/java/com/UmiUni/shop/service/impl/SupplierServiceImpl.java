@@ -158,9 +158,10 @@ public class SupplierServiceImpl implements SupplierService {
 
             return Optional.ofNullable(response.getBody());
         } catch (Exception e) {
-            // Log the exception
             log.error("ERROR when getting paypal info!!", e.getMessage());
-            return Optional.empty();
+            e.printStackTrace();
+//            return Optional.empty();
+            return Optional.of("Error when retrieving PayPal information: " + e.getMessage());
         }
     }
 
