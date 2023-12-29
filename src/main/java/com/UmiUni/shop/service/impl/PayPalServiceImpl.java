@@ -50,7 +50,7 @@ public class PayPalServiceImpl implements PayPalService {
     @Value("${paypal.mode}")
     private String mode;
 
-    @Value("${paypal.frontend.base.test}") // paypal.frontend.base.test  // paypal.frontend.base.uri
+    @Value("${paypal.frontend.base.uri}") // paypal.frontend.base.test  // paypal.frontend.base.uri
     private String frontendUrl;           // "http://localhost:3000"   // https://www.quickmall24.com
 
     @Autowired

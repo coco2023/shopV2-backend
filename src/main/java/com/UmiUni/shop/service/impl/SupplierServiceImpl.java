@@ -27,7 +27,7 @@ import org.springframework.http.*;
 @Log4j2
 public class SupplierServiceImpl implements SupplierService {
 
-    @Value("${paypal.redirect.test}") // paypal.redirect.uri  // paypal.redirect.test
+    @Value("${paypal.redirect.uri}") // paypal.redirect.uri  // paypal.redirect.test
     private String baseRedirectUri;
 
     @Autowired

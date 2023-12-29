@@ -22,7 +22,7 @@ public class SupplierPayPalAuthController {
     @Autowired
     private SupplierService supplierService;
 
-    @Value("${paypal.frontend.redirect.test}") // paypal.frontend.redirect.uri // paypal.frontend.redirect.test
+    @Value("${paypal.frontend.redirect.uri}") // paypal.frontend.redirect.uri // paypal.frontend.redirect.test
     private String frontendRedirectUri;
 
     /**
