@@ -21,4 +21,12 @@ public interface PayPalPaymentRepository extends JpaRepository<PayPalPayment, Lo
     List<PayPalPayment> findByCreateTimeBetweenAndPaymentState(LocalDateTime startDate, LocalDateTime endDate, String status);
 
     PayPalPayment findByTransactionId(String transactionId);
+
+    // SupplierPaymentService
+    PayPalPayment findBySupplierIdAndId(String supplierId, Long id);
+
+    List<PayPalPayment> findAllBySupplierId(String supplierId);
+
+    List<PayPalPayment> findBySupplierIdAndSalesOrderSn(String supplierId, String salesOrderSn);
+
 }

@@ -50,6 +50,8 @@ public class PayPalPayment {
 
     private String merchantId;  // reco
 
+    private String supplierId; // ims
+
     private LocalDateTime createTime;
 
     private LocalDateTime updatedAt; // reco

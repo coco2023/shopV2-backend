@@ -55,6 +55,7 @@ stripe:
 prod-backend: https://v2.quickmall24.com
 prod-frontend: https://www.quickmall24.com
 local-backend: http://localhost:9001
+local-auth-backend: https://4811-66-253-183-231.ngrok-free.app
 local-frontend: http://localhost:3000
 
 paypal:
@@ -64,7 +65,7 @@ paypal:
   mode: 'sandbox'
   redirect:
     uri: ${prod-backend}/api/v1/suppliers/v2/callback
-    test: https://ec2-54-234-75-153.compute-1.amazonaws.com/api/v1/suppliers/v2/callback
+    test: ${local-auth-backend}/api/v1/suppliers/v2/callback
   frontend:
     base:
       uri: ${prod-frontend}
@@ -76,14 +77,6 @@ paypal:
     uri: ${prod-backend}/api/v1/suppliers/refer
     test: ${local-backend}/api/v1/suppliers/refer
 
-#    using above when pushing to cloud
-#    https://v2.quickmall24.com/api/v1/suppliers/paypal/callback
-#    https://v2.quickmall24.com/api/v1/suppliers/refer
-#    https://www.quickmall24.com/supplier-ims/
-#    using above when testing in local
-#    https://692a-66-253-183-231.ngrok-free.app/api/v1/suppliers/v2/callback
-#    http:localhost:9001/api/v1/suppliers/refer
-#    http://localhost:3000/supplier-ims/
 #    id: ASWE1Q8AfwFxHoTDbB8tanMwQB8qRxb0i72hdPMD23RGzhNqY2DQoClXqQv8ONJWGPi_cy5ro5y_6tHB
 #    secret: EAxzPdtbxhyDw3mmSCRvcputnBrx5Ko_7a73fhfXNP5IRCDYoFExYJS5Qi--OhBTdEv0h0Cat7T_IZXj
 

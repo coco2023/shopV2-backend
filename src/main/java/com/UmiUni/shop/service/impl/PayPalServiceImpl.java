@@ -50,7 +50,7 @@ public class PayPalServiceImpl implements PayPalService {
     @Value("${paypal.mode}")
     private String mode;
 
-    @Value("${paypal.frontend.base.uri}") // paypal.frontend.base.test  // paypal.frontend.base.uri
+    @Value("${paypal.frontend.base.test}") // paypal.frontend.base.test  // paypal.frontend.base.uri
     private String frontendUrl;           // "http://localhost:3000"   // https://www.quickmall24.com
 
     @Autowired
@@ -111,6 +111,8 @@ public class PayPalServiceImpl implements PayPalService {
         // get salesOrder expiredTime
         LocalDateTime expiredTime = salesOrder.getExpirationDate();
         log.info(expiredTime);
+        // get supplierId
+        Long supplierId = salesOrder.getSupplierId();
 
         // Logic to create a payment
         Amount amount = new Amount();
@@ -137,8 +139,8 @@ public class PayPalServiceImpl implements PayPalService {
 
 
         RedirectUrls redirectUrls = new RedirectUrls();
-        redirectUrls.setCancelUrl(frontendUrl + "/paypal-return?salesOrderSn=" + salesOrderSn + "&supplierId=" + salesOrder.getSupplierId());
-        redirectUrls.setReturnUrl(frontendUrl + "/paypal-success?salesOrderSn=" + salesOrderSn + "&supplierId=" + salesOrder.getSupplierId());
+        redirectUrls.setCancelUrl(frontendUrl + "/paypal-return?salesOrderSn=" + salesOrderSn + "&supplierId=" + supplierId);
+        redirectUrls.setReturnUrl(frontendUrl + "/paypal-success?salesOrderSn=" + salesOrderSn + "&supplierId=" + supplierId);
         payment.setRedirectUrls(redirectUrls);
         log.info("redirectUrls: " + redirectUrls);
 
@@ -182,6 +184,7 @@ public class PayPalServiceImpl implements PayPalService {
                     .createTime(now)
                     .updatedAt(now)
                     .paymentMethod("PayPal")
+                    .supplierId(String.valueOf(supplierId))
                     .build();
             payPalPaymentRepository.save(payPalPayment);
             log.info("createPayment: " + createdPayment);
