@@ -1,10 +1,10 @@
 package com.UmiUni.shop.controller;
 
 import com.UmiUni.shop.model.DailyReport;
-import com.UmiUni.shop.model.PaypalTransactionRecord;
 import com.UmiUni.shop.model.ReconcileOrderAndPayment;
 import com.UmiUni.shop.model.ReconcileResult;
 import com.UmiUni.shop.service.ReconciliationService;
+import com.UmiUni.shop.utils.DatesFormatConvert;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +37,9 @@ public class ReconciliationController {
     @Autowired
     private ReconciliationService reconciliationService;
 
+    @Autowired
+    private DatesFormatConvert datesFormatConvert;
+
     // http://localhost:9001/api/v1/reconciliation/reconcile?salesOrderSn=SO-1702780660237-4055
     @GetMapping("/reconcile")
     public ResponseEntity<ReconcileOrderAndPayment> reconcilePayment(@RequestParam String salesOrderSn) {
@@ -55,7 +58,7 @@ public class ReconciliationController {
     @GetMapping("/reconcile/between-days")
     public ResponseEntity<?> reconcileBetweenDates(@RequestParam String start, @RequestParam String end) {
         try {
-            ArrayList<LocalDateTime> dates = convertStartAndEndDateFormat(start, end);
+            ArrayList<LocalDateTime> dates = datesFormatConvert.convertStartAndEndDateFormat(start, end);
             LocalDateTime startDate = dates.get(0);
             LocalDateTime endDate = dates.get(1);
             List<ReconcileOrderAndPayment> result = reconciliationService.reconcileBetweenDates(startDate, endDate);
@@ -75,7 +78,7 @@ public class ReconciliationController {
         MediaType mediaType = null;
 
         try {
-            ArrayList<LocalDateTime> dates = convertStartAndEndDateFormat(start, end);
+            ArrayList<LocalDateTime> dates = datesFormatConvert.convertStartAndEndDateFormat(start, end);
             LocalDateTime startDate = dates.get(0);
             LocalDateTime endDate = dates.get(1);
 
@@ -116,24 +119,6 @@ public class ReconciliationController {
         List<ReconcileResult> reconcileResults = reconciliationService.readTransactions(file);
         log.info("file: " + reconcileResults);
         return ResponseEntity.ok(reconcileResults);
-    }
-
-    private ArrayList<LocalDateTime> convertStartAndEndDateFormat(String start, String end) {
-
-        ArrayList<LocalDateTime> dates = new ArrayList<>();
-        try {
-            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
-            LocalDate startDateTime = LocalDate.parse(start, formatter);
-            LocalDate endDateTime = LocalDate.parse(end, formatter);
-
-            LocalDateTime startDate = startDateTime.atStartOfDay();
-            LocalDateTime endDate = endDateTime.atTime(23, 59, 59);
-            dates.add(startDate);
-            dates.add(endDate);
-        }  catch (DateTimeParseException e) {
-            log.error("Invalid date format: " + e.getMessage());
-        }
-        return dates;
     }
 
     private File generateJsonFile(Map<LocalDate, DailyReport> reportMap) {

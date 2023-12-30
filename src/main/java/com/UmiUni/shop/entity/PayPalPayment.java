@@ -56,4 +56,6 @@ public class PayPalPayment {
 
     private LocalDateTime updatedAt; // reco
 
+    private Double tax;  // reco
+
 }

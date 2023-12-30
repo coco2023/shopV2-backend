@@ -3,6 +3,7 @@ package com.UmiUni.shop.entity;
 import lombok.*;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 
 @Entity
 @NoArgsConstructor
@@ -37,5 +38,7 @@ public class Supplier {
     private String paypalClientSecret; // Ensure this is stored securely
 
     private String paypalRedirectUri;
+
+    private BigDecimal balance;
 
 }

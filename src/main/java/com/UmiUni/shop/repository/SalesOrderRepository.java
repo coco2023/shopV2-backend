@@ -27,4 +27,8 @@ public interface SalesOrderRepository extends JpaRepository<SalesOrder, Long> {
     Optional<SalesOrder> findBySupplierIdAndSalesOrderSn(Long supplierId, String salesOrderSn);
 
     void deleteBySalesOrderIdAndSupplierId(Long supplierId, Long id);
+
+    // financial report
+    List<SalesOrder> findBySupplierIdAndOrderDateBetweenAndOrderStatus(Long supplierId, LocalDateTime startDate, LocalDateTime endDate, OrderStatus orderStatus);
+
 }
