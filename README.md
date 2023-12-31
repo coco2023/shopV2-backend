@@ -646,3 +646,82 @@ If you need to update your local repository to exactly match the remote reposito
   You can then later try to reapply the stashed changes with `git stash pop`, but be aware that you might encounter merge conflicts when reapplying them.
 
 Proceed with caution when using these commands to ensure you do not unintentionally lose important work.
+
+# ScheduledTask
+Calling a controller method directly from within a scheduled task is generally not recommended. The better approach is to refactor the shared logic into a service layer method that can be called both from the controller for API requests and from the scheduled task for automated processing. This is the approach used in the example for the monthly report generation.
+
+Here's why this approach is preferred:
+
+1. **Separation of Concerns**: Controllers in Spring Boot are typically designed to handle HTTP requests and responses. They are part of the web layer. Scheduled tasks, however, are part of the service layer and should ideally not depend on web layer components.
+
+2. **Reusability and Maintainability**: By placing the shared logic in a service, you can easily reuse it in different contexts (like web requests and scheduled tasks) without duplication. If the business logic changes, you only need to update it in one place.
+
+3. **Testability**: It's easier to write unit tests for service methods than for controllers, especially when the logic doesn't inherently involve web contexts.
+
+4. **Error Handling**: Handling errors and exceptions can be more appropriately managed within the service layer, especially for background tasks that don't interact with a user directly.
+
+5. **Transactional Boundaries**: Services are a natural place to manage transactions, especially if your logic involves database operations that need to be handled atomically.
+
+So, in your case, for the daily report generation task, instead of calling the controller method, you should create a service method that contains the necessary logic to generate the report. This service method can then be invoked from both the controller and the scheduled task.
+
+Here’s an example of how you might refactor your daily report generation:
+
+```java
+@Service
+public class SuppliersFinanceService {
+    // ... other methods ...
+
+    public FinancialReport generateDailyFinancialReportWrapper(Long supplierId, String daily) {
+        List<LocalDateTime> dates = datesFormatConvert.convertFinancialDayFormat(daily);
+        return generateDailyFinancialReport(supplierId, dates.get(0), dates.get(1), ReportType.DAILY);
+    }
+
+    // ... other methods ...
+}
+
+@RestController
+@RequestMapping("/api/v1/suppliers/finance")
+public class SuppliersFinanceController {
+
+    private final SuppliersFinanceService suppliersFinanceService;
+
+    // Constructor
+    public SuppliersFinanceController(SuppliersFinanceService suppliersFinanceService) {
+        this.suppliersFinanceService = suppliersFinanceService;
+    }
+
+    @GetMapping("/{supplierId}/financial-report/day")
+    public ResponseEntity<?> generateDailySalesReport(@PathVariable Long supplierId, @RequestParam String daily) {
+        FinancialReport financialReport = suppliersFinanceService.generateDailyFinancialReportWrapper(supplierId, daily);
+        // ...
+        return ResponseEntity.ok(financialReport);
+    }
+}
+```
+
+And similarly, in your scheduled task:
+
+```java
+@Component
+public class ScheduledTasks {
+
+    private final SuppliersFinanceService suppliersFinanceService;
+
+    // Constructor
+    public ScheduledTasks(SuppliersFinanceService suppliersFinanceService) {
+        this.suppliersFinanceService = suppliersFinanceService;
+    }
+
+    @Scheduled(cron = "0 59 23 * * ?")
+    public void generateDailySalesReportAutomatically() {
+        // ... fetch supplier IDs and date ...
+
+        for (String supplierId : allSupplierIds) {
+            FinancialReport report = suppliersFinanceService.generateDailyFinancialReportWrapper(Long.valueOf(supplierId), currentDateStr);
+            // Handle the report as necessary
+        }
+    }
+}
+```
+
+This way, the actual logic for report generation is encapsulated within the service, and both the controller and the scheduler call this shared service method.
