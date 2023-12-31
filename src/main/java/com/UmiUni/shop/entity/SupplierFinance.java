@@ -1,13 +1,11 @@
 package com.UmiUni.shop.entity;
 
+import com.UmiUni.shop.constant.ReportType;
 import lombok.*;
 
 import javax.persistence.*;
-import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.time.LocalDateTime;
 
-@NoArgsConstructor
 @AllArgsConstructor
 @Data
 @Builder
@@ -24,7 +22,8 @@ public class SupplierFinance {
     private Long id;
 
     @Column(unique = true)
-    private LocalDate reportDate; // Reporting date
+    private String reportDate; // Reporting date
+    private ReportType reportType; // DAILY, MONTHLY, YEARLY
     private Long supplierId;
 
     // transaction details
@@ -48,5 +47,19 @@ public class SupplierFinance {
 
     // Additional financial details
 //    private LocalDateTime fundsReceivedDate; // Date when funds are received // 到账日期
+
+    public SupplierFinance() {
+        this.paymentsNumReceived = 0;
+        this.totalAmountReceived = Double.valueOf(0);
+        this.otherFees = Double.valueOf(0);
+        this.totalNetAmount = Double.valueOf(0);
+        this.openingBalance = Double.valueOf(0);
+        this.closingBalance = Double.valueOf(0);
+        this.totalTax = Double.valueOf(0);
+        this.totalServiceFee = Double.valueOf(0);
+        this.accountsReceivable = Double.valueOf(0);
+        this.actualReceipts = Double.valueOf(0);
+        this.outstandingAccounts = Double.valueOf(0);
+    }
 
 }

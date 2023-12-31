@@ -5,6 +5,8 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Year;
+import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalAdjusters;
@@ -15,6 +17,48 @@ import java.util.List;
 @Log4j2
 @Service
 public class DatesFormatConvert {
+
+    /**
+     * convert date format for daily, monthly, yearly for financial report
+     * @param start
+     * @return
+     */
+    public List<LocalDateTime> convertFinancialDayFormat(String start) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM/dd");
+        LocalDateTime startDateTime = LocalDate.parse(start, formatter).atStartOfDay();
+        LocalDateTime endDateTime = startDateTime.plusDays(1);
+
+        return Arrays.asList(startDateTime, endDateTime);
+    }
+
+    public List<LocalDateTime> convertFinancialMonthFormat(String month) {
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy/MM");
+        YearMonth yearMonth = YearMonth.parse(month, formatter);
+
+        // First day of the month
+        LocalDate firstDay = yearMonth.atDay(1);
+        LocalDateTime firstDayStart = firstDay.atStartOfDay();
+
+        // Last day of the month
+        LocalDate lastDay = yearMonth.atEndOfMonth();
+        LocalDateTime lastDayEnd = lastDay.atTime(23, 59, 59);
+
+        return Arrays.asList(firstDayStart, lastDayEnd);
+    }
+
+    public List<LocalDateTime> convertFinancialYearFormat(String yearString) {
+        int year = Integer.parseInt(yearString);
+
+        // First day of the first month of the year
+        LocalDate firstDayOfYear = Year.of(year).atDay(1);
+        LocalDateTime firstDayStart = firstDayOfYear.atStartOfDay();
+
+        // Last day of the last month of the year
+        LocalDate lastDayOfYear = Year.of(year).atMonth(12).atEndOfMonth();
+        LocalDateTime lastDayEnd = lastDayOfYear.atTime(23, 59, 59);
+
+        return Arrays.asList(firstDayStart, lastDayEnd);
+    }
 
     public List<LocalDateTime> convertFinancialDateFormat(String start, String rangeType) {
         LocalDateTime startDateTime = null;

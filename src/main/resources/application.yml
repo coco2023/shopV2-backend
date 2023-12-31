@@ -57,7 +57,7 @@ prod-backend: https://v2.quickmall24.com
 prod-frontend: https://www.quickmall24.com
 # host url for local dev
 local-backend: http://localhost:9001
-local-auth-backend: https://478e-66-253-183-231.ngrok-free.app
+local-auth-backend: https://e0ef-66-253-183-231.ngrok-free.app
 local-frontend: http://localhost:3000
 
 paypal:
@@ -66,14 +66,14 @@ paypal:
     secret: EGVLVd0YufvNfz8ID2uN_mGRubofoTt2oZNy7CaYLGx2vHPCryZ5PuIve7LpLXxKQ7tDClvFePHBS7lN
   mode: 'sandbox'
   redirect:
-    uri: ${prod-backend}/api/v1/suppliers/v2/callback # ${local-auth-backend}  # ${prod-backend}
+    uri: ${local-auth-backend}/api/v1/suppliers/v2/callback # ${local-auth-backend}  # ${prod-backend}
   frontend:
     base:
-      uri: ${prod-frontend} # ${local-frontend}  # ${prod-frontend}
+      uri: ${local-frontend} # ${local-frontend}  # ${prod-frontend}
     redirect:
-      uri: ${prod-frontend}/supplier-ims/ # ${local-frontend}  # ${prod-frontend}
+      uri: ${local-frontend}/supplier-ims/ # ${local-frontend}  # ${prod-frontend}
   referral:
-    uri: ${prod-backend}/api/v1/suppliers/refer # ${local-backend} # ${prod-backend}
+    uri: ${local-backend}/api/v1/suppliers/refer # ${local-backend} # ${prod-backend}
 
 #    id: ASWE1Q8AfwFxHoTDbB8tanMwQB8qRxb0i72hdPMD23RGzhNqY2DQoClXqQv8ONJWGPi_cy5ro5y_6tHB
 #    secret: EAxzPdtbxhyDw3mmSCRvcputnBrx5Ko_7a73fhfXNP5IRCDYoFExYJS5Qi--OhBTdEv0h0Cat7T_IZXj

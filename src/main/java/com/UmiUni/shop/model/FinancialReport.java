@@ -1,5 +1,6 @@
 package com.UmiUni.shop.model;
 
+import com.UmiUni.shop.constant.ReportType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -17,7 +18,8 @@ import java.time.LocalDateTime;
 public class FinancialReport {
 
     private Long id;
-    private LocalDate reportDate; // Reporting date, daily
+    private String reportDate; // Reporting date, daily
+    private ReportType reportType; // DAILY, MONTHLY, YEARLY
     private Long supplierId;
 
     // transaction details
