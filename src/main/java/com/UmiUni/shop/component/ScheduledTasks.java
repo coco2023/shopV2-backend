@@ -31,7 +31,7 @@ public class ScheduledTasks {
 //        List<String> allSupplierIds = suppliersFinanceService.getAllSupplierIds();
 
         List<String> allSupplierIds = new ArrayList<>();
-        allSupplierIds.add("1");
+        allSupplierIds.add("3");
 
         // Current date in "yyyy/MM/dd" format
         String currentDateStr = DateTimeFormatter.ofPattern("yyyy/MM/dd").format(LocalDate.now());
@@ -50,7 +50,7 @@ public class ScheduledTasks {
     public void generateMonthlySalesReportAutomatically() {
 //        List<String> allSupplierIds = suppliersFinanceService.getAllSupplierIds();
         List<String> allSupplierIds = new ArrayList<>();
-        allSupplierIds.add("1");
+        allSupplierIds.add("3");
 
         // Get the last day of the current month in "yyyy/MM" format
         YearMonth currentMonth = YearMonth.now();

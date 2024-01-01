@@ -530,7 +530,7 @@ public class SuppliersFinanceServiceImpl implements SuppliersFinanceService {
         FinancialReport financialReport = autoGenerateFinancialReport(salesOrderList, supplierId, supplierFinance.getClosingBalance(), LocalDate.from(startDate));
 
         // find if today's report exit in db  //only save the daily report
-        SupplierFinance supplierFinanceThisDay = supplierFinanceRepository.findBySupplierIdAndReportDate(supplierId, String.valueOf(LocalDate.from(startDate))).get();
+        SupplierFinance supplierFinanceThisDay = supplierFinanceRepository.findBySupplierIdAndReportDate(supplierId, String.valueOf(LocalDate.from(startDate))).orElse(null);
         // save this day's finance report if it is not exit.
         if (supplierFinanceThisDay == null) {
             saveThisDaySupplierFinance(financialReport);
