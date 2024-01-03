@@ -30,6 +30,22 @@ spring:
     port: 5672
     username: guest
     password: guest
+  security:
+    oauth2:
+      client:
+        registration:
+          paypal:
+            client-id: AWhLD4_pmHlrCpHJSSKobJ4nwbwy_e16mcgbtrL_M5DzBaJk9zj84QYazMoy5TB7htSmjry7_ArOE9yU
+            client-secret: EGVLVd0YufvNfz8ID2uN_mGRubofoTt2oZNy7CaYLGx2vHPCryZ5PuIve7LpLXxKQ7tDClvFePHBS7lN
+            authorization-grant-type: authorization_code
+            redirect-uri: ${local-auth-backend}/api/v1/suppliers/v2/callback
+#            scope: openid,email,profile
+        provider:
+          paypal:
+            authorization-uri: https://www.paypal.com/signin/authorize
+            token-uri: https://api.paypal.com/v1/oauth2/token
+            user-info-uri: https://api.paypal.com/v1/identity/oauth2/userinfo
+            user-name-attribute: name
 
 springfox:
   documentation:
@@ -57,7 +73,7 @@ prod-backend: https://v2.quickmall24.com
 prod-frontend: https://www.quickmall24.com
 # host url for local dev
 local-backend: http://localhost:9001
-local-auth-backend: https://73d3-66-253-183-231.ngrok-free.app
+local-auth-backend: https://37a6-66-253-183-231.ngrok-free.app
 local-frontend: http://localhost:3000
 
 paypal:
