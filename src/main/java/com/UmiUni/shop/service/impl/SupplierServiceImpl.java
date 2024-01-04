@@ -59,13 +59,6 @@ public class SupplierServiceImpl implements SupplierService {
         return supplierRepository.save(supplier);
     }
 
-
-    // TODO: registerOrUpdateSupplier
-    private void registerSupplier(Long supplierId) {
-        supplierRepository.findById(supplierId)
-                .orElse(new Supplier());
-    }
-
     public void deleteSupplier(Long id) {
         supplierRepository.deleteById(id);
     }
@@ -81,15 +74,6 @@ public class SupplierServiceImpl implements SupplierService {
         if (supplierPayPalRoot == null) {
             throw new IllegalArgumentException("Supplier not found");
         }
-
-//        // TODO: registerSupplier if not exit
-//        if (supplierId == null){
-//            Supplier supplier = Supplier.builder()
-//                    .supplierName("default Supplier")
-//                    .build();
-//            supplierRepository.save(supplier);
-//            supplierId = supplier.getSupplierId();
-//        }
 
         // update the redirect uri of Default Application [sb-mhmy628874237@business.example.com]
 //        String baseRedirectUri = "https://692a-66-253-183-231.ngrok-free.app/api/v1/suppliers/v2/callback";
@@ -148,10 +132,6 @@ public class SupplierServiceImpl implements SupplierService {
             String accessToken = extractAccessToken(response.getBody());
             log.info("Authorization completed. Access Token for supplier : " +  " " + accessToken);
             updatePaypalAccessToken(supplierId, accessToken);
-
-            // TODO: get&update PayPal user's PayPalInfo
-            getPayPalInfo(accessToken, supplierId);
-
             return extractAccessToken(response.getBody());
         } else {
             throw new RuntimeException("Failed to exchange authorization code");
@@ -177,7 +157,7 @@ public class SupplierServiceImpl implements SupplierService {
 
         try {
             ResponseEntity<PayPalInfo> response = restTemplate.exchange(url, HttpMethod.GET, entity, PayPalInfo.class);
-            log.info("response PayPalInfo: " + response.getBody());
+            log.info("response: " + response.getBody());
 
             // update Supplier Entity to add Paypal info
             updatePayPalNameAndEmail(supplierId, response.getBody());

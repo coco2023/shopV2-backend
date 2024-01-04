@@ -2,7 +2,6 @@ package com.UmiUni.shop.controller;
 
 import com.UmiUni.shop.dto.PaypalConfigurationDto;
 import com.UmiUni.shop.entity.Supplier;
-import com.UmiUni.shop.model.PayPalInfo;
 import com.UmiUni.shop.service.SupplierService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -51,6 +50,7 @@ public class SupplierPayPalAuthController {
 //        supplierService.updatePaypalAccessToken(supplierId, accessToken);
 
         try {
+//            response.sendRedirect("http://localhost:3000/supplier/" + supplierId + "?success=true");
 //            response.sendRedirect("http://localhost:3000/supplier-ims/" + supplierId);
             response.sendRedirect(frontendRedirectUri + supplierId);
 
@@ -81,27 +81,6 @@ public class SupplierPayPalAuthController {
         return ResponseEntity.ok(true);
     }
 
-    /**
-     * using read db to get supplierPayPalInfo instead of sending request to paypal
-     * @param supplierId
-     * @return
-     */
-    @GetMapping("/v2/get-paypal-info/{supplierId}")
-    public ResponseEntity<?> getSupplierPaypalInfoFromDB(@PathVariable Long supplierId) {
-        // Retrieve the access token for the supplier
-        Supplier supplier = supplierService.getSupplier(supplierId);
-        String accessToken = supplier.getPaypalAccessToken();
-        if (accessToken == null) {
-            return ResponseEntity.notFound().build();
-        }
-        PayPalInfo payPalInfo = PayPalInfo.builder()
-                .email(supplier.getPaypalEmail())
-                .name(supplier.getPaypalName())
-                .build();
-        return ResponseEntity.ok(payPalInfo);
-    }
-
-    // sending request to paypal to get supplierPayPalInfo
     // http://localhost:9001/api/v1/suppliers/v2/paypal-info/${supplierId}
     @GetMapping("/v2/paypal-info/{supplierId}")
     public ResponseEntity<?> getSupplierPaypalInfo(@PathVariable Long supplierId) {

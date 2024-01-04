@@ -12,18 +12,18 @@ import java.math.BigDecimal;
 @Builder
 @ToString
 @Table(name = "Suppliers")
-public class Supplier extends User {
+public class Supplier {
 
-//    @Id
-//    @GeneratedValue(strategy = GenerationType.IDENTITY)
-//    private Long supplierId;
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long supplierId;
 
     @Column(nullable = false)
     private String supplierName;
 
     private String contactInfo;
 
-//    @Column(unique = true)
+    @Column(unique = true)
     private String paypalEmail; // PayPal account email
 
     private String paypalName; // PayPal account email
