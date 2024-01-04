@@ -18,7 +18,7 @@ public class Supplier {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long supplierId;
 
-    @Column(nullable = false)
+//    @Column(nullable = false)
     private String supplierName;
 
     private String contactInfo;

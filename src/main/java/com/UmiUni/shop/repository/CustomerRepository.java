@@ -1,12 +1,12 @@
 package com.UmiUni.shop.repository;
 
-import com.UmiUni.shop.entity.Supplier;
+import com.UmiUni.shop.entity.Customer;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.Optional;
 
 @Repository
-public interface SupplierRepository extends JpaRepository<Supplier, Long> {
-    Optional<Supplier> findByPaypalEmail(String email);
+public interface CustomerRepository extends JpaRepository<Customer, Long> {
+    Optional<Customer> findByPaypalEmail(String email);
 }
