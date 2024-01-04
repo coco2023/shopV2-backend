@@ -1,26 +1,43 @@
 package com.UmiUni.shop.config;
 
-import org.springframework.context.annotation.Configuration;
+import com.UmiUni.shop.component.CustomAuthenticationSuccessHandler;
+import com.UmiUni.shop.security.CustomOAuth2UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
+import org.springframework.web.cors.CorsUtils;
 
-@Configuration
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
+
+    @Autowired
+    private CustomOAuth2UserService customOAuth2UserService;
+
+    @Autowired
+    private CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http
+                .httpBasic().disable()
+                .csrf().disable()
+                .cors().and() // Ensure CORS is applied before Spring Security
                 .authorizeRequests()
-//                .antMatchers("/", "/api/v1/suppliers/v2/callback", "/api/v1/suppliers/v2/authorize").permitAll()
+                .anyRequest().permitAll()
+//                    .antMatchers("/", "/api/v1/suppliers/v2/**", "/api/v1/suppliers/**", "/api/v1/suppliers/products/**").permitAll()
+//                    .antMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
+//                .requestMatchers(CorsUtils::isPreFlightRequest).permitAll()
+//
 //                .anyRequest().authenticated()
                 .and()
                 .oauth2Login()
-                .defaultSuccessUrl("/api/v1/suppliers/v2/callback", true)
+                .defaultSuccessUrl("/login/success", true)  // Redirect after successful login
+                .userInfoEndpoint()
+                .userService(customOAuth2UserService)
                 .and()
-                .logout()
-                .logoutSuccessUrl("/")
-                .permitAll();
+                .successHandler(customAuthenticationSuccessHandler);
     }
+
 }

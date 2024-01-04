@@ -82,14 +82,14 @@ public class SupplierServiceImpl implements SupplierService {
             throw new IllegalArgumentException("Supplier not found");
         }
 
-        // TODO: registerSupplier if not exit
-        if (supplierId == null){
-            Supplier supplier = Supplier.builder()
-                    .supplierName("default Supplier")
-                    .build();
-            supplierRepository.save(supplier);
-            supplierId = supplier.getSupplierId();
-        }
+//        // TODO: registerSupplier if not exit
+//        if (supplierId == null){
+//            Supplier supplier = Supplier.builder()
+//                    .supplierName("default Supplier")
+//                    .build();
+//            supplierRepository.save(supplier);
+//            supplierId = supplier.getSupplierId();
+//        }
 
         // update the redirect uri of Default Application [sb-mhmy628874237@business.example.com]
 //        String baseRedirectUri = "https://692a-66-253-183-231.ngrok-free.app/api/v1/suppliers/v2/callback";
