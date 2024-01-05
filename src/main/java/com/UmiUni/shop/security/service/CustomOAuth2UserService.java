@@ -1,5 +1,6 @@
-package com.UmiUni.shop.security;
+package com.UmiUni.shop.security.service;
 
+import com.UmiUni.shop.security.service.UserService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.oauth2.client.userinfo.DefaultOAuth2UserService;

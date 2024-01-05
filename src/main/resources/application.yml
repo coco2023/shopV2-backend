@@ -51,7 +51,7 @@ spring:
 security:
   jwt:
     token:
-      secret-key: Base64EncodedSecretKeyHere
+      secret-key: MUUqkTMQiACw7o84UUjKy8mYT4DtYgjNfvqu/VbyxZw=
       expire-length: 3600000 # 1 hour
 
 springfox:

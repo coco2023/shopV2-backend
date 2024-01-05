@@ -21,6 +21,8 @@ public class Supplier {
 //    @Column(nullable = false)
     private String supplierName;
 
+    private String password;
+
     private String contactInfo;
 
     @Column(unique = true)
@@ -40,5 +42,7 @@ public class Supplier {
     private String paypalRedirectUri;
 
     private BigDecimal balance;
+
+    private String userType;
 
 }
