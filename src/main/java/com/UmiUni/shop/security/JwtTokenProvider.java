@@ -9,6 +9,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.User;
+import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.stereotype.Component;
 
 import javax.annotation.PostConstruct;
@@ -74,8 +75,20 @@ public class JwtTokenProvider {
         }
     }
 
-    public String createToken(Authentication authentication) {
-        String username = authentication.getName();
+    public String createToken(Authentication authentication, Long supplierId) {
+
+        String username = null; // null
+        // Check if the authentication is OAuth2
+        if (authentication instanceof OAuth2AuthenticationToken) {
+            OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
+
+            // Adjust your claims as needed based on the OAuth2 user info
+            username = oauthToken.getPrincipal().getAttribute("email"); // or other identifier
+//            claims.put("supplierId", supplierId); // Adjust if you have the supplier ID
+        } else {
+            username = authentication.getName();
+        }
+        username = authentication.getName();
         log.info("username: " + username);
         // Collecting roles and permissions from authentication authorities
         List<String> roles = authentication.getAuthorities().stream()
@@ -91,6 +104,7 @@ public class JwtTokenProvider {
 
         Claims claims = Jwts.claims().setSubject(username);
         claims.put("roles", roles);
+        claims.put("supplierId", supplierId); // Add supplierId to the claims
 //        claims.put("permissions", permissions);
         log.info("***Clains: " + claims);
         Date now = new Date();
@@ -106,4 +120,9 @@ public class JwtTokenProvider {
         return SecurityConstants.TOKEN_PREFIX + token;
     }
 
+    // Method to extract supplierId from the token
+    public Long getSupplierIdFromToken(String token) {
+        Claims claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody();
+        return claims.get("supplierId", Long.class);
+    }
 }

@@ -19,6 +19,11 @@ public class CorsConfig {
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
+        config.addAllowedOrigin("http://localhost:9001");
+        config.addAllowedOrigin("http://localhost:3000");
+        config.addAllowedOrigin("https://www.sandbox.paypal.com");
+        config.addAllowedOrigin("https://api.sandbox.paypal.com");
+        config.addAllowedOrigin("https://037e-66-253-183-231.ngrok-free.app/");
         config.addAllowedOrigin("https://www.quickmall24.com"); // Replace with the origin of your React app
         config.addAllowedOrigin("https://v2.quickmall24.com"); // Replace with the origin of your React app
         config.addAllowedOriginPattern("*");
