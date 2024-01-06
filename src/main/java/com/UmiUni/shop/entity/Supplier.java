@@ -18,10 +18,8 @@ public class Supplier {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long supplierId;
 
-//    @Column(nullable = false)
+    @Column(nullable = false)
     private String supplierName;
-
-    private String password;
 
     private String contactInfo;
 
@@ -42,7 +40,5 @@ public class Supplier {
     private String paypalRedirectUri;
 
     private BigDecimal balance;
-
-    private String userType;
 
 }

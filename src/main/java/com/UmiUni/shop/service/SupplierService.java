@@ -31,6 +31,4 @@ public interface SupplierService {
     Optional<Object> getPayPalInfo(String accessToken, Long supplierId);
 
     void updateClientIdAndSecret(Long supplierId, PaypalConfigurationDto configuration);
-
-    Supplier getSupplierByName(String username);
 }
