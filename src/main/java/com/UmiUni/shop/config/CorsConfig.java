@@ -26,7 +26,7 @@ public class CorsConfig {
         config.addAllowedOrigin("https://e330-66-253-183-231.ngrok-free.app");
         config.addAllowedOrigin("https://www.quickmall24.com"); // Replace with the origin of your React app
         config.addAllowedOrigin("https://v2.quickmall24.com"); // Replace with the origin of your React app
-//        config.addAllowedOriginPattern("*");
+        config.addAllowedOriginPattern("*");
         config.addAllowedHeader("*");
         config.addAllowedMethod("*");
         config.addAllowedMethod("OPTIONS");
