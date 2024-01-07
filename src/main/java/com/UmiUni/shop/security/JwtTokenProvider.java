@@ -77,6 +77,7 @@ public class JwtTokenProvider {
 
     public String createToken(Authentication authentication, Long supplierId) {
 
+        log.info("this is the createToken auth: " + authentication);
         String username = null; // null
         // Check if the authentication is OAuth2
         if (authentication instanceof OAuth2AuthenticationToken) {
@@ -103,6 +104,9 @@ public class JwtTokenProvider {
 //        log.info("***permissions: " + permissions);
 
         Claims claims = Jwts.claims().setSubject(username);
+//        claims.put("roles", "SUPPLIER"); // role
+//        claims.put("supplierId", supplierId); // Add supplierId to the claims
+
 //        claims.put("roles", "SUPPLIER"); // role
         if (username != null) {
             if (username.endsWith("@business.example.com")) {

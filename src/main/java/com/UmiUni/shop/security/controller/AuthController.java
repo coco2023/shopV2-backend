@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 
+/**
+ * PayPal Oauth
+ */
 @RestController
 @RequestMapping("/auth")
 @Log4j2
@@ -62,15 +65,15 @@ public class AuthController {
         if ("supplier".equals(role)) {
             // Redirect to supplier dashboard
             // Redirect to supplier dashboard
-            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId + "?token=" + token);
-//            response.sendRedirect("http://localhost:3000");
+//            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId + "?token=" + token);
+            response.sendRedirect("http://localhost:3000");
 
 //            return ResponseEntity.ok("Redirecting to supplier dashboard...");
         } else {
             // Redirect to customer dashboard
             // Redirect to supplier dashboard
-            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId + "?token=" + token);
-//            response.sendRedirect("http://localhost:3000");
+//            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId + "?token=" + token);
+            response.sendRedirect("http://localhost:3000");
 
 //            return ResponseEntity.ok("Redirecting to customer dashboard...");
         }

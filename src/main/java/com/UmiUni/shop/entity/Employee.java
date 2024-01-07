@@ -8,26 +8,17 @@ import lombok.ToString;
 import javax.persistence.DiscriminatorValue;
 import javax.persistence.Entity;
 import java.math.BigDecimal;
+import java.time.LocalDateTime;
 
 @Entity
 @NoArgsConstructor
 @AllArgsConstructor
 @Data
 @ToString(callSuper = true)
-@DiscriminatorValue("CUSTOMER")
-public class Customer extends User{
-
-    private String customerName;
-
-    private String contactInfo;
-
-    private String paypalEmail;
-
-    private String paypalName;
-
-    private String paypalAccessToken;
-
-    private BigDecimal balance;
+@DiscriminatorValue("EMPLOYEE")
+public class Employee extends User {
 
     private String userType;
+
+    private LocalDateTime lastLoginTime;
 }

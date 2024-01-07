@@ -1,5 +1,6 @@
 package com.UmiUni.shop.security.controller;
 
+import com.UmiUni.shop.repository.CustomerRepository;
 import com.UmiUni.shop.security.JwtTokenProvider;
 import com.UmiUni.shop.security.dto.RegistrationRequestDTO;
 import com.UmiUni.shop.security.dto.RegistrationResponseDTO;
@@ -14,6 +15,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -41,6 +43,9 @@ public class UserController {
     @Autowired
     private SupplierService supplierService;
 
+    @Autowired
+    private CustomerRepository customerRepository;
+
     // http://localhost:9001/api/auth/register
     @PostMapping("/register")
     public ResponseEntity<Object> registerUser(@RequestBody RegistrationRequestDTO registrationRequestDTO) {
@@ -65,6 +70,7 @@ public class UserController {
                     new UsernamePasswordAuthenticationToken(
                             data.getUsername(),
                             data.getPassword()
+//                            Collections.singleton(new SimpleGrantedAuthority("ROLE_" + data.getRoleName()))
                     )
             );
 
@@ -72,19 +78,42 @@ public class UserController {
             // If authentication was successful, set the security context
             SecurityContextHolder.getContext().setAuthentication(authentication);
 
-            // get supplierId by username
-            Long supplierId = supplierService.getSupplierByName(data.getUsername()).getSupplierId();
-            log.info("supplierId, {}", supplierId);
+            String role = data.getRoleName();
+            String token = null;
+            Map<String, Object> model = new HashMap<>();
+            if (role.equals("SUPPLIER")) {
+                // get supplierId by username
+                Long supplierId = supplierService.getSupplierByName(data.getUsername()).getSupplierId();
+                log.info("supplierId, {}", supplierId);
 
-            // Generate a JWT token with roles and permissions included
-            String token = jwtTokenProvider.createToken(authentication, supplierId);
-            log.info("***token: " + token);
+                // Generate a JWT token with roles and permissions included
+                token = jwtTokenProvider.createToken(authentication, supplierId);
+                log.info("***token: " + token);
+
+                model.put("supplierId", supplierId);
+                model.put("username", data.getUsername());
+                model.put("token", token);
+            } else if (role.equals("CUSTOMER")) {
+                Long customerId = customerRepository.findByName(data.getUsername()).getId();
+                log.info("customerId, {}", customerId);
+
+                token = jwtTokenProvider.createToken(authentication, customerId);
+
+                model.put("customerId", customerId);
+                model.put("username", data.getUsername());
+                model.put("token", token);
+            } else { // TESTER/ADMIN
+
+            }
+//            // get supplierId by username
+//            Long supplierId = supplierService.getSupplierByName(data.getUsername()).getSupplierId();
+//            log.info("supplierId, {}", supplierId);
+//
+//            // Generate a JWT token with roles and permissions included
+//            String token = jwtTokenProvider.createToken(authentication, supplierId);
+//            log.info("***token: " + token);
 
             // Return the token and user information as needed
-            Map<String, Object> model = new HashMap<>();
-            model.put("supplierId", supplierId);
-            model.put("username", data.getUsername());
-            model.put("token", token);
             log.info("***model: " + model);
 
             return ResponseEntity.ok(model);
