@@ -197,6 +197,11 @@ public class SupplierServiceImpl implements SupplierService {
 
     }
 
+    @Override
+    public Supplier getSupplierByName(String username) {
+        return getSupplierByName(username);
+    }
+
     private String extractAccessToken(String responseBody) {
         ObjectMapper objectMapper = new ObjectMapper();
         try {

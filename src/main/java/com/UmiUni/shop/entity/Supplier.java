@@ -1,6 +1,7 @@
 package com.UmiUni.shop.entity;
 
 import lombok.*;
+import org.hibernate.usertype.UserType;
 
 import javax.persistence.*;
 import java.math.BigDecimal;
@@ -20,6 +21,7 @@ public class Supplier {
 
     @Column(nullable = false)
     private String supplierName;
+    private String password;
 
     private String contactInfo;
 
@@ -40,5 +42,7 @@ public class Supplier {
     private String paypalRedirectUri;
 
     private BigDecimal balance;
+
+    private String userType;
 
 }

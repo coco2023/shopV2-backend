@@ -9,6 +9,8 @@ server:
 #  error:
 #    path: /error
 
+local-auth-backend: https://e330-66-253-183-231.ngrok-free.app
+
 spring:
   datasource:
     url: jdbc:mysql://us.umiuni.com:3306/umi_shop
@@ -30,6 +32,30 @@ spring:
     port: 5672
     username: guest
     password: guest
+
+  security:
+    oauth2:
+      client:
+        mode: 'sandbox'
+        registration:
+          paypal:
+            clientId: AYQwg1YezCe92zHxmpD8Y8q6M3_AbaGYpjs--ATI3WZzYBdcupomPY3L5lO91mdnv48iYjD6FQ41_QwE
+            clientSecret: ECbVzUVjhR2Pu_x5PYeXGvmcBnQWK-9sJe1T5D-TlfwJwuXplM666HmJH9A8pvvjkU0UgvftWkSzw23b
+            redirectUri: ${local-auth-backend}/login/oauth2/code/paypal
+            authorizationGrantType: authorization_code
+        #            scope: openid, email, profile
+        provider:
+          paypal:
+            authorizationUri: https://www.sandbox.paypal.com/signin/authorize
+            tokenUri: https://api.sandbox.paypal.com/v1/oauth2/token
+            userInfoUri: https://api.sandbox.paypal.com/v1/identity/oauth2/userinfo
+            userNameAttribute: name
+
+security:
+  jwt:
+    token:
+      secret-key: MUUqkTMQiACw7o84UUjKy8mYT4DtYgjNfvqu/VbyxZw=
+      expire-length: 3600000 # 1 hour
 
 springfox:
   documentation:
@@ -57,7 +83,6 @@ prod-backend: https://v2.quickmall24.com
 prod-frontend: https://www.quickmall24.com
 # host url for local dev
 local-backend: http://localhost:9001
-local-auth-backend: https://73d3-66-253-183-231.ngrok-free.app
 local-frontend: http://localhost:3000
 
 paypal:
@@ -66,12 +91,12 @@ paypal:
     secret: EGVLVd0YufvNfz8ID2uN_mGRubofoTt2oZNy7CaYLGx2vHPCryZ5PuIve7LpLXxKQ7tDClvFePHBS7lN
   mode: 'sandbox'
   redirect:
-    uri: ${prod-backend}/api/v1/suppliers/v2/callback # ${local-auth-backend}  # ${prod-backend}
+    uri: ${local-auth-backend}/api/v1/suppliers/v2/callback # ${local-auth-backend}  # ${prod-backend}
   frontend:
     base:
-      uri: ${prod-frontend} # ${local-frontend}  # ${prod-frontend}
+      uri: ${local-frontend} # ${local-frontend}  # ${prod-frontend}
     redirect:
-      uri: ${prod-frontend}/supplier-ims/ # ${local-frontend}  # ${prod-frontend}
+      uri: ${local-frontend}/supplier-ims/ # ${local-frontend}  # ${prod-frontend}
   referral:
     uri: ${prod-backend}/api/v1/suppliers/refer # ${local-backend} # ${prod-backend}
 
