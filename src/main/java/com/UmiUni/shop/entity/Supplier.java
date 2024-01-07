@@ -41,4 +41,5 @@ public class Supplier {
 
     private BigDecimal balance;
 
+    private String userType;
 }
