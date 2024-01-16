@@ -6,18 +6,27 @@ import com.UmiUni.shop.security.JwtTokenFilter;
 import com.UmiUni.shop.security.JwtTokenProvider;
 import com.UmiUni.shop.security.service.CustomOAuth2UserService;
 import com.UmiUni.shop.security.service.UserService;
+import org.apache.catalina.filters.CorsFilter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
 import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 @EnableWebSecurity
+@EnableWebMvc
+@Configuration
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
@@ -25,6 +34,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Autowired
     private CustomAuthenticationSuccessHandler customAuthenticationSuccessHandler;
+
+    @Autowired
+    private JwtTokenFilter jwtTokenFilter;
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
@@ -51,12 +63,16 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
                 .antMatchers("/api/auth/**").permitAll()
                 .antMatchers("/login/oauth2/code/**").permitAll() // Permit OAuth2 callback
+                .antMatchers("/api/v1/suppliers/finance/**").permitAll()
+                .antMatchers("/api/v1/reconciliation/**").permitAll()
+                .antMatchers("/api/v1/products/**", "/api/v1/productAttributes/**","/api/v1/invoices/**", "/api/v1/brands/**", "/api/v1/categories/**", "/api/v1/suppliers/all").permitAll()
 
 //                .antMatchers("/api/proxy/paypal").permitAll() // Allow unauthenticated access to the proxy
 
                 // Require the SUPPLIER role for supplier-specific endpoints
                 .antMatchers("/api/v1/suppliers/**").hasRole("SUPPLIER")
 
+//                .anyRequest().permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .oauth2Login()
@@ -66,7 +82,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .and()
                 .successHandler(customAuthenticationSuccessHandler)
                 .and()
-                .addFilterBefore(new JwtTokenFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(new JwtTokenFilter(jwtTokenProvider), UsernamePasswordAuthenticationFilter.class); // jwtTokenFilter
     }
 
     @Bean

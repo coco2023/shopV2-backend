@@ -14,8 +14,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 
 /**
  * PayPal Oauth
@@ -53,27 +56,45 @@ public class AuthController {
 
         Supplier supplier = userService.registerOrUpdateSupplier(oAuth2User); // Implement this method as per your requirement
         Long supplierId = supplier.getSupplierId();
-
-        // Implement logic to handle successful login
-        // For example, redirect users based on their roles or attributes
-        // This might involve checking attributes in the oAuth2User
         String role = oAuth2User.getAttribute("role"); // Example attribute
+
         // Create JWT token
         String token = jwtTokenProvider.createToken(authentication, supplierId);
         log.info("token, {}", token);
 
+        // Store the JWT in an HttpOnly cookie
+//        String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8.toString());
+//        Cookie jwtCookie = new Cookie("JWT_TOKEN", token);
+//        jwtCookie.setHttpOnly(true);
+//        jwtCookie.setPath("/"); // Set the path as per your requirement
+//        // Set other cookie properties as needed, like MaxAge, Secure, etc.
+//        response.addCookie(jwtCookie);
+
+//        String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8.toString());
+//        Cookie jwtCookie = new Cookie("token", encodedToken);
+//        response.addCookie(jwtCookie);
+//        log.info("Encoded token: {}", encodedToken);
+
+//        // Set token in HTTP-only Cookie
+//        Cookie jwtCookie = new Cookie("token", token);
+//        jwtCookie.setHttpOnly(true);
+//        jwtCookie.setSecure(true); // Set to true if using HTTPS
+//        jwtCookie.setPath("/");
+//        response.addCookie(jwtCookie);
+
         if ("supplier".equals(role)) {
             // Redirect to supplier dashboard
-            // Redirect to supplier dashboard
-//            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId + "?token=" + token);
-            response.sendRedirect("http://localhost:3000");
+             response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId + "?token=" + token);
+//            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId);
+//            response.sendRedirect("http://localhost:3000");
 
 //            return ResponseEntity.ok("Redirecting to supplier dashboard...");
         } else {
             // Redirect to customer dashboard
             // Redirect to supplier dashboard
-//            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId + "?token=" + token);
-            response.sendRedirect("http://localhost:3000");
+            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId + "?token=" + token);
+//            response.sendRedirect("http://localhost:3000");
+//            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId);
 
 //            return ResponseEntity.ok("Redirecting to customer dashboard...");
         }

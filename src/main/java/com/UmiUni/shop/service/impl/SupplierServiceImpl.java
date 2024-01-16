@@ -131,7 +131,10 @@ public class SupplierServiceImpl implements SupplierService {
             // Extract and update the access token from the response
             String accessToken = extractAccessToken(response.getBody());
             log.info("Authorization completed. Access Token for supplier : " +  " " + accessToken);
+            // update Paypal AccessToken
             updatePaypalAccessToken(supplierId, accessToken);
+            // update supplier's email via accessToken
+            getPayPalInfo(accessToken, supplierId);
             return extractAccessToken(response.getBody());
         } else {
             throw new RuntimeException("Failed to exchange authorization code");

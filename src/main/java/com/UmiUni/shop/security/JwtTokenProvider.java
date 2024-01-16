@@ -69,10 +69,21 @@ public class JwtTokenProvider {
             }
             log.info("***Valid Token!!!***");
             return true;
-        } catch (JwtException | IllegalArgumentException e) {
-            // Here should implement logging and possibly throw an exception depending on the application's needs
-            throw new RuntimeException("Expired or invalid JWT token");   //JwtAuthenticationException
+        }catch (ExpiredJwtException e) {
+            throw new RuntimeException("JWT token is expired");
+        } catch (UnsupportedJwtException e) {
+            throw new RuntimeException("Unsupported JWT token");
+        } catch (MalformedJwtException e) {
+            throw new RuntimeException("Malformed JWT token");
+        } catch (SignatureException e) {
+            throw new RuntimeException("Invalid JWT signature");
+        } catch (IllegalArgumentException e) {
+            throw new RuntimeException("JWT token compact of handler are invalid");
         }
+//        catch (JwtException | IllegalArgumentException e) {
+//            // Here should implement logging and possibly throw an exception depending on the application's needs
+//            throw new RuntimeException("Expired or invalid JWT token");   //JwtAuthenticationException
+//        }
     }
 
     public String createToken(Authentication authentication, Long supplierId) {
@@ -133,7 +144,8 @@ public class JwtTokenProvider {
                 .signWith(SignatureAlgorithm.HS256, secretKey)
                 .compact();
 
-        return SecurityConstants.TOKEN_PREFIX + token;
+//        return SecurityConstants.TOKEN_PREFIX + token;
+        return token;
     }
 
     // Method to extract supplierId from the token

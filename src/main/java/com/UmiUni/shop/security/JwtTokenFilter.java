@@ -1,5 +1,6 @@
 package com.UmiUni.shop.security;
 
+import com.UmiUni.shop.constant.SecurityConstants;
 import com.UmiUni.shop.security.exception.CustomException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.security.core.Authentication;
@@ -9,9 +10,12 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.AccessDeniedException;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -30,6 +34,11 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain chain)
             throws ServletException, IOException {
 
+//        String token = extractJwtFromRequest(request);
+//        log.info("this is the filter token: " + token);
+//        String token = extractJwtTokenFromCookies(request);
+
+        // this method works for saving the token in the header
         String token = resolveToken(request);
         try {
             log.info("***FilterToken: " + token);
@@ -38,16 +47,17 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
                 // Extract supplierId from the token
                 Long tokenSupplierId = jwtTokenProvider.getSupplierIdFromToken(token);
+                log.info("tokenSupplierId, {}", tokenSupplierId);
 
-                // Get supplierId from the request path (if present)
-                log.info("request {}, path: {}, getRequestURI: {} ", request, null, request.getRequestURI());
-                Long pathSupplierId = extractSupplierIdFromPath(request.getRequestURI());
-                log.info("tokenSupplierId: " + tokenSupplierId + "; pathSupplierId: " + pathSupplierId);
-
-                // Check if the supplierId in the token matches the supplierId in the path
-                if (pathSupplierId != null && !pathSupplierId.equals(tokenSupplierId)) {
-                    throw new AccessDeniedException("Access Denied: You do not have permission to access this resource.");
-                }
+//                // Get supplierId from the request path (if present)
+//                log.info("request {}, path: {}, getRequestURI: {} ", request, null, request.getRequestURI());
+//                Long pathSupplierId = extractSupplierIdFromPath(request.getRequestURI());
+//                log.info("tokenSupplierId: " + tokenSupplierId + "; pathSupplierId: " + pathSupplierId);
+//
+//                // Check if the supplierId in the token matches the supplierId in the path
+//                if (pathSupplierId != null && !pathSupplierId.equals(tokenSupplierId)) {
+//                    throw new AccessDeniedException("Access Denied: You do not have permission to access this resource.");
+//                }
 
                 SecurityContextHolder.getContext().setAuthentication(auth);
                 log.info("***auth: " + auth);
@@ -63,11 +73,40 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         chain.doFilter(request, response);
     }
 
+    private String extractJwtTokenFromCookies(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("JWT_TOKEN".equals(cookie.getName())) {
+                    log.info("token in cookies: {}", cookie.getName());
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
+    }
+
+    private String extractJwtFromRequest(HttpServletRequest request) {
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("token".equals(cookie.getName())) {
+                    // URL Decode
+                    String decodedToken = URLDecoder.decode(cookie.getValue(), StandardCharsets.UTF_8);
+                    log.info("success get the cookies! {} , {} ", cookie.getValue(), decodedToken);
+                    return decodedToken; //cookie.getValue();
+                }
+            }
+        }
+        return null;
+    }
+
     private String resolveToken(HttpServletRequest request) {
         log.info("request: " + request);
         String bearerToken = request.getHeader("Authorization");
+        log.info("bearerToken: {} ", bearerToken );
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-//            log.info("@request, {}, {}", request, bearerToken.substring(7));
+            log.info("@request, {}, {}", request, bearerToken.substring(7));
             return bearerToken.substring(7);
         }
         return null;
