@@ -26,7 +26,7 @@ public class SecurityUrlConstants {
             "/api/v1/suppliers/all"
     };
 
-    public static final String[] SUPPLIER_URLS = {
+    public static final String[] SUPPLIER_PUBLIC_URLS = {
             "/api/v1/suppliers/**"
     };
 }

@@ -2,6 +2,7 @@ package com.UmiUni.shop.config;
 
 import com.UmiUni.shop.component.CustomAuthenticationSuccessHandler;
 import com.UmiUni.shop.constant.SecurityConstants;
+import com.UmiUni.shop.constant.SecurityUrlConstants;
 import com.UmiUni.shop.security.JwtTokenFilter;
 import com.UmiUni.shop.security.JwtTokenProvider;
 import com.UmiUni.shop.security.service.CustomOAuth2UserService;
@@ -55,22 +56,11 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .cors().and() // Ensure CORS is applied before Spring Security
 
                 .authorizeRequests()
-                .antMatchers("/home", "/login").permitAll()
-                .antMatchers("/", "/auth/**").permitAll()
-                .antMatchers("/api/v1/suppliers/v2/**", "/api/v1/salesOrders/**", "/api/v1/salesOrderDetails/**", "/api/v1/payments/**", "/login/**").permitAll()
-                .antMatchers(SecurityConstants.SWAGGER_WHITELIST).permitAll()
-                .antMatchers(SecurityConstants.H2_CONSOLE).permitAll()
-                .antMatchers(HttpMethod.GET, "/api/v1/products/**").permitAll()
-                .antMatchers("/api/auth/**").permitAll()
-                .antMatchers("/login/oauth2/code/**").permitAll() // Permit OAuth2 callback
-                .antMatchers("/api/v1/suppliers/finance/**").permitAll()
-                .antMatchers("/api/v1/reconciliation/**").permitAll()
-                .antMatchers("/api/v1/products/**", "/api/v1/productAttributes/**","/api/v1/invoices/**", "/api/v1/brands/**", "/api/v1/categories/**", "/api/v1/suppliers/all").permitAll()
-
+                .antMatchers(HttpMethod.GET, SecurityUrlConstants.READ_ONLY_URLS).permitAll()
+                .antMatchers(SecurityUrlConstants.OTHER_PUBLIC_URLS).permitAll()
 //                .antMatchers("/api/proxy/paypal").permitAll() // Allow unauthenticated access to the proxy
-
                 // Require the SUPPLIER role for supplier-specific endpoints
-                .antMatchers("/api/v1/suppliers/**").hasRole("SUPPLIER")
+                .antMatchers(SecurityUrlConstants.SUPPLIER_PUBLIC_URLS).hasRole("SUPPLIER")
 
 //                .anyRequest().permitAll()
                 .anyRequest().authenticated()
@@ -99,18 +89,3 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     }
 
 }
-
-//                .defaultSuccessUrl("/loginSuccess")
-//                .failureUrl("/loginFailure");
-
-
-//        http
-//                .csrf().disable()
-//                .authorizeRequests()
-//                .antMatchers("/", "/auth/**").permitAll()
-//                .anyRequest().authenticated()
-//                .and()
-//                .oauth2Login()
-//                .loginPage("/login")
-//                .defaultSuccessUrl("/auth/login/success", true)
-//                .failureUrl("/auth/login/failure");

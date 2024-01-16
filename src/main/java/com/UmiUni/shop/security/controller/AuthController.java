@@ -85,18 +85,9 @@ public class AuthController {
         if ("supplier".equals(role)) {
             // Redirect to supplier dashboard
              response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId + "?token=" + token);
-//            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId);
-//            response.sendRedirect("http://localhost:3000");
-
-//            return ResponseEntity.ok("Redirecting to supplier dashboard...");
         } else {
-            // Redirect to customer dashboard
             // Redirect to supplier dashboard
             response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId + "?token=" + token);
-//            response.sendRedirect("http://localhost:3000");
-//            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId);
-
-//            return ResponseEntity.ok("Redirecting to customer dashboard...");
         }
     }
 
