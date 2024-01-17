@@ -61,33 +61,19 @@ public class AuthController {
         // Create JWT token
         String token = jwtTokenProvider.createToken(authentication, supplierId);
         log.info("token, {}", token);
-
-        // Store the JWT in an HttpOnly cookie
-//        String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8.toString());
-//        Cookie jwtCookie = new Cookie("JWT_TOKEN", token);
-//        jwtCookie.setHttpOnly(true);
-//        jwtCookie.setPath("/"); // Set the path as per your requirement
-//        // Set other cookie properties as needed, like MaxAge, Secure, etc.
-//        response.addCookie(jwtCookie);
-
-//        String encodedToken = URLEncoder.encode(token, StandardCharsets.UTF_8.toString());
-//        Cookie jwtCookie = new Cookie("token", encodedToken);
-//        response.addCookie(jwtCookie);
-//        log.info("Encoded token: {}", encodedToken);
-
-//        // Set token in HTTP-only Cookie
-//        Cookie jwtCookie = new Cookie("token", token);
-//        jwtCookie.setHttpOnly(true);
-//        jwtCookie.setSecure(true); // Set to true if using HTTPS
-//        jwtCookie.setPath("/");
-//        response.addCookie(jwtCookie);
+//        Cookie cookie = new Cookie("authToken", token);
+//        log.info("cookie: {}", cookie);
+//        response.addCookie(cookie);
 
         if ("supplier".equals(role)) {
             // Redirect to supplier dashboard
-             response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId + "?token=" + token);
+//             response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId + "?token=" + token);
+//            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId);
+            response.sendRedirect("http://localhost:3000/supplier/profile" + "?token=" + token); // middlepage profile
         } else {
-            // Redirect to supplier dashboard
-            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId + "?token=" + token);
+//            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId + "?token=" + token);
+//            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId);
+            response.sendRedirect("http://localhost:3000/supplier/profile" + "?token=" + token);
         }
     }
 

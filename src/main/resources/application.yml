@@ -9,7 +9,7 @@ server:
 #  error:
 #    path: /error
 
-local-auth-backend: https://1ecb-66-253-183-231.ngrok-free.app
+local-auth-backend: https://0d40-66-253-183-231.ngrok-free.app
 
 spring:
   datasource:
@@ -86,8 +86,8 @@ local-frontend: http://localhost:3000
 
 paypal:
   client:
-    id: AWhLD4_pmHlrCpHJSSKobJ4nwbwy_e16mcgbtrL_M5DzBaJk9zj84QYazMoy5TB7htSmjry7_ArOE9yU
-    secret: EGVLVd0YufvNfz8ID2uN_mGRubofoTt2oZNy7CaYLGx2vHPCryZ5PuIve7LpLXxKQ7tDClvFePHBS7lN
+    id: AYQwg1YezCe92zHxmpD8Y8q6M3_AbaGYpjs--ATI3WZzYBdcupomPY3L5lO91mdnv48iYjD6FQ41_QwE #AWhLD4_pmHlrCpHJSSKobJ4nwbwy_e16mcgbtrL_M5DzBaJk9zj84QYazMoy5TB7htSmjry7_ArOE9yU
+    secret: ECbVzUVjhR2Pu_x5PYeXGvmcBnQWK-9sJe1T5D-TlfwJwuXplM666HmJH9A8pvvjkU0UgvftWkSzw23b #EGVLVd0YufvNfz8ID2uN_mGRubofoTt2oZNy7CaYLGx2vHPCryZ5PuIve7LpLXxKQ7tDClvFePHBS7lN
   mode: 'sandbox'
   redirect:
     uri: ${local-auth-backend}/api/v1/suppliers/v2/callback # ${local-auth-backend}  # ${prod-backend}
