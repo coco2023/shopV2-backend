@@ -19,12 +19,23 @@ public class SecurityUrlConstants {
             "/api/v1/suppliers/finance/**",
             "/api/v1/reconciliation/**",
             "/login/**",
-            String.valueOf(SecurityConstants.SWAGGER_WHITELIST),
-            SecurityConstants.H2_CONSOLE,
             "/api/auth/**",
             "/login/oauth2/code/**",
             "/api/v1/suppliers/all"
     };
+
+    public static final String[] SWAGGER_WHITELIST = {
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/swagger-resources/**",
+            "/api-docs/**",
+            "/v2/api-docs/**",
+            "/v3/api-docs/**",
+            "/webjars/**",
+            "/doc.html",
+    };
+
+    public static final String H2_CONSOLE = "/h2-console/**";
 
     public static final String[] SUPPLIER_PUBLIC_URLS = {
             "/api/v1/suppliers/**"

@@ -2,6 +2,7 @@ package com.UmiUni.shop.controller;
 
 import com.UmiUni.shop.dto.PaypalConfigurationDto;
 import com.UmiUni.shop.entity.Supplier;
+import com.UmiUni.shop.security.JwtTokenProvider;
 import com.UmiUni.shop.service.SupplierService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +21,9 @@ public class SupplierController {
     @Autowired
     private SupplierService supplierService;
 
+    @Autowired
+    private ControllerUtli controllerUtli;
+
     @PostMapping
     public ResponseEntity<Supplier> createSupplier(@RequestBody Supplier supplier) {
         return ResponseEntity.ok(supplierService.createSupplier(supplier));
@@ -28,6 +32,14 @@ public class SupplierController {
     @GetMapping("/{id}")
     public ResponseEntity<Supplier> getSupplierById(@PathVariable Long id) {
         return ResponseEntity.ok(supplierService.getSupplier(id));
+    }
+    @GetMapping()
+    public ResponseEntity<Supplier> getSupplierByIdByToken(@RequestHeader("Authorization") String authorizationHeader) {
+
+        // extract the token from headers
+        Long supplierId = controllerUtli.getSupplierIdByToken(authorizationHeader);
+
+        return ResponseEntity.ok(supplierService.getSupplier(supplierId));
     }
 
     @GetMapping("/all")

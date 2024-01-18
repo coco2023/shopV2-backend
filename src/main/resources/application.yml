@@ -9,7 +9,7 @@ server:
 #  error:
 #    path: /error
 
-local-auth-backend: https://0d40-66-253-183-231.ngrok-free.app
+local-auth-backend: https://ea72-66-253-183-231.ngrok-free.app
 
 spring:
   datasource:

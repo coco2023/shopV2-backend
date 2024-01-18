@@ -25,12 +25,23 @@ public class SupplierPayPalAuthController {
     @Value("${paypal.frontend.redirect.uri}") // paypal.frontend.redirect.uri // paypal.frontend.redirect.test
     private String frontendRedirectUri;
 
+    @Autowired
+    private ControllerUtli controllerUtli;
+
     /**
      * Oauth of paypal to the platform
      */
     // http://localhost:9001/api/v1/suppliers/v2/authorize/1
     @GetMapping("/v2/authorize/{supplierId}")
     public ResponseEntity<?> initiateAuthorization(@PathVariable Long supplierId, HttpServletResponse response) throws IOException {
+        String redirectUrl = supplierService.initiatePaypalAuthorization(supplierId);
+        response.sendRedirect(redirectUrl);
+        log.info("response: " + response);
+        return ResponseEntity.status(HttpStatus.SEE_OTHER).body("Redirecting to PayPal...");
+    }
+    @GetMapping("/v2/authorize")
+    public ResponseEntity<?> initiateAuthorizationByToken(@RequestHeader("Authorization") String authorizationHeader, HttpServletResponse response) throws IOException {
+        Long supplierId = controllerUtli.getSupplierIdByToken(authorizationHeader);
         String redirectUrl = supplierService.initiatePaypalAuthorization(supplierId);
         response.sendRedirect(redirectUrl);
         log.info("response: " + response);
@@ -108,6 +119,14 @@ public class SupplierPayPalAuthController {
     @PostMapping("/v2/suppliers/configure-paypal/{supplierId}")
     public ResponseEntity<?> configurePaypal(@PathVariable Long supplierId,
                                              @RequestBody PaypalConfigurationDto configuration) {
+        supplierService.updateClientIdAndSecret(supplierId, configuration);
+
+        return ResponseEntity.ok("PayPal configuration updated successfully");
+    }
+    @PostMapping("/v2/suppliers/configure-paypal")
+    public ResponseEntity<?> configurePaypalByToken(@RequestHeader("Authorization") String authorizationHeader,
+                                             @RequestBody PaypalConfigurationDto configuration) {
+        Long supplierId = controllerUtli.getSupplierIdByToken(authorizationHeader);
         supplierService.updateClientIdAndSecret(supplierId, configuration);
 
         return ResponseEntity.ok("PayPal configuration updated successfully");

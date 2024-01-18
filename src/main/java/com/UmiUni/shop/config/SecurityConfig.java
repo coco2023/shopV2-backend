@@ -58,6 +58,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .authorizeRequests()
                 .antMatchers(HttpMethod.GET, SecurityUrlConstants.READ_ONLY_URLS).permitAll()
                 .antMatchers(SecurityUrlConstants.OTHER_PUBLIC_URLS).permitAll()
+                .antMatchers(SecurityUrlConstants.SWAGGER_WHITELIST).permitAll()
+                .antMatchers(SecurityUrlConstants.H2_CONSOLE).permitAll()
+
 //                .antMatchers("/api/proxy/paypal").permitAll() // Allow unauthenticated access to the proxy
                 // Require the SUPPLIER role for supplier-specific endpoints
                 .antMatchers(SecurityUrlConstants.SUPPLIER_PUBLIC_URLS).hasRole("SUPPLIER")

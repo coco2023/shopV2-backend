@@ -17,6 +17,9 @@ public class ProductAttributeController {
     @Autowired
     private ProductAttributeService productAttributeService;
 
+    @Autowired
+    private ControllerUtli controllerUtli;
+
     @PostMapping
     public ResponseEntity<ProductAttribute> createProductAttribute(@RequestBody ProductAttribute productAttribute) {
         return ResponseEntity.ok(productAttributeService.createProductAttribute(productAttribute));
@@ -42,6 +45,8 @@ public class ProductAttributeController {
         productAttributeService.deleteProductAttribute(id);
         return ResponseEntity.ok().build();
     }
+
+    // get product attributes by product Id
     @GetMapping("/{productId}/attributes")
     public ResponseEntity<List<ProductAttribute>> getProductAttributesByProductId(@PathVariable Long productId) {
         List<ProductAttribute> productAttributes = productAttributeService.getProductAttributesByProductId(productId);
