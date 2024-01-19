@@ -1,10 +1,12 @@
 package com.UmiUni.shop.service.impl;
 
+import com.UmiUni.shop.constant.OrderStatus;
 import com.UmiUni.shop.constant.PaymentStatus;
 import com.UmiUni.shop.entity.Payment;
 import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.model.PaymentResponse;
 import com.UmiUni.shop.repository.PaymentRepository;
+import com.UmiUni.shop.repository.SalesOrderRepository;
 import com.UmiUni.shop.service.StripeService;
 import com.stripe.Stripe;
 import com.stripe.model.Charge;
@@ -27,6 +29,9 @@ public class StripeServiceImpl implements StripeService {
 
     @Autowired
     private PaymentRepository paymentRepository;
+
+    @Autowired
+    private SalesOrderRepository salesOrderRepository;
 
     @Override
     public PaymentResponse createCharge(SalesOrder salesOrder, String token) {
@@ -64,6 +69,12 @@ public class StripeServiceImpl implements StripeService {
             payment.setPaymentMethodDetails(charge.getPaymentMethodDetails().getType());
             payment.setAmount(salesOrder.getTotalAmount());
             payment.setReceiptUrl(charge.getReceiptUrl()); // Set the receipt URL
+
+            // update SalesOrderStatus
+            SalesOrder salesOrderUpdate = salesOrderRepository.getSalesOrderBySalesOrderSn(salesOrder.getSalesOrderSn()).get();
+            salesOrderUpdate.setOrderStatus(OrderStatus.PROCESSING);
+            salesOrderUpdate.setLastUpdated(LocalDateTime.now());
+            salesOrderRepository.save(salesOrderUpdate);
 
             payment.setErrorMessage(charge.getFailureMessage()); // In case of failure
             paymentRepository.save(payment);
