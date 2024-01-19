@@ -2,6 +2,7 @@ package com.UmiUni.shop.controller;
 
 import com.UmiUni.shop.entity.Product;
 import com.UmiUni.shop.model.ProductWithAttributes;
+import com.UmiUni.shop.security.JwtTokenProvider;
 import com.UmiUni.shop.service.SupplierProductService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -16,9 +17,17 @@ public class SupplierProductController {
     @Autowired
     private SupplierProductService supplierProductService;
 
+    @Autowired
+    private ControllerUtli controllerUtli;
+
     // Create a product for a specific supplier
     @PostMapping("/{supplierId}/product")
     public ResponseEntity<Product> createProduct(@PathVariable Long supplierId, @RequestBody Product product) {
+        return ResponseEntity.ok(supplierProductService.createProduct(supplierId, product));
+    }
+    @PostMapping("/product")
+    public ResponseEntity<Product> createProductByToken(@RequestHeader("Authorization") String authorizationHeader, @RequestBody Product product) {
+        Long supplierId = controllerUtli.getSupplierIdByToken(authorizationHeader);
         return ResponseEntity.ok(supplierProductService.createProduct(supplierId, product));
     }
 
@@ -27,10 +36,21 @@ public class SupplierProductController {
     public ResponseEntity<Product> getProductByIdAndSupplier(@PathVariable Long supplierId, @PathVariable Long id) {
         return ResponseEntity.ok(supplierProductService.getProductByIdAndSupplier(id, supplierId));
     }
+    @GetMapping("/product/{id}")
+    public ResponseEntity<Product> getProductByIdAndSupplierToken(@RequestHeader("Authorization") String authorizationHeader, @PathVariable Long id) {
+        Long supplierId = controllerUtli.getSupplierIdByToken(authorizationHeader);
+        return ResponseEntity.ok(supplierProductService.getProductByIdAndSupplier(id, supplierId));
+    }
 
     // Get all products for a specific supplier
     @GetMapping("/{supplierId}/products/all")
     public ResponseEntity<List<Product>> getAllProductsBySupplier(@PathVariable Long supplierId) {
+        return ResponseEntity.ok(supplierProductService.getAllProductsBySupplier(supplierId));
+    }
+    @GetMapping("/all")
+    public ResponseEntity<List<Product>> getAllProductsBySupplierByToken(@RequestHeader("Authorization") String authorizationHeader) {
+        // extract the token from headers
+        Long supplierId = controllerUtli.getSupplierIdByToken(authorizationHeader);
         return ResponseEntity.ok(supplierProductService.getAllProductsBySupplier(supplierId));
     }
 
@@ -39,10 +59,21 @@ public class SupplierProductController {
     public ResponseEntity<Product> updateProductForSupplier(@PathVariable Long supplierId, @PathVariable Long id, @RequestBody Product productDetails) {
         return ResponseEntity.ok(supplierProductService.updateProductForSupplier(id, supplierId, productDetails));
     }
+    @PutMapping("/product/{id}")
+    public ResponseEntity<Product> updateProductForSupplierByToken(@RequestHeader("Authorization") String authorizationHeader, @PathVariable Long id, @RequestBody Product productDetails) {
+        Long supplierId = controllerUtli.getSupplierIdByToken(authorizationHeader);
+        return ResponseEntity.ok(supplierProductService.updateProductForSupplier(id, supplierId, productDetails));
+    }
 
     // Delete a specific product for a given supplier
     @DeleteMapping("/{supplierId}/product/{id}")
     public ResponseEntity<Void> deleteProductForSupplier(@PathVariable Long supplierId, @PathVariable Long id) {
+        supplierProductService.deleteProductForSupplier(id, supplierId);
+        return ResponseEntity.ok().build();
+    }
+    @DeleteMapping("/product/{id}")
+    public ResponseEntity<Void> deleteProductForSupplierByToken(@RequestHeader("Authorization") String authorizationHeader, @PathVariable Long id) {
+        Long supplierId = controllerUtli.getSupplierIdByToken(authorizationHeader);
         supplierProductService.deleteProductForSupplier(id, supplierId);
         return ResponseEntity.ok().build();
     }

@@ -1,4 +1,4 @@
-# QuickMall-shop-backend
+# Umi-shop-backend
 1. PayPal: https://developer.paypal.com/braintree/docs/guides/ec-braintree-sdk/server-side/java
 2. https://developer.paypal.com/docs/api/partner-referrals/v2/
 3. https://chat.openai.com/share/1d431841-65cc-4937-98d3-2540b637d1ff [Payment-RollBack realted]
@@ -10,6 +10,9 @@
 create payment Log_ERROR_DB to save every error/interrupts occur during payment process.
 
 ![payment Log_ERROR_DB.png](doc/img/payment_ERROR_Log_database.png)
+
+# Customer, Supplier 在加了身份验证 改了代码以后没有办法登录（用户名密码都没有问题）
+因为password Encoder在JWTProvide里面需要处理各种用户密码登录操作的password；如果把Password Encoder和其他函数放在了JWTFilter或其他地方就会报错
 
 # add TransactionTemplate to payment process for payment rollback
  If you are facing difficulties using `TransactionSynchronizationManager` and it's not resolving the `getCurrentTransactionStatus` method, here's an alternative approach to handle transaction rollback programmatically:
