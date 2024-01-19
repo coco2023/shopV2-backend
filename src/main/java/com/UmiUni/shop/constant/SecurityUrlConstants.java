@@ -1,7 +1,7 @@
 package com.UmiUni.shop.constant;
 
 public class SecurityUrlConstants {
-    public static final String[] READ_ONLY_URLS = {
+    public static final String[] PUBLIC_READ_URLS = {
             "/api/v1/products/**",
             "/api/v1/productAttributes/**",
             "/api/v1/invoices/**",
@@ -10,18 +10,30 @@ public class SecurityUrlConstants {
             "/api/v1/salesOrders/**",
             "/api/v1/salesOrderDetails/**",
             "/api/v1/payments/**",
+            "/api/v1/payments/paypal/**",
+            "/api/v1/payments/stripe/**",
     };
 
-    public static final String[] OTHER_PUBLIC_URLS = {
+    public static final String[] PUBLIC_CREATE_URLS = {
+            "/api/v1/payments/paypal/**",
+            "/api/v1/payments/stripe/**",
+            "/api/v1/salesOrders/**",
+            "/api/v1/salesOrderDetails/**",
+    };
+
+    public static final String[] PUBLIC_URLS = {
             "/home", "/login",
-            "/", "/auth/**",
+            "/",
             "/api/v1/suppliers/v2/**",
             "/api/v1/suppliers/finance/**",
             "/api/v1/reconciliation/**",
             "/login/**",
+            "/auth/**",
             "/api/auth/**",
+            "/api/auth/login",
+            "/api/auth/register",
             "/login/oauth2/code/**",
-            "/api/v1/suppliers/all"
+            "/api/v1/suppliers/all",
     };
 
     public static final String[] SWAGGER_WHITELIST = {

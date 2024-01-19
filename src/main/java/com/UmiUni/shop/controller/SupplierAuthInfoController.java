@@ -27,7 +27,7 @@ public class SupplierAuthInfoController {
     public ResponseEntity<Supplier> getSupplierByToken(@RequestHeader("Authorization") String authorizationHeader) {
         try {
             String token = extractTokenFromHeader(authorizationHeader);
-            Long supplierId = jwtTokenProvider.getSupplierIdFromToken(token);
+            Long supplierId = jwtTokenProvider.getIdByRoleFromToken(token);
 
             Supplier supplier = supplierService.getSupplier(supplierId);
             return ResponseEntity.ok(supplier);

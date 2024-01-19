@@ -1,12 +1,15 @@
 package com.UmiUni.shop.security.controller;
 
+import com.UmiUni.shop.constant.UserType;
 import com.UmiUni.shop.entity.Supplier;
+import com.UmiUni.shop.security.JwtTokenFilter;
 import com.UmiUni.shop.security.JwtTokenProvider;
 import com.UmiUni.shop.security.service.UserService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.client.authentication.OAuth2AuthenticationToken;
 import org.springframework.security.oauth2.core.user.OAuth2User;
@@ -56,24 +59,26 @@ public class AuthController {
 
         Supplier supplier = userService.registerOrUpdateSupplier(oAuth2User); // Implement this method as per your requirement
         Long supplierId = supplier.getSupplierId();
-        String role = oAuth2User.getAttribute("role"); // Example attribute
+//        String role = oAuth2User.getAttribute("role");
 
         // Create JWT token
-        String token = jwtTokenProvider.createToken(authentication, supplierId);
-        log.info("token, {}", token);
+        String token = jwtTokenProvider.createToken(authentication, supplierId, null); // userType here is for password login
+        String role = jwtTokenProvider.getRoleFromToken(token);
+        Authentication authRes = jwtTokenProvider.getAuthentication(token);
+        log.info("role: {}, token: {}, auth: {}", role, token, authRes);
 //        Cookie cookie = new Cookie("authToken", token);
 //        log.info("cookie: {}", cookie);
 //        response.addCookie(cookie);
 
-        if ("supplier".equals(role)) {
+        if (UserType.SUPPLIER.name().equals(role)) {
             // Redirect to supplier dashboard
 //             response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId + "?token=" + token);
 //            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId);
             response.sendRedirect("http://localhost:3000/supplier/profile" + "?token=" + token); // middlepage profile
-        } else {
+        } else if (UserType.CUSTOMER.name().equals(role)){
 //            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId + "?token=" + token);
 //            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId);
-            response.sendRedirect("http://localhost:3000/supplier/profile" + "?token=" + token);
+            response.sendRedirect("http://localhost:3000");
         }
     }
 

@@ -1,5 +1,7 @@
 package com.UmiUni.shop.security.controller;
 
+import com.UmiUni.shop.constant.UserType;
+import com.UmiUni.shop.entity.Customer;
 import com.UmiUni.shop.repository.CustomerRepository;
 import com.UmiUni.shop.security.JwtTokenProvider;
 import com.UmiUni.shop.security.dto.RegistrationRequestDTO;
@@ -66,11 +68,11 @@ public class UserController {
     public ResponseEntity<?> login(@RequestBody AuthRequest data) {
         try {
             // Authenticate the user
+            log.info("AuthRequest {}", data);
             Authentication authentication = authenticationManager.authenticate(
                     new UsernamePasswordAuthenticationToken(
                             data.getUsername(),
                             data.getPassword()
-//                            Collections.singleton(new SimpleGrantedAuthority("ROLE_" + data.getRoleName()))
                     )
             );
 
@@ -87,17 +89,18 @@ public class UserController {
                 log.info("supplierId, {}", supplierId);
 
                 // Generate a JWT token with roles and permissions included
-                token = jwtTokenProvider.createToken(authentication, supplierId);
+                token = jwtTokenProvider.createToken(authentication, supplierId, UserType.SUPPLIER.name());
                 log.info("***token: " + token);
 
                 model.put("supplierId", supplierId);
                 model.put("username", data.getUsername());
                 model.put("token", token);
+
             } else if (role.equals("CUSTOMER")) {
                 Long customerId = customerRepository.findByName(data.getUsername()).getId();
                 log.info("customerId, {}", customerId);
 
-                token = jwtTokenProvider.createToken(authentication, customerId);
+                token = jwtTokenProvider.createToken(authentication, customerId, UserType.CUSTOMER.name());
 
                 model.put("customerId", customerId);
                 model.put("username", data.getUsername());
@@ -115,7 +118,6 @@ public class UserController {
 
             // Return the token and user information as needed
             log.info("***model: " + model);
-
             return ResponseEntity.ok(model);
 
         } catch (AuthenticationException e) {
