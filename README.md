@@ -1,4 +1,4 @@
-# QuickMall-shop-backend
+# Umi-shop-backend
 1. PayPal: https://developer.paypal.com/braintree/docs/guides/ec-braintree-sdk/server-side/java
 2. https://developer.paypal.com/docs/api/partner-referrals/v2/
 3. https://chat.openai.com/share/1d431841-65cc-4937-98d3-2540b637d1ff [Payment-RollBack realted]

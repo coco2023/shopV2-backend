@@ -7,6 +7,7 @@ import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.model.PaymentResponse;
 import com.UmiUni.shop.repository.PaymentRepository;
 import com.UmiUni.shop.repository.SalesOrderRepository;
+import com.UmiUni.shop.service.PaymentErrorHandlingService;
 import com.UmiUni.shop.service.StripeService;
 import com.stripe.Stripe;
 import com.stripe.model.Charge;
@@ -14,6 +15,8 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -33,9 +36,14 @@ public class StripeServiceImpl implements StripeService {
     @Autowired
     private SalesOrderRepository salesOrderRepository;
 
+    @Autowired
+    private PaymentErrorHandlingService paymentErrorHandlingService;
+
     @Override
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
     public PaymentResponse createCharge(SalesOrder salesOrder, String token) {
 
+        Payment payment = null;
         try{
 
             Stripe.apiKey = apiKey;
@@ -58,7 +66,7 @@ public class StripeServiceImpl implements StripeService {
             Charge charge = Charge.create(chargeParams);
 
             // Save or update payment details in the database
-            Payment payment = new Payment();
+            payment = new Payment();
             payment.setTransactionId(charge.getId());
             payment.setSalesOrderSn(salesOrder.getSalesOrderSn());
             payment.setCurrency("USD");
@@ -83,6 +91,7 @@ public class StripeServiceImpl implements StripeService {
 
         } catch (Exception e) {
             e.printStackTrace();
+            paymentErrorHandlingService.handleGenericError(e, payment.getTransactionId(), salesOrder.getSalesOrderSn());
             return new PaymentResponse("failed", null, null, e.getMessage(), null);
         }
     }
