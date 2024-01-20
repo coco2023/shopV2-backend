@@ -7,6 +7,7 @@ import com.UmiUni.shop.security.JwtTokenProvider;
 import com.UmiUni.shop.security.service.UserService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.core.Authentication;
@@ -30,6 +31,9 @@ import java.nio.charset.StandardCharsets;
 @RequestMapping("/auth")
 @Log4j2
 public class AuthController {
+
+    @Value("${paypal.login-success-redirect.uri}")
+    private String loginSuccessFrontendHost;
 
     @Autowired
     private UserService userService;
@@ -74,11 +78,11 @@ public class AuthController {
             // Redirect to supplier dashboard
 //             response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId + "?token=" + token);
 //            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId);
-            response.sendRedirect("http://localhost:3000/supplier/profile" + "?token=" + token); // middlepage profile
+            response.sendRedirect(loginSuccessFrontendHost + "/supplier/profile" + "?token=" + token); // middlepage profile
         } else if (UserType.CUSTOMER.name().equals(role)){
 //            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId + "?token=" + token);
 //            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId);
-            response.sendRedirect("http://localhost:3000");
+            response.sendRedirect(loginSuccessFrontendHost);
         }
     }
 

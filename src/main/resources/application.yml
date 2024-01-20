@@ -98,6 +98,8 @@ paypal:
       uri: ${prod-frontend}/supplier-ims/ # ${local-frontend}  # ${prod-frontend}
   referral:
     uri: ${prod-backend}/api/v1/suppliers/refer # ${local-backend} # ${prod-backend}
+  login-success-redirect:
+    uri: ${prod-frontend}  # local-frontend
 
 #    id: ASWE1Q8AfwFxHoTDbB8tanMwQB8qRxb0i72hdPMD23RGzhNqY2DQoClXqQv8ONJWGPi_cy5ro5y_6tHB
 #    secret: EAxzPdtbxhyDw3mmSCRvcputnBrx5Ko_7a73fhfXNP5IRCDYoFExYJS5Qi--OhBTdEv0h0Cat7T_IZXj
