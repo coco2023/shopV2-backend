@@ -82,7 +82,7 @@ public class AuthController {
         } else if (UserType.CUSTOMER.name().equals(role)){
 //            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId + "?token=" + token);
 //            response.sendRedirect("http://localhost:3000/supplier/profile/" + supplierId);
-            response.sendRedirect(loginSuccessFrontendHost);
+            response.sendRedirect(loginSuccessFrontendHost + "/customer/main"  + "?token=" + token);
         }
     }
 

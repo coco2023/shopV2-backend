@@ -31,4 +31,7 @@ public interface SalesOrderRepository extends JpaRepository<SalesOrder, Long> {
     // financial report
     List<SalesOrder> findBySupplierIdAndOrderDateBetweenAndOrderStatus(Long supplierId, LocalDateTime startDate, LocalDateTime endDate, OrderStatus orderStatus);
 
+    List<SalesOrder> findAllByCustomerId(Long customerId);
+
+    Optional<SalesOrder> findByCustomerIdAndSalesOrderSn(Long customerId, String salesOrderSn);
 }

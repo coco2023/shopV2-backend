@@ -19,7 +19,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
-// TODO: can use the same token logging to other's account
 @EnableWebSecurity
 @EnableWebMvc
 @Configuration
@@ -55,9 +54,10 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.POST, SecurityUrlConstants.PUBLIC_CREATE_URLS).permitAll()
 
 //                .antMatchers("/api/proxy/paypal").permitAll() // Allow unauthenticated access to the proxy
-                // Require the SUPPLIER role for supplier-specific endpoints
+
                 .antMatchers(SecurityUrlConstants.SUPPLIER_PUBLIC_URLS).hasRole("SUPPLIER")
                 .antMatchers(SecurityUrlConstants.CUSTOMER_PUBLIC_URLS).hasRole("CUSTOMER")
+                .antMatchers(SecurityUrlConstants.ADMIN_PUBLIC_URLS).hasAnyRole("ADMIN", "TESTER")
 
 //                .anyRequest().permitAll()
                 .anyRequest().authenticated()

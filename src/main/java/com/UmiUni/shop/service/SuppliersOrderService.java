@@ -14,4 +14,8 @@ public interface SuppliersOrderService {
     SalesOrder updateSuppliersSalesOrder(Long supplierId, Long id, SalesOrder salesOrderDetails);
 
     void deleteSuppliersSalesOrder(Long supplierId, Long id);
+
+    List<SalesOrder> getCustomersAllSalesOrders(Long customerId);
+
+    SalesOrder getCustomersSalesOrderBySalesOrderSn(Long customerId, String salesOrderSn);
 }

@@ -15,6 +15,11 @@ public class CustomerController {
     @Autowired
     private CustomerService customerService;
 
+    @PostMapping()
+    public ResponseEntity<Customer> createCustomer(@RequestBody Customer customer) {
+        return ResponseEntity.ok().body(customerService.saveCustomer(customer));
+    }
+
     @GetMapping("/{id}")
     public ResponseEntity<Customer> getCustomerById(@PathVariable(value = "id") Long customerId) {
         Customer customer = customerService.getCustomerById(customerId)

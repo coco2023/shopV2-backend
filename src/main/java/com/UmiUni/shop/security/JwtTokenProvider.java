@@ -142,8 +142,8 @@ public class JwtTokenProvider {
                 claims.put("roles", "SUPPLIER"); // role
                 claims.put("supplierId", supplierId); // Add supplierId to the claims
             } else {
-                claims.put("roles", "SUPPLIER"); // role
-                claims.put("supplierId", supplierId); // Add supplierId to the claims
+                claims.put("roles", "CUSTOMER"); // role
+                claims.put("customerId", supplierId); // Add customerId to the claims
             }
         } else {
             throw new IllegalArgumentException("Unable to determine user type: Email is missing");
@@ -160,7 +160,7 @@ public class JwtTokenProvider {
         } else if (role.equals(UserType.CUSTOMER.name())) {
             return claims.get("customerId", Long.class);
         } else {
-            return claims.get("userId", Long.class);
+            return claims.get("employeeId", Long.class);
         }
     }
 

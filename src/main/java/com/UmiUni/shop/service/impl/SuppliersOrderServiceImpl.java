@@ -50,4 +50,15 @@ public class SuppliersOrderServiceImpl implements SuppliersOrderService {
     public void deleteSuppliersSalesOrder(Long supplierId, Long id) {
         salesOrderRepository.deleteBySalesOrderIdAndSupplierId(supplierId, id);
     }
+
+    @Override
+    public List<SalesOrder> getCustomersAllSalesOrders(Long customerId) {
+        return salesOrderRepository.findAllByCustomerId(customerId);
+    }
+
+    @Override
+    public SalesOrder getCustomersSalesOrderBySalesOrderSn(Long customerId, String salesOrderSn) {
+        return salesOrderRepository.findByCustomerIdAndSalesOrderSn(customerId, salesOrderSn)
+                .orElseThrow(() -> new RuntimeException("customerId/ salesOrderSn not exit!"));
+    }
 }

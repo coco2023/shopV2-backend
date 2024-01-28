@@ -2,7 +2,9 @@ package com.UmiUni.shop.security.controller;
 
 import com.UmiUni.shop.constant.UserType;
 import com.UmiUni.shop.entity.Customer;
+import com.UmiUni.shop.entity.Employee;
 import com.UmiUni.shop.repository.CustomerRepository;
+import com.UmiUni.shop.repository.EmployeeRepository;
 import com.UmiUni.shop.security.JwtTokenProvider;
 import com.UmiUni.shop.security.dto.RegistrationRequestDTO;
 import com.UmiUni.shop.security.dto.RegistrationResponseDTO;
@@ -47,6 +49,9 @@ public class UserController {
 
     @Autowired
     private CustomerRepository customerRepository;
+
+    @Autowired
+    private EmployeeRepository employeeRepository;
 
     // http://localhost:9001/api/auth/register
     @PostMapping("/register")
@@ -106,16 +111,16 @@ public class UserController {
                 model.put("username", data.getUsername());
                 model.put("token", token);
             } else { // TESTER/ADMIN
+                Employee employee = employeeRepository.findByName(data.getUsername()).get();
+                log.info("employee, {}", employee);
+
+                token = jwtTokenProvider.createToken(authentication, employee.getId(), employee.getUserType());
+
+                model.put("employeeId", employee.getId());
+                model.put("username", data.getUsername());
+                model.put("token", token);
 
             }
-//            // get supplierId by username
-//            Long supplierId = supplierService.getSupplierByName(data.getUsername()).getSupplierId();
-//            log.info("supplierId, {}", supplierId);
-//
-//            // Generate a JWT token with roles and permissions included
-//            String token = jwtTokenProvider.createToken(authentication, supplierId);
-//            log.info("***token: " + token);
-
             // Return the token and user information as needed
             log.info("***model: " + model);
             return ResponseEntity.ok(model);

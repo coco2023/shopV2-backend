@@ -49,12 +49,18 @@ public class SecurityUrlConstants {
 
     public static final String H2_CONSOLE = "/h2-console/**";
 
+    public static final String[] ADMIN_PUBLIC_URLS = {
+            "/api/v1/suppliers/**",
+            "/api/v1/customers/**",
+    };
+
     public static final String[] SUPPLIER_PUBLIC_URLS = {
-            "/api/v1/suppliers/**"
+            "/api/v1/suppliers/auth/info/**",
     };
 
     public static final String[] CUSTOMER_PUBLIC_URLS = {
-            "/api/v1/customers/**"
+            "/api/v1/customers/auth/info/**",
+            "/api/v1/customers/salesOrders/**"
     };
 
 }

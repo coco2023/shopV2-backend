@@ -181,6 +181,9 @@ public class UserServiceImpl implements UserService {
             if (supplier.isPresent()) {
                 log.info("suppler: {}", supplier.get().getPassword());
                 userDetails = buildUserDetails(supplier.get(), "SUPPLIER");
+            } else {
+                Optional<Employee> employee = employeeRepository.findByName(username);
+                userDetails = buildUserDetails(employee.get(), employee.get().getUserType());
             }
         }
 
