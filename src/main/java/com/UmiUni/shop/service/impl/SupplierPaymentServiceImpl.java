@@ -8,6 +8,7 @@ import com.UmiUni.shop.repository.PaymentRepository;
 import com.UmiUni.shop.repository.SalesOrderRepository;
 import com.UmiUni.shop.service.SupplierPaymentService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -41,8 +42,9 @@ public class SupplierPaymentServiceImpl implements SupplierPaymentService {
 
     @Override
     public List<PayPalPayment> getPayPalPaymentsBySalesOrderSn(String supplierId) {
+        Sort sort = Sort.by(Sort.Direction.DESC, "salesOrderId");
         // find the salesOrderSn list by supplierId
-        List<SalesOrder> salesOrders = salesOrderRepository.findAllBySupplierId(Long.valueOf(supplierId));
+        List<SalesOrder> salesOrders = salesOrderRepository.findAllBySupplierId(Long.valueOf(supplierId), sort);
         List<String> salesOrderSnList = salesOrders.stream().map(SalesOrder::getSalesOrderSn).collect(Collectors.toList());
         // get the transactionId
         List<PayPalPayment> payPalPaymentList = new ArrayList<>();

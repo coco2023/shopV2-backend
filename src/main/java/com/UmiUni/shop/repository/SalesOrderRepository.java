@@ -2,6 +2,7 @@ package com.UmiUni.shop.repository;
 
 import com.UmiUni.shop.constant.OrderStatus;
 import com.UmiUni.shop.entity.SalesOrder;
+import org.springframework.data.domain.Sort;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -22,7 +23,7 @@ public interface SalesOrderRepository extends JpaRepository<SalesOrder, Long> {
 
     Optional<SalesOrder> findBySupplierIdAndSalesOrderId(Long supplierId, Long id);
 
-    List<SalesOrder> findAllBySupplierId(Long supplierId);
+    List<SalesOrder> findAllBySupplierId(Long supplierId, Sort sort);
 
     Optional<SalesOrder> findBySupplierIdAndSalesOrderSn(Long supplierId, String salesOrderSn);
 
@@ -31,7 +32,7 @@ public interface SalesOrderRepository extends JpaRepository<SalesOrder, Long> {
     // financial report
     List<SalesOrder> findBySupplierIdAndOrderDateBetweenAndOrderStatus(Long supplierId, LocalDateTime startDate, LocalDateTime endDate, OrderStatus orderStatus);
 
-    List<SalesOrder> findAllByCustomerId(Long customerId);
+    List<SalesOrder> findAllByCustomerId(Long customerId, Sort sort);
 
     Optional<SalesOrder> findByCustomerIdAndSalesOrderSn(Long customerId, String salesOrderSn);
 }

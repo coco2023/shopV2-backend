@@ -5,6 +5,7 @@ import com.UmiUni.shop.repository.SalesOrderRepository;
 import com.UmiUni.shop.service.SuppliersOrderService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -29,7 +30,8 @@ public class SuppliersOrderServiceImpl implements SuppliersOrderService {
 
     @Override
     public List<SalesOrder> getSuppliersAllSalesOrders(Long supplierId) {
-        return salesOrderRepository.findAllBySupplierId(supplierId);
+        Sort sort = Sort.by(Sort.Direction.DESC, "salesOrderId");
+        return salesOrderRepository.findAllBySupplierId(supplierId, sort);
     }
 
     @Override
@@ -53,7 +55,9 @@ public class SuppliersOrderServiceImpl implements SuppliersOrderService {
 
     @Override
     public List<SalesOrder> getCustomersAllSalesOrders(Long customerId) {
-        return salesOrderRepository.findAllByCustomerId(customerId);
+        // Sort by 'id' in descending order
+        Sort sort = Sort.by(Sort.Direction.DESC, "salesOrderId");
+        return salesOrderRepository.findAllByCustomerId(customerId, sort);
     }
 
     @Override
