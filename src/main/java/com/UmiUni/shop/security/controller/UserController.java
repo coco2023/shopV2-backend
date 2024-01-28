@@ -85,7 +85,7 @@ public class UserController {
             Map<String, Object> model = new HashMap<>();
             if (role.equals("SUPPLIER")) {
                 // get supplierId by username
-                Long supplierId = supplierService.getSupplierByName(data.getUsername()).getSupplierId();
+                Long supplierId = supplierService.getSupplierByName(data.getUsername()).getId();
                 log.info("supplierId, {}", supplierId);
 
                 // Generate a JWT token with roles and permissions included
@@ -97,7 +97,7 @@ public class UserController {
                 model.put("token", token);
 
             } else if (role.equals("CUSTOMER")) {
-                Long customerId = customerRepository.findByName(data.getUsername()).getId();
+                Long customerId = customerRepository.findByName(data.getUsername()).get().getId();
                 log.info("customerId, {}", customerId);
 
                 token = jwtTokenProvider.createToken(authentication, customerId, UserType.CUSTOMER.name());

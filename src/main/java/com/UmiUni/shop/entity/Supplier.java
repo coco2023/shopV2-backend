@@ -12,16 +12,17 @@ import java.math.BigDecimal;
 @Builder
 @ToString
 @Table(name = "Suppliers")
-public class Supplier {
+@DiscriminatorValue("SUPPLIER")
+public class Supplier extends User {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long supplierId;
+//    @Id
+//    @GeneratedValue(strategy = GenerationType.IDENTITY)
+//    private Long supplierId;
 
     @Column(nullable = false)
     private String supplierName;
 
-    private String password;
+//    private String password;
 
     private String contactInfo;
 

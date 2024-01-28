@@ -4,6 +4,7 @@ import com.UmiUni.shop.constant.UserType;
 import com.UmiUni.shop.entity.Customer;
 import com.UmiUni.shop.entity.Employee;
 import com.UmiUni.shop.entity.Supplier;
+import com.UmiUni.shop.entity.User;
 import com.UmiUni.shop.repository.CustomerRepository;
 import com.UmiUni.shop.repository.EmployeeRepository;
 import com.UmiUni.shop.repository.SupplierRepository;
@@ -24,7 +25,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Log4j2
@@ -87,8 +90,16 @@ public class UserServiceImpl implements UserService {
             throw new RuntimeException("Username is already taken!"); //CustomDuplicateUsernameException
         }
 
+        if (customerRepository.existsByCustomerName(registrationRequestDTO.getUsername())) {
+            throw new RuntimeException("Username is already taken!"); //CustomDuplicateUsernameException
+        }
+
         // Check if email exists
         if (supplierRepository.existsByContactInfo(registrationRequestDTO.getEmail())) {
+            throw new RuntimeException("Email is already in use!"); // CustomDuplicateEmailException
+        }
+
+        if (customerRepository.existsByEmail(registrationRequestDTO.getEmail())) {
             throw new RuntimeException("Email is already in use!"); // CustomDuplicateEmailException
         }
 
@@ -100,17 +111,19 @@ public class UserServiceImpl implements UserService {
 
         RegistrationResponseDTO registrationResponseDTO = null;
         if (role.equals("SUPPLIER")) {
+            log.info("register supplier");
             // Create a new user
             Supplier newUser = new Supplier();
+            newUser.setName(registrationRequestDTO.getUsername());
             newUser.setSupplierName(registrationRequestDTO.getUsername());
             newUser.setPassword(hashedPassword);
-            newUser.setContactInfo(registrationRequestDTO.getEmail());
+            newUser.setEmail(registrationRequestDTO.getEmail());
             newUser.setUserType(role);
             newUser = supplierRepository.save(newUser);
 
             registrationResponseDTO = RegistrationResponseDTO.builder()
-                    .userID(newUser.getSupplierId())
-                    .username(newUser.getSupplierName())
+                    .userID(newUser.getId())
+                    .username(newUser.getName())
                     .userType(newUser.getUserType())
                     .build();
 
@@ -157,32 +170,44 @@ public class UserServiceImpl implements UserService {
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
         // should determine the user type first
-        // Retrieve the user and their roles
-        Supplier user = supplierRepository.findBySupplierName(username)
-                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
+        UserDetails userDetails = null;
 
-        List<GrantedAuthority> authorities = new ArrayList<>();
-        authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getUserType()));
+        Optional<Customer> customer = customerRepository.findByName(username);
+        if (customer.isPresent()) {
+            log.info("customer: {}", customer.get().getId());
+            userDetails = buildUserDetails(customer.get(), "CUSTOMER");
+        } else {
+            Optional<Supplier> supplier = supplierRepository.findBySupplierName(username);
+            if (supplier.isPresent()) {
+                log.info("suppler: {}", supplier.get().getPassword());
+                userDetails = buildUserDetails(supplier.get(), "SUPPLIER");
+            }
+        }
 
-        // Return the user details including the authorities
+        if (userDetails == null) {
+            throw new UsernameNotFoundException("User not found with username: " + username);
+        }
+
+        return userDetails;
+
+    }
+
+    private UserDetails buildUserDetails(User user, String userType) {
+        // Construct and return a UserDetails object based on the user type
+        // This might involve setting authorities based on the userType
         return new org.springframework.security.core.userdetails.User(
-                user.getSupplierName(),
+                user.getName(),
                 user.getPassword(),
-                authorities
+                getAuthorities(userType)
         );
+    }
 
-//        Customer user = customerRepository.findByName(username);
-////                .orElseThrow(() -> new UsernameNotFoundException("User not found with username: " + username));
-//
-//        List<GrantedAuthority> authorities = new ArrayList<>();
-//        authorities.add(new SimpleGrantedAuthority("ROLE_" + user.getUserType()));
-//
-//        // Return the user details including the authorities
-//        return new org.springframework.security.core.userdetails.User(
-//                user.getName(),
-//                user.getPassword(),
-//                authorities
-//        );
+    private Collection<? extends GrantedAuthority> getAuthorities(String userType) {
+        // Define authorities based on userType
+        List<SimpleGrantedAuthority> authorities = new ArrayList<>();
+        authorities.add(new SimpleGrantedAuthority("ROLE_" + userType.toUpperCase()));
+        // Add more authorities as needed
+        return authorities;
     }
 
 }

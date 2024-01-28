@@ -62,7 +62,7 @@ public class AuthController {
         String name = oAuth2User.getAttribute("name"); // Adjust according to the data provided by PayPal
 
         Supplier supplier = userService.registerOrUpdateSupplier(oAuth2User); // Implement this method as per your requirement
-        Long supplierId = supplier.getSupplierId();
+        Long supplierId = supplier.getId();
 //        String role = oAuth2User.getAttribute("role");
 
         // Create JWT token

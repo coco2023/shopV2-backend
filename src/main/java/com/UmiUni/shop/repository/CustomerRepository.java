@@ -10,5 +10,9 @@ import java.util.Optional;
 public interface CustomerRepository extends JpaRepository<Customer, Long> {
     Optional<Customer> findByPaypalEmail(String paypalEmail);
 
-    Customer findByName(String username);
+    Optional<Customer> findByName(String username);
+
+    boolean existsByCustomerName(String username);
+
+    boolean existsByEmail(String email);
 }
