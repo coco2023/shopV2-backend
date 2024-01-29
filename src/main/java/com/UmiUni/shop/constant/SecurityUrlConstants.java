@@ -34,6 +34,7 @@ public class SecurityUrlConstants {
             "/api/auth/register",
             "/login/oauth2/code/**",
             "/api/v1/suppliers/all",
+            "/api/v1/products/**"
     };
 
     public static final String[] SWAGGER_WHITELIST = {

@@ -12,6 +12,10 @@ server:
 local-auth-backend: https://7e9a-66-253-183-231.ngrok-free.app
 
 spring:
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 50MB
   datasource:
     url: jdbc:mysql://us.umiuni.com:3306/umi_shop
     username: root
@@ -126,3 +130,7 @@ inventory:
     queue:
       name: inventory_reduction_queue
 
+product:
+  image:
+    storage:
+      path: src/main/resources/image/storage

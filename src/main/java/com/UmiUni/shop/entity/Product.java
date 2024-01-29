@@ -6,6 +6,8 @@ import lombok.*;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 @Entity
 @NoArgsConstructor
@@ -50,6 +52,11 @@ public class Product {
     private Long salesAmount; // the total number of sales
 
     private String imageUrl;
+
+    @ElementCollection
+//    @CollectionTable(name = "product_image_ids", joinColumns = @JoinColumn(name = "product_id"))
+    @Column(name = "image_id")
+    private List<Long> productImageIds;
 
     private Integer stockQuantity;
 

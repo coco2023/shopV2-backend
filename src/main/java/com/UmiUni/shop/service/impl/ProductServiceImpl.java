@@ -37,8 +37,10 @@ public class ProductServiceImpl implements ProductService {
 
     @Override
     public Product getProduct(Long id) {
-        return productRepository.findById(id)
+        Product product = productRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Product not found with id: " + id));
+        log.info(product.getProductImageIds());
+        return product;
     }
 
     @Override
@@ -68,6 +70,7 @@ public class ProductServiceImpl implements ProductService {
         product.setStockStatus(productDetails.getStockStatus());
         product.setShippingInfo(productDetails.getShippingInfo());
         product.setLastStockUpdate(productDetails.getLastStockUpdate());
+        product.setProductImageIds(productDetails.getProductImageIds());
 
         // Save the updated product
         return productRepository.save(product);

@@ -8,7 +8,7 @@ import org.springframework.web.servlet.config.annotation.EnableWebMvc;
 
 import java.util.TimeZone;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = {"com.UmiUni.shop"})
 @EnableConfigurationProperties
 @EnableScheduling
 @EnableWebMvc
