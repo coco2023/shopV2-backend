@@ -11,6 +11,32 @@ create payment Log_ERROR_DB to save every error/interrupts occur during payment 
 
 ![payment Log_ERROR_DB.png](doc/img/payment_ERROR_Log_database.png)
 
+# Redis
+有几种优化策略可以提高电商网站加载商品主页的效率，并减少对数据库的重复访问。以下是一些推荐的做法：
+
+1. **缓存（Caching）**:
+   - **应用层缓存**：可以在应用层面引入缓存机制，比如使用Redis或Memcached来存储热门商品的信息。这样，用户在访问商品主页时，系统首先从缓存中检索数据，如果未命中，则读取数据库并更新缓存。这将大大减少数据库的访问次数。
+   - **CDN缓存**：使用内容分发网络（CDN）缓存静态资源，如商品图片、CSS和JavaScript文件，可以加快全球用户的加载速度。
+
+2. **数据库优化**:
+   - **查询优化**：确保数据库查询是高效的，比如通过合理的索引、避免全表扫描等。
+   - **读写分离**：将数据库的读操作和写操作分离，使用主从复制技术，可以提高数据库的并发处理能力。
+
+3. **按需加载/懒加载（Lazy Loading）**:
+   - 对于商品列表，可以实现按需加载，即仅当用户滚动查看更多商品时才加载更多内容，而不是一次性加载所有商品。
+
+4. **前端优化**:
+   - 通过减少HTTP请求、压缩文件、合理使用HTTP缓存控制策略等方式来优化前端性能。
+   - 实现异步加载（AJAX）来更新页面内容，无需重新加载整个页面。
+
+5. **使用负载均衡**:
+   - 如果网站流量较大，可以考虑使用负载均衡器分散请求到多个服务器，从而提高整体的处理能力和可用性。
+
+6. **微服务架构**:
+   - 如果您的应用非常庞大且复杂，可以考虑将其拆分为多个微服务，每个服务负责处理特定的功能。这样可以提高每个服务的专注度和效率。
+
+通过综合应用上述策略，可以显著提高您电商网站的性能和用户体验。每种方法都有其适用场景，建议根据您的具体需求和资源情况进行选择和调整。如果需要更详细的实现建议或帮助，请随时提问！
+
 # Customer, Supplier 在加了身份验证 改了代码以后没有办法登录（用户名密码都没有问题）
 因为password Encoder在JWTProvide里面需要处理各种用户密码登录操作的password；如果把Password Encoder和其他函数放在了JWTFilter或其他地方就会报错
 
@@ -728,3 +754,97 @@ public class ScheduledTasks {
 ```
 
 This way, the actual logic for report generation is encapsulated within the service, and both the controller and the scheduler call this shared service method.
+
+# Redis & Cache: 实现缓存配置以及在更新或删除产品时清除或更新缓存
+为了实现缓存配置以及在更新或删除产品时清除或更新缓存，我们可以扩展您的示例代码。首先，是缓存配置类`CacheConfig`，它启用了Spring的缓存支持。接着，我们将在`ProductService`中添加逻辑来处理更新和删除产品时的缓存操作。
+
+### 缓存配置
+
+```java
+import org.springframework.cache.annotation.EnableCaching;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.cache.CacheManager;
+import org.springframework.data.redis.cache.RedisCacheManager;
+import org.springframework.data.redis.connection.RedisConnectionFactory;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import java.time.Duration;
+
+@Configuration
+@EnableCaching
+public class CacheConfig {
+
+    @Bean
+    public CacheManager cacheManager(RedisConnectionFactory redisConnectionFactory) {
+        RedisCacheConfiguration cacheConfiguration = RedisCacheConfiguration.defaultCacheConfig()
+            .entryTtl(Duration.ofHours(1)) // 设置缓存有效期一小时
+            .disableCachingNullValues(); // 不缓存空值
+
+        return RedisCacheManager.builder(redisConnectionFactory)
+            .cacheDefaults(cacheConfiguration)
+            .build();
+    }
+}
+```
+
+这个配置类定义了一个`CacheManager`的Bean，它是Spring框架中管理缓存操作的组件。这里我们使用`RedisCacheManager`，它是基于Redis的实现。我们还为缓存设置了一些默认配置，比如缓存条目的存活时间（TTL）和不缓存空值的策略。
+
+### 更新或删除产品时清除缓存
+
+接下来，我们需要在更新或删除产品的操作中清除相关的缓存。这里，我们使用`@CacheEvict`注解来实现这一点。我们假设`ProductService`类中有`updateProduct`和`deleteProduct`方法，我们在这些方法执行成功后清除缓存。
+
+首先，确保`ProductService`类中有相应的方法实现：
+
+```java
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.stereotype.Service;
+
+@Service
+public class ProductService {
+
+    // 其他方法...
+
+    @CacheEvict(value = "products", allEntries = true)
+    public Product updateProduct(Long id, Product productDetails) {
+        // 更新产品的逻辑
+        // 假设这里有逻辑来更新产品，并返回更新后的产品
+        return updatedProduct;
+    }
+
+    @CacheEvict(value = "products", allEntries = true)
+    public void deleteProduct(Long id) {
+        // 删除产品的逻辑
+        // 假设这里有逻辑来删除指定ID的产品
+    }
+}
+```
+
+然后，在控制器`ProductController`中调用这些服务方法：
+
+```java
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/products")
+public class ProductController {
+
+    private final ProductService productService;
+
+    // 构造函数、注入等...
+
+    @PutMapping("/{id}")
+    public ResponseEntity<Product> updateProduct(@PathVariable Long id, @RequestBody Product productDetails) {
+        Product updatedProduct = productService.updateProduct(id, productDetails);
+        return ResponseEntity.ok(updatedProduct);
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void> deleteProduct(@PathVariable Long id) {
+        productService.deleteProduct(id);
+        return ResponseEntity.ok().build();
+    }
+}
+```
+
+通过在服务层的方法上使用`@CacheEvict`注解，并设置`allEntries = true`，我们告诉Spring在这些方法成功执行后清除名为"products"的缓存中的所有条目。这确保了缓存中的数据保持最新，用户在下次请求时能获取到最新的数据。

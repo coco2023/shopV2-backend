@@ -5,6 +5,7 @@ import com.UmiUni.shop.repository.ProductImageRepository;
 import com.UmiUni.shop.service.ProductImageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,6 +24,9 @@ public class ProductImageServiceImpl implements ProductImageService {
 
     @Value("${product.image.storage.path}")
     private String storagePath;
+
+    @Autowired
+    private RedisTemplate<String, byte[]> redisTemplate;
 
     @Override
     public ProductImage saveImage(Long productId, MultipartFile imageFile) {
@@ -72,6 +76,29 @@ public class ProductImageServiceImpl implements ProductImageService {
         } catch (IOException e) {
             throw new RuntimeException("Failed to delete image file", e);
         }
+    }
+
+    @Override
+    public byte[] getImageDataByCache(Long id) {
+        String cacheKey = "image_" + id;
+        // 尝试从Redis缓存中获取图片数据
+        byte[] imageData = redisTemplate.opsForValue().get(cacheKey);
+
+        if (imageData == null || imageData.length == 0) {
+            // 缓存中没有找到图片数据，从文件系统中加载
+            ProductImage productImage = getImage(id); // 获取ProductImage实例
+            Path path = Paths.get(productImage.getFilePath());
+
+            try {
+                imageData = Files.readAllBytes(path);
+                // 将图片数据存入Redis缓存
+                redisTemplate.opsForValue().set(cacheKey, imageData);
+            } catch (IOException e) {
+                throw new RuntimeException("Failed to read image data", e);
+            }
+
+        }
+        return imageData;
     }
 
 }

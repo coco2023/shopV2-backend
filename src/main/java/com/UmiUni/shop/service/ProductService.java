@@ -1,5 +1,6 @@
 package com.UmiUni.shop.service;
 
+import com.UmiUni.shop.dto.ProductDTO;
 import com.UmiUni.shop.entity.Product;
 import com.UmiUni.shop.model.ProductWithAttributes;
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -24,4 +25,6 @@ public interface ProductService {
     public void lockInventory(String skuCode, int quantity);
 
     ResponseEntity<?> updateProductAndImages(Long productId, String productStr, MultipartFile[] newImages, List<Long> imagesToDelete) throws JsonProcessingException;
+
+    List<ProductDTO> getProductsByPage(int page, int size);
 }

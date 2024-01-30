@@ -1,5 +1,6 @@
 package com.UmiUni.shop.service.impl;
 
+import com.UmiUni.shop.dto.ProductDTO;
 import com.UmiUni.shop.entity.Product;
 import com.UmiUni.shop.entity.ProductAttribute;
 import com.UmiUni.shop.entity.ProductImage;
@@ -14,7 +15,10 @@ import com.UmiUni.shop.service.ProductService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
+import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -22,6 +26,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @Log4j2
@@ -58,6 +63,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @CacheEvict(value = "products", allEntries = true)
     public Product updateProduct(Long id, Product productDetails) {
         // Retrieve the existing product by ID
         Product product = productRepository.findById(id)
@@ -86,6 +92,7 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @CacheEvict(value = "products", allEntries = true)
     public void deleteProduct(Long id) {
         productRepository.deleteById(id);
     }
@@ -238,4 +245,45 @@ public class ProductServiceImpl implements ProductService {
 
         return ResponseEntity.ok(product);
     }
+
+    @Override
+    public List<ProductDTO> getProductsByPage(int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size);
+        List<Product> productList = productRepository.findAll(pageRequest).getContent();
+
+        return productList.stream().map(product -> {
+                ProductDTO dto = new ProductDTO();
+
+                dto.setProductId(product.getProductId());
+                dto.setProductName(product.getProductName());
+                dto.setSkuCode(product.getSkuCode());
+                dto.setCategoryId(product.getCategoryId() != null ? product.getCategoryId() : null);
+                dto.setCategoryName(product.getCategoryName() != null ? product.getCategoryName() : null);
+                dto.setBrandId(product.getBrandId() != null ? product.getBrandId() : null);
+                dto.setBrandName(product.getBrandName() != null ? product.getBrandName() : null);
+                dto.setSupplierId(product.getSupplierId() != null ? product.getSupplierId() : null);
+                dto.setSupplierName(product.getProductName() != null ? product.getProductName() : null);
+                dto.setDescription(product.getDescription());
+                dto.setPrice(product.getPrice());
+                dto.setDiscount(product.getDiscount());
+                dto.setFinalPrice(product.getFinalPrice());
+                dto.setRating(product.getRating());
+                dto.setSalesAmount(product.getSalesAmount());
+                dto.setImageUrl(product.getImageUrl());
+                dto.setStockQuantity(product.getStockQuantity());
+                dto.setStockStatus(product.getStockStatus());
+                dto.setShippingInfo(product.getShippingInfo());
+                dto.setLastStockUpdate(product.getLastStockUpdate());
+                dto.setLockedStockQuantity(product.getLockedStockQuantity());
+
+                // 初始化并设置产品图片ID列表
+                Hibernate.initialize(product.getProductImageIds());
+                dto.setProductImageIds(product.getProductImageIds() != null ? new ArrayList<>(product.getProductImageIds()) : null);
+
+                return dto;
+            }
+
+        ).collect(Collectors.toList());
+    }
+
 }

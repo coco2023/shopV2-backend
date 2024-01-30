@@ -31,6 +31,9 @@ spring:
   sql:
     init:
       platform: mysql
+  redis:
+    host: localhost
+    port: 6379
   rabbitmq:
     host: ec2-54-234-75-153.compute-1.amazonaws.com #127.0.0.1 #ec2-54-234-75-153.compute-1.amazonaws.com #127.0.0.1
     port: 5672
