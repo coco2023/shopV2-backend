@@ -2,17 +2,23 @@ package com.UmiUni.shop.service.impl;
 
 import com.UmiUni.shop.entity.Product;
 import com.UmiUni.shop.entity.ProductAttribute;
+import com.UmiUni.shop.entity.ProductImage;
 import com.UmiUni.shop.exception.InsufficientStockException;
 import com.UmiUni.shop.exception.ProductNotFoundException;
 import com.UmiUni.shop.model.ProductWithAttributes;
 import com.UmiUni.shop.repository.ProductAttributeRepository;
 import com.UmiUni.shop.repository.ProductRepository;
 import com.UmiUni.shop.service.PaymentErrorHandlingService;
+import com.UmiUni.shop.service.ProductImageService;
 import com.UmiUni.shop.service.ProductService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -29,6 +35,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     private PaymentErrorHandlingService paymentErrorHandlingService;
+
+    @Autowired
+    private ProductImageService productImageService;
 
     @Override
     public Product createProduct(Product product) {
@@ -173,5 +182,60 @@ public class ProductServiceImpl implements ProductService {
         } catch (Exception e) {
             paymentErrorHandlingService.handleGenericError(e, null, null);
         }
+    }
+
+    @Override
+    public ResponseEntity<?> updateProductAndImages(
+            Long productId, String productStr,
+            MultipartFile[] newImages, List<Long> imagesToDelete) throws JsonProcessingException {
+
+        // Fetch the existing product
+        Product product = productRepository.findById(productId).orElseThrow(() -> new RuntimeException("Product not found"));
+
+        // Deserialize the JSON string to a Product object
+        ObjectMapper objectMapper = new ObjectMapper();
+        Product productDetails = objectMapper.readValue(productStr, Product.class);
+
+        // Update product fields from productStr
+        product.setProductName(productDetails.getProductName());
+        product.setSkuCode(productDetails.getSkuCode());
+        product.setCategoryId(productDetails.getCategoryId());
+        product.setCategoryName(productDetails.getCategoryName());
+        product.setBrandId(productDetails.getBrandId());
+        product.setBrandName(productDetails.getBrandName());
+        product.setSupplierId(productDetails.getSupplierId());
+        product.setSupplierName(productDetails.getSupplierName());
+        product.setDescription(productDetails.getDescription());
+        product.setPrice(productDetails.getPrice());
+        product.setImageUrl(productDetails.getImageUrl());
+        product.setStockQuantity(productDetails.getStockQuantity());
+        product.setStockStatus(productDetails.getStockStatus());
+        product.setShippingInfo(productDetails.getShippingInfo());
+        product.setLastStockUpdate(productDetails.getLastStockUpdate());
+
+        // get image ids
+        List<Long> imageIds = productDetails.getProductImageIds();
+
+        // Delete specified images
+        if (imagesToDelete != null) {
+            imagesToDelete.forEach(productImageService::deleteImage);
+            // remove the images in the original ids
+            imagesToDelete.forEach(imageIds::remove);
+        }
+
+        // Save new images
+        if (newImages != null) {
+            for (MultipartFile image : newImages) {
+                ProductImage productImage = productImageService.saveImage(productId, image);
+                // update the new images into the original image ids
+                imageIds.add(productImage.getId());
+            }
+        }
+        product.setProductImageIds(imageIds);
+
+        // Save the updated product
+        productRepository.save(product);
+
+        return ResponseEntity.ok(product);
     }
 }

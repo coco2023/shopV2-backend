@@ -2,6 +2,9 @@ package com.UmiUni.shop.service;
 
 import com.UmiUni.shop.entity.Product;
 import com.UmiUni.shop.model.ProductWithAttributes;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -19,4 +22,6 @@ public interface ProductService {
     public void reduceProductInventory(String skuCode, int quantity);
 
     public void lockInventory(String skuCode, int quantity);
+
+    ResponseEntity<?> updateProductAndImages(Long productId, String productStr, MultipartFile[] newImages, List<Long> imagesToDelete) throws JsonProcessingException;
 }

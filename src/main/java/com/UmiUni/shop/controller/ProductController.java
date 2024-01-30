@@ -5,6 +5,7 @@ import com.UmiUni.shop.entity.ProductImage;
 import com.UmiUni.shop.model.ProductWithAttributes;
 import com.UmiUni.shop.service.ProductImageService;
 import com.UmiUni.shop.service.ProductService;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -29,6 +30,7 @@ public class ProductController {
     @Autowired
     private ObjectMapper objectMapper; // ObjectMapper is provided by Spring Boot
 
+    // create product with images
     @PostMapping
     public ResponseEntity<Product> createProduct(
             @RequestParam("product") String productStr,
@@ -64,6 +66,20 @@ public class ProductController {
     @GetMapping("/all")
     public List<Product> getAllProducts() {
         return productService.getAllProducts();
+    }
+
+    // update product including images
+    @PatchMapping("/{productId}")
+    public ResponseEntity<?> updateProduct(
+            @PathVariable Long productId,
+            @RequestParam("product") String productStr,
+            @RequestParam(value = "newImages", required = false) MultipartFile[] newImages,
+            @RequestParam(value = "imagesToDelete", required = false) List<Long> imagesToDelete) {
+        try {
+            return productService.updateProductAndImages(productId, productStr, newImages, imagesToDelete);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @PutMapping("/{id}")
