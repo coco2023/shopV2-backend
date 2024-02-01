@@ -1,6 +1,7 @@
 package com.UmiUni.shop.entity;
 
 import com.UmiUni.shop.constant.StockStatus;
+import com.UmiUni.shop.dto.ProductDTO;
 import lombok.*;
 
 import javax.persistence.*;
@@ -56,7 +57,7 @@ public class Product implements Serializable {
 
     private String imageUrl;
 
-    @ElementCollection
+    @ElementCollection //(fetch = FetchType.EAGER) // Change to eager fetching
 //    @CollectionTable(name = "product_image_ids", joinColumns = @JoinColumn(name = "product_id"))
     @Column(name = "image_id")
     private List<Long> productImageIds;

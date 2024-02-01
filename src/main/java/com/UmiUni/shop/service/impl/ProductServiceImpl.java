@@ -18,6 +18,8 @@ import lombok.extern.log4j.Log4j2;
 import org.hibernate.Hibernate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -43,6 +45,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     private ProductImageService productImageService;
+
+    @Autowired
+    private ObjectMapper objectMapper;
 
     @Override
     public Product createProduct(Product product) {
@@ -192,7 +197,8 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public ResponseEntity<?> updateProductAndImages(
+    @CacheEvict(value = "products", allEntries = true)
+    public Product updateProductAndImages(
             Long productId, String productStr,
             MultipartFile[] newImages, List<Long> imagesToDelete) throws JsonProcessingException {
 
@@ -200,7 +206,6 @@ public class ProductServiceImpl implements ProductService {
         Product product = productRepository.findById(productId).orElseThrow(() -> new RuntimeException("Product not found"));
 
         // Deserialize the JSON string to a Product object
-        ObjectMapper objectMapper = new ObjectMapper();
         Product productDetails = objectMapper.readValue(productStr, Product.class);
 
         // Update product fields from productStr
@@ -243,47 +248,58 @@ public class ProductServiceImpl implements ProductService {
         // Save the updated product
         productRepository.save(product);
 
-        return ResponseEntity.ok(product);
+        return product;
     }
 
     @Override
-    public List<ProductDTO> getProductsByPage(int page, int size) {
+    @Transactional(readOnly = true)
+    public Page<ProductDTO> getProductsByPage(int page, int size) {
         PageRequest pageRequest = PageRequest.of(page, size);
-        List<Product> productList = productRepository.findAll(pageRequest).getContent();
+//        List<Product> productList = productRepository.findAll(pageRequest).getContent();
+        Page<Product> productPage = productRepository.findAll(pageRequest);
 
-        return productList.stream().map(product -> {
-                ProductDTO dto = new ProductDTO();
+        Page<ProductDTO> response = productPage.map(this::convertToProductDTO); // 使用map转换Product到ProductDTO
+        log.info("return Page<ProductDTO>: {} ", response);
 
-                dto.setProductId(product.getProductId());
-                dto.setProductName(product.getProductName());
-                dto.setSkuCode(product.getSkuCode());
-                dto.setCategoryId(product.getCategoryId() != null ? product.getCategoryId() : null);
-                dto.setCategoryName(product.getCategoryName() != null ? product.getCategoryName() : null);
-                dto.setBrandId(product.getBrandId() != null ? product.getBrandId() : null);
-                dto.setBrandName(product.getBrandName() != null ? product.getBrandName() : null);
-                dto.setSupplierId(product.getSupplierId() != null ? product.getSupplierId() : null);
-                dto.setSupplierName(product.getProductName() != null ? product.getProductName() : null);
-                dto.setDescription(product.getDescription());
-                dto.setPrice(product.getPrice());
-                dto.setDiscount(product.getDiscount());
-                dto.setFinalPrice(product.getFinalPrice());
-                dto.setRating(product.getRating());
-                dto.setSalesAmount(product.getSalesAmount());
-                dto.setImageUrl(product.getImageUrl());
-                dto.setStockQuantity(product.getStockQuantity());
-                dto.setStockStatus(product.getStockStatus());
-                dto.setShippingInfo(product.getShippingInfo());
-                dto.setLastStockUpdate(product.getLastStockUpdate());
-                dto.setLockedStockQuantity(product.getLockedStockQuantity());
+        List<ProductDTO> productDTOList = productPage.getContent().stream()
+                .map(this::convertToProductDTO)
+                .collect(Collectors.toList());
 
-                // 初始化并设置产品图片ID列表
-                Hibernate.initialize(product.getProductImageIds());
-                dto.setProductImageIds(product.getProductImageIds() != null ? new ArrayList<>(product.getProductImageIds()) : null);
+        return new PageImpl<>(productDTOList, pageRequest, productPage.getTotalElements());
+    }
 
-                return dto;
-            }
+    public ProductDTO convertToProductDTO(Product product) {
+        ProductDTO dto = new ProductDTO();
 
-        ).collect(Collectors.toList());
+        // Initialize the lazy-loaded collection
+        Hibernate.initialize(product.getProductImageIds());
+        // Trigger lazy loading; Force initialization
+        product.getProductImageIds().size();
+
+        dto.setProductId(product.getProductId());
+        dto.setProductName(product.getProductName());
+        dto.setSkuCode(product.getSkuCode());
+        dto.setCategoryId(product.getCategoryId());
+        dto.setCategoryName(product.getCategoryName());
+        dto.setBrandId(product.getBrandId());
+        dto.setBrandName(product.getBrandName());
+        dto.setSupplierId(product.getSupplierId());
+        dto.setSupplierName(product.getSupplierName());
+        dto.setDescription(product.getDescription());
+        dto.setPrice(product.getPrice());
+        dto.setDiscount(product.getDiscount());
+        dto.setFinalPrice(product.getFinalPrice());
+        dto.setRating(product.getRating());
+        dto.setSalesAmount(product.getSalesAmount());
+        dto.setImageUrl(product.getImageUrl());
+        dto.setProductImageIds(product.getProductImageIds() != null ? new ArrayList<>(product.getProductImageIds()) : null);
+        dto.setStockQuantity(product.getStockQuantity());
+        dto.setStockStatus(product.getStockStatus());
+        dto.setShippingInfo(product.getShippingInfo());
+        dto.setLastStockUpdate(product.getLastStockUpdate());
+        dto.setLockedStockQuantity(product.getLockedStockQuantity());
+
+        return dto;
     }
 
 }

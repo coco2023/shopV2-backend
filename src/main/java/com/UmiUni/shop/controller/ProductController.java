@@ -13,6 +13,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -71,14 +74,22 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProduct(id));
     }
 
+    /**
+     * get all product by Page (for e-comm mainPage, erp-product page)
+     * @param page
+     * @param size
+     * @return
+     */
     @GetMapping("/main/all")
     @Cacheable(value = "products", key = "'page:' + #page + 'size:' + #size")
-    public List<ProductDTO> getProductsFromCache(@RequestParam(value = "page", defaultValue = "0") int page,
+    public Page<ProductDTO> getProductsFromCache(@RequestParam(value = "page", defaultValue = "0") int page,
                                                  @RequestParam(value = "size", defaultValue = "20") int size) {
 //        // 更新完产品后清除所有产品列表的缓存
 //        clearAllProductsCache();
 
-        return productService.getProductsByPage(page, size);
+        Page<ProductDTO> productDTOPage = productService.getProductsByPage(page, size);
+        log.info("productDTOPage: {}", productDTOPage);
+        return productDTOPage;
     }
 
     @GetMapping("/all")
@@ -94,7 +105,8 @@ public class ProductController {
             @RequestParam(value = "newImages", required = false) MultipartFile[] newImages,
             @RequestParam(value = "imagesToDelete", required = false) List<Long> imagesToDelete) {
         try {
-            return productService.updateProductAndImages(productId, productStr, newImages, imagesToDelete);
+            Product product =  productService.updateProductAndImages(productId, productStr, newImages, imagesToDelete);
+            return ResponseEntity.ok(product);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
