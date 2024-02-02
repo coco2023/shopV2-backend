@@ -7,6 +7,7 @@ import com.UmiUni.shop.entity.ProductImage;
 import com.UmiUni.shop.exception.InsufficientStockException;
 import com.UmiUni.shop.exception.ProductNotFoundException;
 import com.UmiUni.shop.model.ProductWithAttributes;
+import com.UmiUni.shop.redis.InventoryLockService;
 import com.UmiUni.shop.repository.ProductAttributeRepository;
 import com.UmiUni.shop.repository.ProductRepository;
 import com.UmiUni.shop.service.PaymentErrorHandlingService;
@@ -48,6 +49,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private InventoryLockService inventoryLockService;
 
     @Override
     public Product createProduct(Product product) {
@@ -168,31 +172,62 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
     public void lockInventory(String skuCode, int quantity) {
-        Product product = productRepository.findBySkuCode(skuCode)
-                .orElseThrow(() -> new ProductNotFoundException("Product not found"));  // ProductNotFoundException
-        log.info(quantity + " lockInventory product Info: " + product.getSkuCode() + " " + product.getStockQuantity());
+
+        // 尝试获取全局锁
+        if (!inventoryLockService.globalLock(skuCode)) {
+            throw new IllegalStateException("Unable to acquire global lock for skuCode: " + skuCode);
+        }
+        log.info("Able to acquire global lock for skuCode: " + skuCode);
 
         try {
-            int availableQuantity = product.getStockQuantity() - (product.getLockedStockQuantity() != null ? -product.getLockedStockQuantity() : 0);
-            log.info("availableQuantity: " + availableQuantity);
+            // 获取本地锁
+            inventoryLockService.localLock(skuCode);
+            log.info("Able to acquire local Lock for skuCode: " + skuCode);
 
-            if (availableQuantity < quantity) {
-                throw new InsufficientStockException("Insufficient available stock for product"); // InsufficientStockException
+            Product product = null;
+
+            try {
+                product = productRepository.findBySkuCode(skuCode)
+                        .orElseThrow(() -> new ProductNotFoundException("Product not found"));  // ProductNotFoundException
+                log.info(quantity + " lockInventory product Info: " + product.getSkuCode() + " " + product.getStockQuantity());
+
+                if (product == null || product.getStockQuantity() < quantity) {
+                    // 库存不足逻辑处理
+                    throw new InsufficientStockException("Insufficient stock for skuCode: " + skuCode);
+                }
+
+                int availableQuantity = product.getStockQuantity() - (product.getLockedStockQuantity() != null ? -product.getLockedStockQuantity() : 0);
+                log.info("availableQuantity: " + availableQuantity);
+
+                if (availableQuantity < quantity) {
+                    throw new InsufficientStockException("Insufficient available stock for product"); // InsufficientStockException
+                }
+
+                // 锁定库存
+                product.setLockedStockQuantity(product.getLockedStockQuantity() + quantity);
+
+                int newLockedQuantity = (product.getLockedStockQuantity() != null ? product.getLockedStockQuantity() : 0) + quantity;
+                log.info("newLockedQuantity: " + newLockedQuantity + " " + product.getLockedStockQuantity() + " " + quantity);
+                product.setLockedStockQuantity(newLockedQuantity);
+
+                productRepository.save(product);
+                log.info("lockInventory update product: " + product.getLockedStockQuantity());
+
+            } catch (ProductNotFoundException e) {
+                paymentErrorHandlingService.handleProductNotFoundException(e, product.getSkuCode(), "Product not found");
+            } catch (InsufficientStockException e) {
+                paymentErrorHandlingService.handleInsufficientStockException(e, product.getSkuCode(), "Insufficient available stock for product");
+            } catch (Exception e) {
+                paymentErrorHandlingService.handleGenericError(e, null, null);
+            } finally {
+                // 释放本地锁
+                inventoryLockService.localUnlock(skuCode);
             }
-            int newLockedQuantity = (product.getLockedStockQuantity() != null ? product.getLockedStockQuantity() : 0) + quantity;
-            log.info("newLockedQuantity: " + newLockedQuantity + " " + product.getLockedStockQuantity() + " " + quantity);
-            product.setLockedStockQuantity(newLockedQuantity);
-
-            productRepository.save(product);
-            log.info("lockInventory update product: " + product.getLockedStockQuantity());
-
-        } catch (ProductNotFoundException e) {
-            paymentErrorHandlingService.handleProductNotFoundException(e, product.getSkuCode(), "Product not found");
-        } catch (InsufficientStockException e) {
-            paymentErrorHandlingService.handleInsufficientStockException(e, product.getSkuCode(), "Insufficient available stock for product");
-        } catch (Exception e) {
-            paymentErrorHandlingService.handleGenericError(e, null, null);
+        } finally {
+            // 释放全局锁
+            inventoryLockService.globalUnlock(skuCode);
         }
     }
 
@@ -224,6 +259,9 @@ public class ProductServiceImpl implements ProductService {
         product.setStockStatus(productDetails.getStockStatus());
         product.setShippingInfo(productDetails.getShippingInfo());
         product.setLastStockUpdate(productDetails.getLastStockUpdate());
+        product.setRating(productDetails.getRating());
+        product.setFinalPrice(productDetails.getFinalPrice());
+        product.setDiscount(productDetails.getDiscount());
 
         // get image ids
         List<Long> imageIds = productDetails.getProductImageIds();

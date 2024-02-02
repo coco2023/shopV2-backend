@@ -86,12 +86,14 @@ public class PayPalServiceImpl implements PayPalService {
     }
 
     private APIContext createApiContextForSupplier(Long supplierId) {
-        Supplier supplier = supplierRepository.findById(supplierId)
+        log.info("supplierId: {}", supplierId);
+        Supplier supplier = supplierRepository.findById(61L)
                 .orElseThrow();
         String supplierClientId = supplier.getPaypalClientId();
         String supplierSecret = supplier.getPaypalClientSecret();
 
         APIContext apiContext = new APIContext(supplierClientId, supplierSecret, "sandbox");
+        log.info("success!");
         return apiContext;
     }
 
@@ -101,6 +103,7 @@ public class PayPalServiceImpl implements PayPalService {
 
         log.info("start create payment");
         SalesOrder salesOrder = salesOrderRepository.getSalesOrderBySalesOrderSn(salesOrderRequest.getSalesOrderSn()).get();
+        log.info("here is the salesOrder entity: " + salesOrder);
 
         // TODO: get clientId and secret of the current supplier and create a new apiContext
 //        APIContext apiContext = getAPIContext();
@@ -136,7 +139,6 @@ public class PayPalServiceImpl implements PayPalService {
         payment.setIntent("sale");
         payment.setPayer(payer);
         payment.setTransactions(transactions);
-
 
         RedirectUrls redirectUrls = new RedirectUrls();
         redirectUrls.setCancelUrl(frontendUrl + "/paypal-return?salesOrderSn=" + salesOrderSn + "&supplierId=" + supplierId);

@@ -92,7 +92,7 @@ public class PaymentController {
             PaymentResponse paymentResponse = payPalService.createPayment(salesOrder);
             return ResponseEntity.ok(paymentResponse);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating PayPal payment: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("!!Error creating PayPal payment: " + e.getMessage());
         }
     }
 

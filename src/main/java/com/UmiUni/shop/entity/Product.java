@@ -18,6 +18,7 @@ import java.util.List;
 @Builder
 @ToString
 @Table(name = "Products")
+//@Table(name = "Products", indexes = {@Index(name = "idx_product_name", columnList = "skuCode")})
 public class Product implements Serializable {
 
     private static final long serialVersionUID = 7727871091681128507L;
