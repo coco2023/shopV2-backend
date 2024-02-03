@@ -5,6 +5,7 @@ import com.UmiUni.shop.service.ProductImageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -27,6 +28,16 @@ public class ProductImageController {
         return ResponseEntity.ok(productImage);
     }
 
+    @GetMapping("/main/img/{id}")
+    public ResponseEntity<byte[]> getImageByCache(@PathVariable Long id) {
+        byte[] imageData = productImageService.getImageDataByCache(id);
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.IMAGE_JPEG) // 根据实际情况动态确定内容类型
+                .body(imageData);
+    }
+
+    // get images without redis cache
     @GetMapping("/{id}")
     public ResponseEntity<Resource> getImage(@PathVariable Long id) {
         try {

@@ -1,6 +1,8 @@
 package com.UmiUni.shop.controller;
 
+import com.UmiUni.shop.constant.OrderStatus;
 import com.UmiUni.shop.dto.PayPalPaymentResponseDTO;
+import com.UmiUni.shop.dto.SalesOrderDTO;
 import com.UmiUni.shop.entity.Payment;
 import com.UmiUni.shop.entity.PaymentErrorLog;
 import com.UmiUni.shop.entity.SalesOrder;
@@ -87,12 +89,12 @@ public class PaymentController {
 
     // Endpoint to create a payment
     @PostMapping("/paypal/create")
-    public ResponseEntity<?> createPayment(@RequestBody SalesOrder salesOrder) {
+    public ResponseEntity<?> createPayment(@RequestBody SalesOrderDTO salesOrder) {
         try {
-            PaymentResponse paymentResponse = payPalService.createPayment(salesOrder);
+            PaymentResponse paymentResponse = payPalService.createPaymentMQSender(salesOrder);
             return ResponseEntity.ok(paymentResponse);
         } catch (Exception e) {
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("Error creating PayPal payment: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("!!Error creating PayPal payment: " + e.getMessage());
         }
     }
 
@@ -111,6 +113,7 @@ public class PaymentController {
     public ResponseEntity<?> checkPaymentStatus(@RequestParam("token") String token, @RequestParam("supplierId") String supplierId) throws Exception {
         try {
             PaymentResponse response = payPalService.checkPaymentStatus(token, supplierId);
+            log.info("check-payment-status response: {}", response);
             return ResponseEntity.ok(response);
         } catch (PaymentProcessingException e) {
 //            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
@@ -121,6 +124,33 @@ public class PaymentController {
 //            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build();
             throw new Exception(e.getMessage());
         }
+    }
+
+    /**
+     * check payment status during createPayment() process
+     * @param orderSn
+     * @return
+     */
+    @GetMapping("/paypal/{orderSn}/status")
+    public ResponseEntity<?> getOrderStatus(@PathVariable String orderSn) {
+        // 查询订单状态的逻辑
+        PaymentResponse paymentResponse = payPalService.checkCreatePaymentStatus(orderSn);
+
+        if (paymentResponse == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        return ResponseEntity.ok(paymentResponse);
+//        OrderStatus status = payPalService.getOrderStatus(orderSn);
+//
+//        if (status == OrderStatus.PROCESSING) {
+//            return ResponseEntity.ok(new OrderStatusResponse("PROCESSING", null));
+//        } else if (status == OrderStatus.COMPLETE) {
+//            String redirectUrl = orderService.getRedirectUrl(orderSn);
+//            return ResponseEntity.ok(new OrderStatusResponse("COMPLETE", redirectUrl));
+//        } else {
+//            // 处理其他状态
+//        }
     }
 
     /**

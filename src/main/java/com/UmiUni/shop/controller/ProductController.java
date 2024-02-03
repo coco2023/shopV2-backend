@@ -1,5 +1,6 @@
 package com.UmiUni.shop.controller;
 
+import com.UmiUni.shop.dto.ProductDTO;
 import com.UmiUni.shop.entity.Product;
 import com.UmiUni.shop.entity.ProductImage;
 import com.UmiUni.shop.model.ProductWithAttributes;
@@ -9,6 +10,12 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
@@ -29,6 +36,10 @@ public class ProductController {
 
     @Autowired
     private ObjectMapper objectMapper; // ObjectMapper is provided by Spring Boot
+
+    // 依赖注入CacheManager
+    @Autowired
+    private CacheManager cacheManager;
 
     // create product with images
     @PostMapping
@@ -63,6 +74,24 @@ public class ProductController {
         return ResponseEntity.ok(productService.getProduct(id));
     }
 
+    /**
+     * get all product by Page (for e-comm mainPage, erp-product page)
+     * @param page
+     * @param size
+     * @return
+     */
+    @GetMapping("/main/all")
+    @Cacheable(value = "products", key = "'page:' + #page + 'size:' + #size")
+    public Page<ProductDTO> getProductsFromCache(@RequestParam(value = "page", defaultValue = "0") int page,
+                                                 @RequestParam(value = "size", defaultValue = "20") int size) {
+//        // 更新完产品后清除所有产品列表的缓存
+//        clearAllProductsCache();
+
+        Page<ProductDTO> productDTOPage = productService.getProductsByPage(page, size);
+        log.info("productDTOPage: {}", productDTOPage);
+        return productDTOPage;
+    }
+
     @GetMapping("/all")
     public List<Product> getAllProducts() {
         return productService.getAllProducts();
@@ -76,7 +105,8 @@ public class ProductController {
             @RequestParam(value = "newImages", required = false) MultipartFile[] newImages,
             @RequestParam(value = "imagesToDelete", required = false) List<Long> imagesToDelete) {
         try {
-            return productService.updateProductAndImages(productId, productStr, newImages, imagesToDelete);
+            Product product =  productService.updateProductAndImages(productId, productStr, newImages, imagesToDelete);
+            return ResponseEntity.ok(product);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
@@ -103,6 +133,11 @@ public class ProductController {
     public ResponseEntity<Product> getProductBySkuCode(@PathVariable String skuCode) {
         Product product = productService.findBySkuCode(skuCode);
         return ResponseEntity.ok(product);
+    }
+
+    @CacheEvict(value = "products", allEntries = true)
+    public void clearAllProductsCache() {
+        // 这个方法体可以留空，因为@CacheEvict注解会负责清除缓存
     }
 
 }
