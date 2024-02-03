@@ -163,7 +163,12 @@
 		<dependency>
 			<groupId>com.fasterxml.jackson.datatype</groupId>
 			<artifactId>jackson-datatype-jsr310</artifactId>
-			<version>2.12.3</version> <!-- 请使用与您的Jackson核心库相匹配的版本 -->
+			<version>2.13.3</version> <!-- 请使用与您的Jackson核心库相匹配的版本 -->
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>2.13.3</version>
 		</dependency>
 
 	</dependencies>

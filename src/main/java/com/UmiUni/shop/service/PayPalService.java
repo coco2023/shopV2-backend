@@ -1,6 +1,7 @@
 package com.UmiUni.shop.service;
 
 import com.UmiUni.shop.dto.PayPalPaymentResponseDTO;
+import com.UmiUni.shop.dto.SalesOrderDTO;
 import com.UmiUni.shop.entity.PaymentErrorLog;
 import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.model.PaymentResponse;
@@ -8,7 +9,9 @@ import com.UmiUni.shop.model.PaymentResponse;
 import java.util.List;
 
 public interface PayPalService {
-    PaymentResponse createPayment(SalesOrder salesOrder);
+    PaymentResponse createPaymentMQSender(SalesOrderDTO salesOrder);
+
+    PaymentResponse createPayment(SalesOrderDTO salesOrder);
 
     PaymentResponse completePayment(String paymentId, String payerId, String supplierId);
 
@@ -19,4 +22,6 @@ public interface PayPalService {
     List<PayPalPaymentResponseDTO> getAllPayPalPaymentResponseEntity();
 
     List<PaymentErrorLog> getPaymentErrorLog();
+
+    PaymentResponse checkCreatePaymentStatus(String orderSn);
 }

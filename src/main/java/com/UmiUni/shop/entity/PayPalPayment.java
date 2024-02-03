@@ -58,4 +58,6 @@ public class PayPalPayment {
 
     private Double tax;  // reco
 
+    private String approvalURL;
+
 }

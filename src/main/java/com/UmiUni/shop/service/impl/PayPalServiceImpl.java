@@ -4,6 +4,7 @@ import com.UmiUni.shop.constant.ErrorCategory;
 import com.UmiUni.shop.constant.OrderStatus;
 import com.UmiUni.shop.constant.PaymentStatus;
 import com.UmiUni.shop.dto.PayPalPaymentResponseDTO;
+import com.UmiUni.shop.dto.SalesOrderDTO;
 import com.UmiUni.shop.entity.*;
 import com.UmiUni.shop.exception.PaymentExpiredException;
 import com.UmiUni.shop.exception.PaymentProcessingException;
@@ -20,6 +21,7 @@ import com.paypal.api.payments.Payment;
 import com.paypal.base.rest.APIContext;
 import com.paypal.base.rest.PayPalRESTException;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
@@ -80,6 +82,9 @@ public class PayPalServiceImpl implements PayPalService {
     @Autowired
     private SupplierRepository supplierRepository;
 
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+
     private APIContext getAPIContext() {
         return new APIContext(clientId, clientSecret, mode);
 
@@ -87,7 +92,7 @@ public class PayPalServiceImpl implements PayPalService {
 
     private APIContext createApiContextForSupplier(Long supplierId) {
         log.info("supplierId: {}", supplierId);
-        Supplier supplier = supplierRepository.findById(61L)
+        Supplier supplier = supplierRepository.findById(supplierId)  // 61L
                 .orElseThrow();
         String supplierClientId = supplier.getPaypalClientId();
         String supplierSecret = supplier.getPaypalClientSecret();
@@ -99,13 +104,26 @@ public class PayPalServiceImpl implements PayPalService {
 
     @Override
     @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
-    public PaymentResponse createPayment(SalesOrder salesOrderRequest) {
+    public PaymentResponse createPaymentMQSender(SalesOrderDTO salesOrderRequest) {
+        log.info("Start creating payment for salesOrderSn: {}", salesOrderRequest.getSalesOrderSn());
+
+        // 发送订单详情到RabbitMQ队列进行异步处理
+//        rabbitTemplate.convertAndSend("orderQueue", salesOrderRequest);
+        rabbitMQSender.sendOrder(salesOrderRequest);
+
+        // 立即返回响应给用户，不需要等待订单处理完成
+        return new PaymentResponse("Order received and is being processed.", null, "PROCESSING", null, null);
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class, isolation = Isolation.READ_COMMITTED)
+    public PaymentResponse createPayment(SalesOrderDTO salesOrderRequest) {
 
         log.info("start create payment");
         SalesOrder salesOrder = salesOrderRepository.getSalesOrderBySalesOrderSn(salesOrderRequest.getSalesOrderSn()).get();
         log.info("here is the salesOrder entity: " + salesOrder);
 
-        // TODO: get clientId and secret of the current supplier and create a new apiContext
+        // get clientId and secret of the current supplier and create a new apiContext
 //        APIContext apiContext = getAPIContext();
         APIContext apiContext = createApiContextForSupplier(salesOrder.getSupplierId());
 
@@ -152,7 +170,6 @@ public class PayPalServiceImpl implements PayPalService {
         try {
 
             if ( salesOrder.getTotalAmount().compareTo(BigDecimal.ZERO) < 0 ) {
-                // TODO: save the error logs during PayPal payment action
                 throw new PaymentProcessingException("Payment processing failed because the payment amount is negative.");
             }
 
@@ -187,6 +204,9 @@ public class PayPalServiceImpl implements PayPalService {
                     .updatedAt(now)
                     .paymentMethod("PayPal")
                     .supplierId(String.valueOf(supplierId))
+                    .approvalURL(approvalUrl)
+                    .status(PaymentStatus.CREATED.name())
+                    .paymentState(createdPayment.getState())
                     .build();
             payPalPaymentRepository.save(payPalPayment);
             log.info("createPayment: " + createdPayment);
@@ -421,6 +441,22 @@ public class PayPalServiceImpl implements PayPalService {
     @Override
     public List<PaymentErrorLog> getPaymentErrorLog() {
         return paymentErrorLogRepo.findAll();
+    }
+
+    @Override
+    public PaymentResponse checkCreatePaymentStatus(String orderSn) {
+        PayPalPayment payment = payPalPaymentRepository.findBySalesOrderSn(orderSn).orElseThrow();
+        log.info("payment found! {}", payment);
+
+        PaymentResponse paymentResponse = PaymentResponse.builder()
+                .transactionId(payment.getTransactionId())
+                .status(payment.getStatus())
+                .description("payment create success!, token: " + payment.getPaypalToken())
+                .errorMesg(null)
+                .approvalUrl(payment.getApprovalURL())
+                .build();
+//        log.info("paymentResponse: {}", paymentResponse);
+        return paymentResponse;
     }
 
     // Additional method to check if the customer has insufficient funds

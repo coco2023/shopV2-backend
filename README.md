@@ -40,6 +40,55 @@ create payment Log_ERROR_DB to save every error/interrupts occur during payment 
 # Customer, Supplier 在加了身份验证 改了代码以后没有办法登录（用户名密码都没有问题）
 因为password Encoder在JWTProvide里面需要处理各种用户密码登录操作的password；如果把Password Encoder和其他函数放在了JWTFilter或其他地方就会报错
 
+# 使用RabbitMQ处理（可能的）高并发订单时问题
+1. 异步处理response有LocalDateTime序列化的问题
+maven, 使对象class序列化
+```md
+确保当Jackson2JsonMessageConverter处理消息时，它将能够正确地序列化和反序列化LocalDateTime字段。
+
+		<dependency>
+			<groupId>com.fasterxml.jackson.datatype</groupId>
+			<artifactId>jackson-datatype-jsr310</artifactId>
+			<version>2.13.3</version> <!-- 请使用与您的Jackson核心库相匹配的版本 -->
+		</dependency>
+		<dependency>
+			<groupId>com.fasterxml.jackson.core</groupId>
+			<artifactId>jackson-core</artifactId>
+			<version>2.13.3</version>
+		</dependency>
+```
+并对`RabbitConfig`进行配置
+```md 
+    @Bean
+    public Jackson2ObjectMapperBuilderCustomizer jsonCustomizer() {
+        return builder -> {
+            builder.modules(new JavaTimeModule());
+            builder.featuresToDisable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        };
+    }
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        ObjectMapper objectMapper = new ObjectMapper();
+        objectMapper.registerModule(new JavaTimeModule()); // 注册JavaTimeModule
+        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // 禁用日期时间戳格式
+        return objectMapper;
+    }
+```
+
+2. 异步处理createPaymentAtMQ 和真正的createPayment和前端交互的问题
+```md
+
+1. **前端轮询或 WebSocket**：在前端实现一个轮询机制，定期向后端查询支付创建的状态和重定向 URL。一旦后端确认支付已创建并有了重定向 URL，前端就可以使用 JavaScript 实现页面跳转。或者，使用 WebSocket 在服务端和客户端之间建立一个双向通信通道，当支付创建完成并获取到重定向 URL 后，通过 WebSocket 直接将 URL 发送到客户端，然后客户端执行重定向。
+
+2. **同步处理支付创建**：如果可能，考虑在用户的原始请求-响应周期内同步处理支付创建。这样，一旦创建了支付并获取了重定向 URL，就可以直接在响应中返回重定向指令。这种方法可能会增加请求的响应时间，但可以直接实现重定向。
+
+3. **中间页面或状态页面**：引导用户到一个中间页面或状态页面，在这个页面上使用 JavaScript 定时检查支付状态。一旦检测到支付已创建并获取到重定向 URL，就使用 JavaScript 在客户端执行重定向。
+
+4. **客户端发起支付请求**：改变流程，让客户端（比如浏览器）直接发起支付创建请求，而不是通过服务器端的异步处理。这样，服务器端可以在处理该请求时同步返回重定向 URL，从而实现重定向。
+
+```
+
 # add TransactionTemplate to payment process for payment rollback
  If you are facing difficulties using `TransactionSynchronizationManager` and it's not resolving the `getCurrentTransactionStatus` method, here's an alternative approach to handle transaction rollback programmatically:
 
@@ -1465,9 +1514,98 @@ public class ProductService {
 
 这样的设计既利用了本地锁的高性能特点，又通过全局锁确保了在分布式环境下的数据一致性。同时，它也遵循了设计模式原则，如单一职责原则（SRP）和开闭原则（OCP），使得系统更加灵活和可扩展。
 
+您提供的`RabbitConfig`配置类包含了一个用于消息序列化的`Jackson2JsonMessageConverter` Bean。这是一个很好的做法，因为它能够确保消息在发送和接收时被正确地序列化和反序列化为JSON格式。但是，如果您在声明队列时遇到问题，可能还需要添加更多的配置来声明队列、交换机和绑定，以及配置消息监听器。
 
+### 完整的RabbitMQ配置示例
 
+以下是一个包含队列、交换机、绑定以及消息监听器配置的完整`RabbitConfig`类示例：
 
+```java
+import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.rabbit.connection.ConnectionFactory;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
+import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+
+@Configuration
+public class RabbitConfig {
+
+    public static final String QUEUE_NAME = "orderQueue";
+    public static final String EXCHANGE_NAME = "orderExchange";
+    public static final String ROUTING_KEY = "orderRoutingKey";
+
+    @Bean
+    public Queue queue() {
+        return new Queue(QUEUE_NAME, true);
+    }
+
+    @Bean
+    public DirectExchange exchange() {
+        return new DirectExchange(EXCHANGE_NAME);
+    }
+
+    @Bean
+    public Binding binding(Queue queue, DirectExchange exchange) {
+        return BindingBuilder.bind(queue).to(exchange).with(ROUTING_KEY);
+    }
+
+    @Bean
+    public RabbitTemplate rabbitTemplate(final ConnectionFactory connectionFactory) {
+        final RabbitTemplate rabbitTemplate = new RabbitTemplate(connectionFactory);
+        rabbitTemplate.setMessageConverter(producerJackson2MessageConverter());
+        return rabbitTemplate;
+    }
+
+    @Bean
+    public Jackson2JsonMessageConverter producerJackson2MessageConverter() {
+        return new Jackson2JsonMessageConverter();
+    }
+
+    @RabbitListener(queues = QUEUE_NAME)
+    public void listener(Object message) {
+        // 处理接收到的消息
+        System.out.println("Received message: " + message);
+    }
+}
+```
+
+这个配置类完成了以下几个关键的配置：
+
+1. **队列**：声明了一个名为`orderQueue`的队列。
+2. **交换机**：声明了一个名为`orderExchange`的直连交换机（`DirectExchange`）。
+3. **绑定**：将队列和交换机通过路由键`orderRoutingKey`进行绑定。
+4. **消息模板**：配置了`RabbitTemplate`，并设置了`Jackson2JsonMessageConverter`作为消息转换器。
+5. **消息监听器**：通过`@RabbitListener`注解定义了一个消息监听器，用于监听`orderQueue`队列中的消息。
+
+### 验证和调试
+
+- 确保这个配置类被Spring扫描到。如果您的配置类不在Spring Boot的主应用类所在包或其子包中，可能需要在主应用类上使用`@ComponentScan`注解来指定额外的包扫描路径。
+- 使用RabbitMQ管理界面（通常在`http://localhost:15672`）验证队列、交换机和绑定是否按预期创建。
+- 检查Spring Boot应用的启动日志，查看是否有任何与RabbitMQ相关的错误信息。
+- 如果仍然遇到问题，考虑增加日志级别以获取更详细的调试信息。
+
+这样配置后，您的应用应该能够正确地与RabbitMQ进行通信，发送和接收消息。如果仍然遇到“Failed to declare queue: orderQueue”这类错误，请检查RabbitMQ服务状态、连接配置以及权限设置是否正确。
+
+# 异步处理createPayment，生成支付订单
+当使用 RabbitMQ 异步处理订单并创建 PayPal 支付时，如果你成功获取了支付的重定向 URL 但页面没有跳转到 PayPal，这通常是因为异步处理模式与页面重定向的交互方式有关。在你的场景中，`OrderMessageListener` 在接收到消息后异步调用 `payPalService.createPayment` 方法来创建支付，这个过程和用户当前的请求-响应周期是分离的。也就是说，当 `payPalService.createPayment` 执行并生成了重定向 URL 时，用户的原始 HTTP 请求可能已经结束，且响应已经发送回客户端。
+
+在 Web 应用中，重定向通常是在 HTTP 响应中通过状态码 `302` 和 `Location` 头实现的。但在异步处理中，当你的服务获取到重定向 URL 后，无法直接修改已经完成的 HTTP 响应来实现重定向。因此，即使你获取了正确的 PayPal 重定向 URL，也无法直接引导用户的浏览器跳转到该 URL。
+
+### 解决方案
+
+为了解决这个问题，你可以考虑以下几种方法：
+
+1. **前端轮询或 WebSocket**：在前端实现一个轮询机制，定期向后端查询支付创建的状态和重定向 URL。一旦后端确认支付已创建并有了重定向 URL，前端就可以使用 JavaScript 实现页面跳转。或者，使用 WebSocket 在服务端和客户端之间建立一个双向通信通道，当支付创建完成并获取到重定向 URL 后，通过 WebSocket 直接将 URL 发送到客户端，然后客户端执行重定向。
+
+2. **同步处理支付创建**：如果可能，考虑在用户的原始请求-响应周期内同步处理支付创建。这样，一旦创建了支付并获取了重定向 URL，就可以直接在响应中返回重定向指令。这种方法可能会增加请求的响应时间，但可以直接实现重定向。
+
+3. **中间页面或状态页面**：引导用户到一个中间页面或状态页面，在这个页面上使用 JavaScript 定时检查支付状态。一旦检测到支付已创建并获取到重定向 URL，就使用 JavaScript 在客户端执行重定向。
+
+4. **客户端发起支付请求**：改变流程，让客户端（比如浏览器）直接发起支付创建请求，而不是通过服务器端的异步处理。这样，服务器端可以在处理该请求时同步返回重定向 URL，从而实现重定向。
+
+每种方法都有其适用场景和权衡。根据你的具体需求和应用架构，选择最合适的解决方案。
 
 
 

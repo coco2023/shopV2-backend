@@ -1,8 +1,12 @@
 package com.UmiUni.shop.mq;
 
+import com.UmiUni.shop.dto.SalesOrderDTO;
+import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.exception.AmqpException;
 import com.UmiUni.shop.model.InventoryUpdateMessage;
 import com.UmiUni.shop.service.PaymentErrorHandlingService;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
@@ -33,6 +37,9 @@ public class RabbitMQSender {
     @Value("${inventory.reduce.queue.name}")
     private String inventoryReductionQueue;
 
+    @Value("${order.queue.name}")
+    private String orderQueue;
+
     @Autowired
     private PaymentErrorHandlingService paymentErrorHandlingService;
 
@@ -56,6 +63,27 @@ public class RabbitMQSender {
             log.info("sendInventoryReduction! " + message);
         } catch (AmqpException e) {
             paymentErrorHandlingService.handleAmqpException(e, message);
+        }
+    }
+
+    public void sendOrder(SalesOrderDTO salesOrder) {
+        try {
+            log.info("sent order to queue!! {}", salesOrder );
+
+//            ObjectMapper objectMapper = new ObjectMapper();
+//            try {
+//                String json = objectMapper.writeValueAsString(salesOrder);
+//                log.info("json: {}", json);
+//            } catch (JsonProcessingException e) {
+//                e.printStackTrace();
+//            }
+
+            rabbitTemplate.convertAndSend(orderQueue, salesOrder);
+            log.info("Order sent to queue: {}", salesOrder);
+        } catch (AmqpException e) {
+            e.printStackTrace();
+            log.error("Failed to send order to queue: {}", e.getMessage());
+            // 可能需要错误处理逻辑
         }
     }
 
