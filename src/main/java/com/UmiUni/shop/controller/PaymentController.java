@@ -128,8 +128,6 @@ public class PaymentController {
 
     /**
      * check payment status during createPayment() process
-     * @param orderSn
-     * @return
      */
     @GetMapping("/paypal/{orderSn}/status")
     public ResponseEntity<?> getOrderStatus(@PathVariable String orderSn) {
@@ -141,16 +139,6 @@ public class PaymentController {
         }
 
         return ResponseEntity.ok(paymentResponse);
-//        OrderStatus status = payPalService.getOrderStatus(orderSn);
-//
-//        if (status == OrderStatus.PROCESSING) {
-//            return ResponseEntity.ok(new OrderStatusResponse("PROCESSING", null));
-//        } else if (status == OrderStatus.COMPLETE) {
-//            String redirectUrl = orderService.getRedirectUrl(orderSn);
-//            return ResponseEntity.ok(new OrderStatusResponse("COMPLETE", redirectUrl));
-//        } else {
-//            // 处理其他状态
-//        }
     }
 
     /**
