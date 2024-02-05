@@ -6,6 +6,7 @@ import com.UmiUni.shop.dto.SalesOrderDTO;
 import com.UmiUni.shop.entity.Payment;
 import com.UmiUni.shop.entity.PaymentErrorLog;
 import com.UmiUni.shop.entity.SalesOrder;
+import com.UmiUni.shop.exception.OrderNotFoundException;
 import com.UmiUni.shop.exception.PaymentProcessingException;
 import com.UmiUni.shop.model.*;
 import com.UmiUni.shop.service.PayPalService;
@@ -139,6 +140,12 @@ public class PaymentController {
         }
 
         return ResponseEntity.ok(paymentResponse);
+    }
+
+    // error handling
+    @ExceptionHandler(OrderNotFoundException.class)
+    public ResponseEntity<?> handleOrderNotFoundException(OrderNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
     }
 
     /**

@@ -9,7 +9,7 @@ server:
 #  error:
 #    path: /error
 
-local-auth-backend: https://3f35-66-253-183-231.ngrok-free.app
+local-auth-backend: https://f936-66-253-183-231.ngrok-free.app
 
 spring:
   main:
@@ -41,6 +41,12 @@ spring:
     port: 5672
     username: guest
     password: guest
+    listener:
+      simple:
+        concurrency: 1
+        max-concurrency: 1
+        acknowledge-mode: manual
+        prefetch: 1
   security:
     oauth2:
       client:
@@ -134,9 +140,24 @@ inventory:
   reduce:
     queue:
       name: inventory_reduction_queue
-order:
-  queue:
-    name: order_queue
+#order:
+#  queue:
+#    name: order_queue
+
+rabbitmq:
+  queues:
+    order_process:
+      name: order_queue
+      ttl: 60000  # 1分钟的TTL: 60000  1 minute in milliseconds
+      exchange:
+        name: order_queue_exchange
+      routing-key: order_queue_routing
+  dlx:
+    queue:
+      name: order_dlx_queue
+    exchange:
+      name: order_dlx_exchange
+    routing-key: order_dlx
 
 product:
   image:

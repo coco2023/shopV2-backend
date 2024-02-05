@@ -12,4 +12,8 @@ public interface SalesOrderService {
     void deleteSalesOrder(Long id);
 
     SalesOrder getSalesOrderBySalesOrderSn(String salesOrderSn);
+
+    boolean canCancelOrder(String salesOrderSn);
+
+    void cancelOrder(String salesOrderSn);
 }

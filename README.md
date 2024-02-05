@@ -37,6 +37,117 @@ create payment Log_ERROR_DB to save every error/interrupts occur during payment 
 
 通过综合应用上述策略，可以显著提高您电商网站的性能和用户体验。每种方法都有其适用场景，建议根据您的具体需求和资源情况进行选择和调整。如果需要更详细的实现建议或帮助，请随时提问！
 
+# RabbitMQ: order_queue 不能接收消息
+1. 自己设定自定义交换机发送消息: 在 `convertAndSend` 方法中指定交换机名称、路由键和消息体
+2. **消费者配置**：如果您的消费者配置为手动确认消息，但实际处理逻辑中没有正确执行 `basicAck`: 手动确认消息
+
+- **错误类型**：`PRECONDITION_FAILED`，这通常意味着客户端请求的操作违反了 RabbitMQ 服务器的某些条件或设置。
+- **具体问题**：`delivery acknowledgement on channel timed out`，这表明在指定的超时时间内，消费者没有发送消息确认（acknowledgement）回 RabbitMQ 服务器。
+- **超时值**：`Timeout value used: 1800000 ms`，即使用的超时时间为 1800000 毫秒（30分钟）。
+```md
+# 这里设置了 manual ack报文确认
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        concurrency: 1
+        max-concurrency: 1
+        acknowledge-mode: manual
+        prefetch: 1
+```
+### 可能的原因
+
+1. **消息确认延迟**：您的应用可能在处理消息时耗时较长，导致未能在预定的超时时间内发送 ack 回服务器。这可能是因为消息处理逻辑复杂、系统负载高、外部资源（如数据库）访问延迟等原因。
+
+2. **消费者配置**：如果您的消费者配置为手动确认消息，但实际处理逻辑中没有正确执行 `basicAck`，则会导致此问题。
+
+### 解决方案
+
+1. **检查和优化消息处理逻辑**：确保您的消费者能够高效地处理消息，并在合理的时间内发送 ack。这可能需要优化处理逻辑，或者在处理大量数据时引入分批处理和异步处理机制。
+
+2. **调整确认超时设置**：如果您确认消费者的处理时间确实可能超过默认的超时时间，并且这是可接受的，您可以考虑调整 RabbitMQ 的消费者超时设置。这可以通过修改 RabbitMQ 的配置文件实现，具体取决于您的 RabbitMQ 版本和部署方式。
+
+3. **确保手动确认逻辑正确**：如果您使用的是手动确认模式，请确保在消息被成功处理后调用 `basicAck` 方法。如果处理失败，根据情况调用 `basicNack` 或 `basicReject`。
+
+4. **增加日志记录**：在消息处理的各个阶段增加日志记录，这有助于诊断是否存在处理延迟或确认遗漏的问题。
+
+### 示例：手动确认消息
+
+如果您使用 Spring AMQP，并且配置了手动消息确认，确保在消息处理器中正确地确认消息：
+
+```md
+@RabbitListener(queues = "#{@yourQueue}")
+public void receiveMessage(final Message message, Channel channel) throws IOException {
+    try {
+        // 处理消息
+        System.out.println("Received message: " + new String(message.getBody()));
+
+        // 消息处理成功后，确认消息
+        channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+    } catch (Exception e) {
+        // 处理失败，拒绝消息并重新入队
+        channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
+    }
+}
+```
+
+# rabbitMQ 反序列化问题: ObjectMapper
+
+Listener:
+```md
+    @Autowired
+    private ObjectMapper objectMapper;
+    @RabbitListener(queues = "#{@orderQueue}")
+    public void onOrderReceived(Message message, Channel channel) throws IOException {
+        try {
+            SalesOrderDTO salesOrder = convertMessageToSalesOrderDTO(message);
+
+            log.info("Asynchronously processing order for salesOrderSn: {}", salesOrder.getSalesOrderSn());
+            log.info("sales order: {}", salesOrderService.getSalesOrderBySalesOrderSn(salesOrder.getSalesOrderSn()));
+
+            // 在这里进行订单处理，例如验证订单、检查库存、保存订单到数据库等
+            payPalService.createPayment(salesOrder);
+
+            // 手动确认消息
+            channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+        } catch (Exception e) {
+            // 可以在这里实现错误处理逻辑，如重试或将失败的订单信息发送到另一个队列进行进一步处理
+            log.error("Failed to process order asynchronously: {}", e.getMessage());
+
+            // 对于处理失败的消息，您可以选择拒绝并重新入队，或者直接丢弃
+            channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
+        }
+    }
+
+    private SalesOrderDTO convertMessageToSalesOrderDTO(Message message) {
+        try {
+            // 假设消息体是 JSON 格式，并且能够被直接映射到 SalesOrderDTO 类
+            // 使用已配置的 ObjectMapper 实例进行反序列化
+            return objectMapper.readValue(message.getBody(), SalesOrderDTO.class);
+        } catch (IOException e) {
+            log.error("Error converting message to SalesOrderDTO", e);
+            throw new RuntimeException("Error converting message to SalesOrderDTO", e);
+        }
+    }
+
+```
+加入maven和JacksonConfig
+```md
+@Configuration
+public class JacksonConfig {
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        return mapper;
+    }
+}
+```
+
 # Customer, Supplier 在加了身份验证 改了代码以后没有办法登录（用户名密码都没有问题）
 因为password Encoder在JWTProvide里面需要处理各种用户密码登录操作的password；如果把Password Encoder和其他函数放在了JWTFilter或其他地方就会报错
 
@@ -90,6 +201,64 @@ refer: [Polling] https://opendocs.alipay.com/support/01rfnt
 4. **客户端发起支付请求**：改变流程，让客户端（比如浏览器）直接发起支付创建请求，而不是通过服务器端的异步处理。这样，服务器端可以在处理该请求时同步返回重定向 URL，从而实现重定向。
 
 ```
+
+# RabbitMQ 死信队列
+```md
+Shutdown Signal: channel error; protocol method: #method<channel.close>(reply-code=406, reply-text=PRECONDITION_FAILED - inequivalent arg 'x-message-ttl' for queue 'order_queue' in vhost '/': received the value '120000' of type 'signedint' but current is none, class-id=50, method-id=10)
+
+WARN 30588 --- [ntContainer#2-1] o.s.a.r.listener.BlockingQueueConsumer   : Queue declaration failed; retries left=3
+
+org.springframework.amqp.rabbit.listener.BlockingQueueConsumer$DeclarationException: Failed to declare queue(s):[dlxQueue]
+at org.springframework.amqp.rabbit.listener.BlockingQueueConsumer.attemptPassiveDeclarations(BlockingQueueConsumer.java:760) ~[spring-rabbit-2.4.17.jar:2.4.17]
+at org.springframework.amqp.rabbit.listener.BlockingQueueConsumer.passiveDeclarations(BlockingQueueConsumer.java:637) ~[spring-rabbit-2.4.17.jar:2.4.17]
+at org.springframework.amqp.rabbit.listener.BlockingQueueConsumer.start(BlockingQueueConsumer.java:624) ~[spring-rabbit-2.4.17.jar:2.4.17]
+at 
+```
+This issue often arises when a queue is initially created without certain arguments (like `x-message-ttl` in your case) and later attempts are made to declare the same queue name with those arguments. RabbitMQ does not allow the modification of certain properties of an existing queue. Therefore, if the queue was first created without a TTL (Time-To-Live) and you're now trying to declare it with a TTL, RabbitMQ will reject this declaration.
+
+The error you're encountering, `PRECONDITION_FAILED - inequivalent arg 'x-message-ttl' for queue 'order_queue'`, indicates that there is a mismatch in the configuration of the `order_queue` between what is already defined in RabbitMQ and what your application is trying to declare.
+
+To resolve this issue, you have a few options:
+
+1. **Delete the Existing Queue**: If the queue doesn't contain messages that need to be preserved, the simplest solution is to delete the existing queue from RabbitMQ and let your application re-declare it with the new arguments. You can delete the queue using the RabbitMQ Management UI or with a command-line tool like `rabbitmqctl`.
+
+2. **Use a Different Queue Name**: If deleting the queue is not feasible, consider using a different name for the new queue with the TTL argument. This requires changes in your application where the queue name is referenced.
+
+3. **Remove the TTL Argument**: If the TTL is not a strict requirement for your application logic, you can remove the `x-message-ttl` argument from your queue declaration to match the existing queue configuration.
+
+To delete the queue using RabbitMQ Management UI, follow these steps:
+
+- Log in to the RabbitMQ Management UI (usually accessible at `http://your-rabbitmq-server:15672/`).
+- Navigate to the "Queues" tab.
+- Find the `order_queue` in the list and click on it.
+- Scroll down to the "Delete" section and click the "Delete" button.
+
+After deleting the queue, restart your application, and it should be able to declare the queue with the new `x-message-ttl` argument without any issues.
+
+For the `dlxQueue` declaration failure, ensure that the `dlxQueue` is also not pre-existing with different settings or verify that the `dlx.exchange` and routing key `dlx_order` are correctly configured in both RabbitMQ and your application. If `dlxQueue` also exists, you might need to apply the same resolution steps as mentioned above for the `order_queue`.
+
+# 延迟队列
+延迟队列是一种支持消息被延迟一定时间后再被消费的队列。消息被发送到队列中后，并不会立即被消费，而是要等到设定的延迟时间过后，消息才会被发送到消费队列，供消费者处理。延迟队列常用于实现需要延时处理的业务逻辑，如订单超时未支付自动取消、定时任务调度、延迟消息提醒等场景。
+
+### 如何运用延迟队列
+
+1. **订单超时处理**：电商平台中的订单在创建后，如果用户在一定时间内未支付，则需要自动取消订单。可以将订单信息以消息的形式发送到延迟队列中，设置延迟时间为订单的支付超时时间。当延迟时间到达时，从队列中取出订单信息，执行取消操作。
+
+2. **定时任务调度**：在某些场景下，需要在指定的时间执行任务，如每天定时发送报表、定时推送通知等。将任务信息和执行时间发送到延迟队列，队列到时间后触发任务执行。
+
+3. **消息提醒**：如社交应用中的生日提醒、会议提醒等，提前将提醒信息和提醒时间发送到延迟队列中，当时间到达时，再将消息推送给用户。
+
+4. **实现TTL(Time To Live)**：在分布式系统中，某些临时数据需要在一定时间后自动过期，可以将这些数据的过期操作作为消息发送到延迟队列，实现自动过期处理。
+
+### 实现延迟队列的方法
+
+- **RabbitMQ**：通过RabbitMQ的死信队列和TTL设置实现。消息被设置一个TTL，当消息在队列中的存活时间超过TTL时，会被自动发送到另一个死信队列中，从而实现延迟消费的效果。
+
+- **Redis**：使用Redis的`ZSET`（有序集合），将消息的执行时间作为分数，消息内容作为成员存入ZSET中。通过轮询ZSET，取出当前时间之前的所有消息进行处理。
+
+- **Kafka**：Kafka本身不支持精准的延迟队列，但可以通过设置消息的时间戳来实现类似的功能，消费者根据时间戳判断是否消费消息。
+
+- **专门的延迟队列服务**：如阿里云的消息队列 MQ、腾讯云的CMQ等，提供了更为完善和易用的延迟消息服务。
 
 # add TransactionTemplate to payment process for payment rollback
  If you are facing difficulties using `TransactionSynchronizationManager` and it's not resolving the `getCurrentTransactionStatus` method, here's an alternative approach to handle transaction rollback programmatically:
@@ -1640,6 +1809,6 @@ public class RabbitConfig {
 
 通过缓存预热，可以有效提升缓存命中率，减轻数据库负担，提高系统的整体性能和稳定性。
 
-
+# RabbitMQ: order_queue 不能接收消息（详细）
 
 

@@ -1,5 +1,6 @@
 package com.UmiUni.shop;
 
+import org.springframework.amqp.rabbit.annotation.EnableRabbit;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -12,6 +13,7 @@ import java.util.TimeZone;
 @EnableConfigurationProperties
 @EnableScheduling
 @EnableWebMvc
+@EnableRabbit
 public class ShopApplication {
     public static void main(String[] args) {
         TimeZone.setDefault(TimeZone.getTimeZone("America/Chicago"));

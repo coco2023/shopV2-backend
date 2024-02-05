@@ -1,6 +1,8 @@
 package com.UmiUni.shop.service.impl;
 
+import com.UmiUni.shop.constant.OrderStatus;
 import com.UmiUni.shop.entity.SalesOrder;
+import com.UmiUni.shop.exception.OrderNotFoundException;
 import com.UmiUni.shop.repository.SalesOrderRepository;
 import com.UmiUni.shop.service.SalesOrderService;
 import lombok.extern.log4j.Log4j2;
@@ -63,5 +65,35 @@ public class SalesOrderServiceImpl implements SalesOrderService {
     @Override
     public SalesOrder getSalesOrderBySalesOrderSn(String salesOrderSn) {
         return salesOrderRepository.getSalesOrderBySalesOrderSn(salesOrderSn).get();
+    }
+
+    @Override
+    public boolean canCancelOrder(String salesOrderSn) {
+        SalesOrder salesOrder = salesOrderRepository.getSalesOrderBySalesOrderSn(salesOrderSn).get();
+        if (salesOrder == null) {
+            throw new OrderNotFoundException("Order with SN " + salesOrderSn + " not found.");
+        }
+
+        // Check if the order's status allows for cancellation
+        return salesOrder.getOrderStatus().equals(OrderStatus.PENDING) || salesOrder.getOrderStatus().equals(OrderStatus.PROCESSING);
+    }
+
+    @Override
+    public void cancelOrder(String salesOrderSn) {
+        SalesOrder salesOrder = salesOrderRepository.getSalesOrderBySalesOrderSn(salesOrderSn).get();
+        if (salesOrder == null) {
+            throw new OrderNotFoundException("Order with SN " + salesOrderSn + " not found.");
+        }
+
+        // Update order status
+        salesOrder.setOrderStatus(OrderStatus.CANCELLED);
+        salesOrder.setLastUpdated(LocalDateTime.now());
+        salesOrderRepository.save(salesOrder);
+
+        // Additional logic might include:
+        // TODO: - Issuing a refund if the order was paid
+        // TODO: - Updating inventory to reflect the cancellation
+        // TODO: - Notifying the customer of the cancellation
+
     }
 }
