@@ -91,10 +91,10 @@ public class RabbitConfig {
 //    }
     @Bean
     public Queue orderQueue() {
-        return QueueBuilder.durable(orderQueueName)
-                .deadLetterExchange(dlxExchangeName)
-                .deadLetterRoutingKey(dlxRoutingKey)
-                .ttl(120000) // 确保这个值是从配置文件中读取的整数值
+        return QueueBuilder.durable("order_queue")
+                .deadLetterExchange("order_dlx_exchange")
+                .deadLetterRoutingKey("order_dlx")
+                .ttl(2000) // 确保这个值是从配置文件中读取的整数值
                 .build();
     }
 
@@ -111,13 +111,13 @@ public class RabbitConfig {
     // 配置死信交换器: 声明交换机：这可以是任意类型的交换机（direct, topic, fanout, headers)
     @Bean
     public DirectExchange deadLetterExchange() {
-        return new DirectExchange(dlxExchangeName);
+        return new DirectExchange("order_dlx_exchange");
     }
 
     // 配置死信队列: 声明死信队列：这个队列就是用来接收死信的。
     @Bean
     public Queue dlxQueue() {
-        return new Queue(dlxQueueName, true);
+        return new Queue("order_dlx_queue", true);
     }
 
     // 绑定死信队列和死信交换器: 绑定DLX到死信队列：这样DLX上的消息就会路由到这个死信队列
