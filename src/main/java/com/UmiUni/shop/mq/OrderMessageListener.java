@@ -1,5 +1,6 @@
 package com.UmiUni.shop.mq;
 
+import com.UmiUni.shop.constant.PaymentStatus;
 import com.UmiUni.shop.dto.SalesOrderDTO;
 import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.model.PaymentResponse;
@@ -18,8 +19,8 @@ import org.springframework.amqp.core.Message;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 @Component
 @Log4j2
@@ -34,6 +35,9 @@ public class OrderMessageListener {
     @Autowired
     @Qualifier("asyncExecutor") // 使用 @Qualifier 指定注入的 Executor Bean
     private Executor asyncExecutor;
+
+    private static final long POLLING_INTERVAL_MS = 5000; // 轮询间隔，例如5秒
+    private static final long PAYMENT_TIMEOUT_MS = 2000; // 支付超时时间，例如2秒
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -50,7 +54,7 @@ public class OrderMessageListener {
 //            // 在这里进行订单处理，例如验证订单、检查库存、保存订单到数据库等
 //            payPalService.createPayment(salesOrder);
 
-            // 异步执行支付处理，并在完成后确认消息
+            // 异步执行创建支付，并在支付创建成功后启动轮询支付状态
             // 使用CompletableFuture异步执行同步的支付处理方法
             CompletableFuture<PaymentResponse> paymentFuture = CompletableFuture.supplyAsync(() -> {
                 return payPalService.createPayment(salesOrder);
@@ -58,16 +62,57 @@ public class OrderMessageListener {
 
             paymentFuture.thenAccept(paymentResponse -> {
                 // deal with the payment response
-                log.info("Payment processing completed for salesOrderSn: {}", salesOrder.getSalesOrderSn());
-                log.info("PaymentResponse: {}", paymentResponse);
+                if (paymentResponse.getStatus() == PaymentStatus.CREATED.name()) {
+                    // 创建支付成功，启动轮询检查支付状态
+                    ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+                    AtomicBoolean paymentCompleted = new AtomicBoolean(false);
 
-                // 成功处理后确认消息
-                try {
-                    channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
-                    log.info("successfully deal with sales order!");
-                } catch (IOException e) {
-                    log.error("Failed to acknowledge message: {}", e.getMessage());
+                    ScheduledFuture<?> pollingTask = scheduler.scheduleAtFixedRate(() -> {
+                        PaymentResponse completeResponse = payPalService.checkCompletePaymentStatus(salesOrder.getSalesOrderSn());
+                        if (completeResponse.getStatus() == PaymentStatus.SUCCESS.name()) {
+                            paymentCompleted.set(true);
+                            scheduler.shutdown();
+                            try {
+                                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+                                log.info("Payment completed successfully for salesOrderSn: {}", salesOrder.getSalesOrderSn());
+                            } catch (IOException e) {
+                                log.error("Failed to acknowledge message: {}", e.getMessage());
+                            }
+                        }
+                    }, 0, POLLING_INTERVAL_MS, TimeUnit.MICROSECONDS);
+
+                    // 设置超时以停止轮询
+                    scheduler.schedule(() -> {
+                        if (!paymentCompleted.get()) {
+                            pollingTask.cancel(true);
+                            scheduler.shutdown();
+                            try {
+                                channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
+                                log.error("Payment timeout for salesOrderSn: {}", salesOrder.getSalesOrderSn());
+                            } catch (IOException e) {
+                                log.error("Failed to nack message: {}", e.getMessage());
+                            }
+                        }
+                    }, PAYMENT_TIMEOUT_MS, TimeUnit.MICROSECONDS);
+                } else {
+                    // 创建支付失败，处理失败逻辑
+                    log.error("Failed to create payment for salesOrderSn: {}", salesOrder.getSalesOrderSn());
+                    try {
+                        channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
+                    } catch (IOException e) {
+                        log.error("Failed to nack message: {}", e.getMessage());
+                    }
                 }
+//                log.info("Payment processing completed for salesOrderSn: {}", salesOrder.getSalesOrderSn());
+//                log.info("PaymentResponse: {}", paymentResponse);
+//
+//                // 成功处理后确认消息
+//                try {
+//                    channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+//                    log.info("successfully deal with sales order!");
+//                } catch (IOException e) {
+//                    log.error("Failed to acknowledge message: {}", e.getMessage());
+//                }
             }).exceptionally(ex -> {
                 // 支付处理失败，拒绝消息并可选择是否重新入队
                 try {

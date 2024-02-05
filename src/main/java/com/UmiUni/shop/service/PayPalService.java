@@ -24,4 +24,6 @@ public interface PayPalService {
     List<PaymentErrorLog> getPaymentErrorLog();
 
     PaymentResponse checkCreatePaymentStatus(String orderSn);
+
+    PaymentResponse checkCompletePaymentStatus(String salesOrderSn);
 }

@@ -239,7 +239,7 @@ public class PayPalServiceImpl implements PayPalService {
                 rabbitMQSender.sendInventoryLock(new InventoryUpdateMessage(skuCode, quantity));
             }
 
-            return new PaymentResponse("success create payment!", createdPayment.getId(), null, null, approvalUrl);
+            return new PaymentResponse(PaymentStatus.CREATED.name(), createdPayment.getId(), null, null, approvalUrl);
         } catch (PaymentProcessingException e) {
             return  paymentErrorHandlingService.handlePaymentProcessingError(e, payPalPayment.getTransactionId(), salesOrder.getSalesOrderSn());
         } catch (PayPalRESTException e) {
@@ -472,6 +472,20 @@ public class PayPalServiceImpl implements PayPalService {
                     .build();
         }
 //        log.info("paymentResponse: {}", paymentResponse);
+        return paymentResponse;
+    }
+
+    @Override
+    public PaymentResponse checkCompletePaymentStatus(String salesOrderSn) {
+        PayPalPayment payment = payPalPaymentRepository.findBySalesOrderSn(salesOrderSn).get();
+        PaymentResponse paymentResponse = PaymentResponse.builder()
+                .transactionId(payment.getTransactionId())
+                .status(payment.getStatus())
+                .description("payment create success!, token: " + payment.getPaypalToken())
+                .errorMesg(null)
+                .approvalUrl(payment.getApprovalURL())
+                .build();
+
         return paymentResponse;
     }
 

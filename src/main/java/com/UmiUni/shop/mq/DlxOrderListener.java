@@ -19,7 +19,6 @@ public class DlxOrderListener {
     @Autowired
     private ObjectMapper objectMapper;
 
-    // TODO： can not get delay queue
     @RabbitListener(queues = "#{@dlxQueue}")
     public void onExpiredOrderReceived(Message message, Channel channel) throws IOException {
         try {
