@@ -37,6 +37,126 @@ create payment Log_ERROR_DB to save every error/interrupts occur during payment 
 
 通过综合应用上述策略，可以显著提高您电商网站的性能和用户体验。每种方法都有其适用场景，建议根据您的具体需求和资源情况进行选择和调整。如果需要更详细的实现建议或帮助，请随时提问！
 
+# RabbitMQ: order_queue 不能接收消息
+1. 自己设定自定义交换机发送消息: 在 `convertAndSend` 方法中指定交换机名称、路由键和消息体
+2. **消费者配置**：如果您的消费者配置为手动确认消息，但实际处理逻辑中没有正确执行 `basicAck`: 手动确认消息
+
+- **错误类型**：`PRECONDITION_FAILED`，这通常意味着客户端请求的操作违反了 RabbitMQ 服务器的某些条件或设置。
+- **具体问题**：`delivery acknowledgement on channel timed out`，这表明在指定的超时时间内，消费者没有发送消息确认（acknowledgement）回 RabbitMQ 服务器。
+- **超时值**：`Timeout value used: 1800000 ms`，即使用的超时时间为 1800000 毫秒（30分钟）。
+```md
+# 这里设置了 manual ack报文确认
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        concurrency: 1
+        max-concurrency: 1
+        acknowledge-mode: manual
+        prefetch: 1
+```
+### 可能的原因
+
+1. **消息确认延迟**：您的应用可能在处理消息时耗时较长，导致未能在预定的超时时间内发送 ack 回服务器。这可能是因为消息处理逻辑复杂、系统负载高、外部资源（如数据库）访问延迟等原因。
+
+2. **消费者配置**：如果您的消费者配置为手动确认消息，但实际处理逻辑中没有正确执行 `basicAck`，则会导致此问题。
+
+### 解决方案
+
+1. **检查和优化消息处理逻辑**：确保您的消费者能够高效地处理消息，并在合理的时间内发送 ack。这可能需要优化处理逻辑，或者在处理大量数据时引入分批处理和异步处理机制。
+
+2. **调整确认超时设置**：如果您确认消费者的处理时间确实可能超过默认的超时时间，并且这是可接受的，您可以考虑调整 RabbitMQ 的消费者超时设置。这可以通过修改 RabbitMQ 的配置文件实现，具体取决于您的 RabbitMQ 版本和部署方式。
+
+3. **确保手动确认逻辑正确**：如果您使用的是手动确认模式，请确保在消息被成功处理后调用 `basicAck` 方法。如果处理失败，根据情况调用 `basicNack` 或 `basicReject`。
+
+4. **增加日志记录**：在消息处理的各个阶段增加日志记录，这有助于诊断是否存在处理延迟或确认遗漏的问题。
+
+### 示例：手动确认消息
+
+如果您使用 Spring AMQP，并且配置了手动消息确认，确保在消息处理器中正确地确认消息：
+
+```md
+@RabbitListener(queues = "#{@yourQueue}")
+public void receiveMessage(final Message message, Channel channel) throws IOException {
+    try {
+        // 处理消息
+        System.out.println("Received message: " + new String(message.getBody()));
+
+        // 消息处理成功后，确认消息
+        channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+    } catch (Exception e) {
+        // 处理失败，拒绝消息并重新入队
+        channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
+    }
+}
+```
+# rabbitMQ ttl 死信队列接收不到消息
+结合使用异步方式处理 `createPayment` 并使用轮询来查询订单状态，首先异步执行 `createPayment` 方法。一旦创建支付成功，开始一个轮询过程来检查订单的支付状态，直到支付完成或达到超时条件。
+
+在发送 `channel.basicAck` 确认消息之前，确实需要检查 `completePaymentResponse` 是否表示支付成功。这是因为只在支付流程完全成功完成后才确认消息。如果支付未能成功完成（无论是在创建支付阶段还是在完成支付阶段），应该处理相应的失败情况，这可能包括拒绝消息（使用 `channel.basicNack`），并根据业务需求决定是否重新入队消息以便未来重试。
+
+只有在整个支付流程（创建和完成支付）成功完成后，消息才会被确认并从队列中移除。这确保了只有成功处理的订单才会被确认，从而提高了系统的健壮性和可靠性。
+
+
+
+
+# rabbitMQ 反序列化问题: ObjectMapper
+
+Listener:
+```md
+    @Autowired
+    private ObjectMapper objectMapper;
+    @RabbitListener(queues = "#{@orderQueue}")
+    public void onOrderReceived(Message message, Channel channel) throws IOException {
+        try {
+            SalesOrderDTO salesOrder = convertMessageToSalesOrderDTO(message);
+
+            log.info("Asynchronously processing order for salesOrderSn: {}", salesOrder.getSalesOrderSn());
+            log.info("sales order: {}", salesOrderService.getSalesOrderBySalesOrderSn(salesOrder.getSalesOrderSn()));
+
+            // 在这里进行订单处理，例如验证订单、检查库存、保存订单到数据库等
+            payPalService.createPayment(salesOrder);
+
+            // 手动确认消息
+            channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+        } catch (Exception e) {
+            // 可以在这里实现错误处理逻辑，如重试或将失败的订单信息发送到另一个队列进行进一步处理
+            log.error("Failed to process order asynchronously: {}", e.getMessage());
+
+            // 对于处理失败的消息，您可以选择拒绝并重新入队，或者直接丢弃
+            channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
+        }
+    }
+
+    private SalesOrderDTO convertMessageToSalesOrderDTO(Message message) {
+        try {
+            // 假设消息体是 JSON 格式，并且能够被直接映射到 SalesOrderDTO 类
+            // 使用已配置的 ObjectMapper 实例进行反序列化
+            return objectMapper.readValue(message.getBody(), SalesOrderDTO.class);
+        } catch (IOException e) {
+            log.error("Error converting message to SalesOrderDTO", e);
+            throw new RuntimeException("Error converting message to SalesOrderDTO", e);
+        }
+    }
+
+```
+加入maven和JacksonConfig
+```md
+@Configuration
+public class JacksonConfig {
+
+    @Bean
+    public ObjectMapper objectMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+        return mapper;
+    }
+}
+```
+
 # Customer, Supplier 在加了身份验证 改了代码以后没有办法登录（用户名密码都没有问题）
 因为password Encoder在JWTProvide里面需要处理各种用户密码登录操作的password；如果把Password Encoder和其他函数放在了JWTFilter或其他地方就会报错
 
@@ -77,6 +197,8 @@ maven, 使对象class序列化
 ```
 
 2. 异步处理createPaymentAtMQ 和真正的createPayment和前端交互的问题
+
+refer: [Polling] https://opendocs.alipay.com/support/01rfnt
 ```md
 
 1. **前端轮询或 WebSocket**：在前端实现一个轮询机制，定期向后端查询支付创建的状态和重定向 URL。一旦后端确认支付已创建并有了重定向 URL，前端就可以使用 JavaScript 实现页面跳转。或者，使用 WebSocket 在服务端和客户端之间建立一个双向通信通道，当支付创建完成并获取到重定向 URL 后，通过 WebSocket 直接将 URL 发送到客户端，然后客户端执行重定向。
@@ -88,6 +210,64 @@ maven, 使对象class序列化
 4. **客户端发起支付请求**：改变流程，让客户端（比如浏览器）直接发起支付创建请求，而不是通过服务器端的异步处理。这样，服务器端可以在处理该请求时同步返回重定向 URL，从而实现重定向。
 
 ```
+
+# RabbitMQ 死信队列
+```md
+Shutdown Signal: channel error; protocol method: #method<channel.close>(reply-code=406, reply-text=PRECONDITION_FAILED - inequivalent arg 'x-message-ttl' for queue 'order_queue' in vhost '/': received the value '120000' of type 'signedint' but current is none, class-id=50, method-id=10)
+
+WARN 30588 --- [ntContainer#2-1] o.s.a.r.listener.BlockingQueueConsumer   : Queue declaration failed; retries left=3
+
+org.springframework.amqp.rabbit.listener.BlockingQueueConsumer$DeclarationException: Failed to declare queue(s):[dlxQueue]
+at org.springframework.amqp.rabbit.listener.BlockingQueueConsumer.attemptPassiveDeclarations(BlockingQueueConsumer.java:760) ~[spring-rabbit-2.4.17.jar:2.4.17]
+at org.springframework.amqp.rabbit.listener.BlockingQueueConsumer.passiveDeclarations(BlockingQueueConsumer.java:637) ~[spring-rabbit-2.4.17.jar:2.4.17]
+at org.springframework.amqp.rabbit.listener.BlockingQueueConsumer.start(BlockingQueueConsumer.java:624) ~[spring-rabbit-2.4.17.jar:2.4.17]
+at 
+```
+This issue often arises when a queue is initially created without certain arguments (like `x-message-ttl` in your case) and later attempts are made to declare the same queue name with those arguments. RabbitMQ does not allow the modification of certain properties of an existing queue. Therefore, if the queue was first created without a TTL (Time-To-Live) and you're now trying to declare it with a TTL, RabbitMQ will reject this declaration.
+
+The error you're encountering, `PRECONDITION_FAILED - inequivalent arg 'x-message-ttl' for queue 'order_queue'`, indicates that there is a mismatch in the configuration of the `order_queue` between what is already defined in RabbitMQ and what your application is trying to declare.
+
+To resolve this issue, you have a few options:
+
+1. **Delete the Existing Queue**: If the queue doesn't contain messages that need to be preserved, the simplest solution is to delete the existing queue from RabbitMQ and let your application re-declare it with the new arguments. You can delete the queue using the RabbitMQ Management UI or with a command-line tool like `rabbitmqctl`.
+
+2. **Use a Different Queue Name**: If deleting the queue is not feasible, consider using a different name for the new queue with the TTL argument. This requires changes in your application where the queue name is referenced.
+
+3. **Remove the TTL Argument**: If the TTL is not a strict requirement for your application logic, you can remove the `x-message-ttl` argument from your queue declaration to match the existing queue configuration.
+
+To delete the queue using RabbitMQ Management UI, follow these steps:
+
+- Log in to the RabbitMQ Management UI (usually accessible at `http://your-rabbitmq-server:15672/`).
+- Navigate to the "Queues" tab.
+- Find the `order_queue` in the list and click on it.
+- Scroll down to the "Delete" section and click the "Delete" button.
+
+After deleting the queue, restart your application, and it should be able to declare the queue with the new `x-message-ttl` argument without any issues.
+
+For the `dlxQueue` declaration failure, ensure that the `dlxQueue` is also not pre-existing with different settings or verify that the `dlx.exchange` and routing key `dlx_order` are correctly configured in both RabbitMQ and your application. If `dlxQueue` also exists, you might need to apply the same resolution steps as mentioned above for the `order_queue`.
+
+# 延迟队列
+延迟队列是一种支持消息被延迟一定时间后再被消费的队列。消息被发送到队列中后，并不会立即被消费，而是要等到设定的延迟时间过后，消息才会被发送到消费队列，供消费者处理。延迟队列常用于实现需要延时处理的业务逻辑，如订单超时未支付自动取消、定时任务调度、延迟消息提醒等场景。
+
+### 如何运用延迟队列
+
+1. **订单超时处理**：电商平台中的订单在创建后，如果用户在一定时间内未支付，则需要自动取消订单。可以将订单信息以消息的形式发送到延迟队列中，设置延迟时间为订单的支付超时时间。当延迟时间到达时，从队列中取出订单信息，执行取消操作。
+
+2. **定时任务调度**：在某些场景下，需要在指定的时间执行任务，如每天定时发送报表、定时推送通知等。将任务信息和执行时间发送到延迟队列，队列到时间后触发任务执行。
+
+3. **消息提醒**：如社交应用中的生日提醒、会议提醒等，提前将提醒信息和提醒时间发送到延迟队列中，当时间到达时，再将消息推送给用户。
+
+4. **实现TTL(Time To Live)**：在分布式系统中，某些临时数据需要在一定时间后自动过期，可以将这些数据的过期操作作为消息发送到延迟队列，实现自动过期处理。
+
+### 实现延迟队列的方法
+
+- **RabbitMQ**：通过RabbitMQ的死信队列和TTL设置实现。消息被设置一个TTL，当消息在队列中的存活时间超过TTL时，会被自动发送到另一个死信队列中，从而实现延迟消费的效果。
+
+- **Redis**：使用Redis的`ZSET`（有序集合），将消息的执行时间作为分数，消息内容作为成员存入ZSET中。通过轮询ZSET，取出当前时间之前的所有消息进行处理。
+
+- **Kafka**：Kafka本身不支持精准的延迟队列，但可以通过设置消息的时间戳来实现类似的功能，消费者根据时间戳判断是否消费消息。
+
+- **专门的延迟队列服务**：如阿里云的消息队列 MQ、腾讯云的CMQ等，提供了更为完善和易用的延迟消息服务。
 
 # add TransactionTemplate to payment process for payment rollback
  If you are facing difficulties using `TransactionSynchronizationManager` and it's not resolving the `getCurrentTransactionStatus` method, here's an alternative approach to handle transaction rollback programmatically:
@@ -1607,8 +1787,51 @@ public class RabbitConfig {
 
 每种方法都有其适用场景和权衡。根据你的具体需求和应用架构，选择最合适的解决方案。
 
+# Redis 缓存预热
+缓存预热是指在缓存系统正式对外提供服务前，提前将一些数据加载到缓存中的过程。这样做的目的是为了避免缓存系统刚启动时大量的缓存穿透，导致数据库压力骤增，从而影响系统的稳定性和性能。通过缓存预热，可以保证系统在启动初期就能够提供高效的数据访问。
 
+### 缓存预热的常见方法：
 
+1. **静态预热**：根据历史访问频率或业务重要性，预先选定一批数据，然后在缓存系统启动时，通过脚本或程序将这些数据主动加载到缓存中。
 
+2. **动态预热**：通过分析日志文件等，找出访问频次较高的数据，然后将这部分数据加载到缓存中。这种方式更加灵活，能够根据实际情况动态调整预热的数据集。
 
+3. **懒加载结合预热**：系统启动时，对一些重要数据进行预热，而对于其他数据，则采用懒加载的方式，即当请求到来时，再从数据库中加载数据到缓存中。这种方式是一种折中的策略，既能够提高系统启动速度，又能够确保热点数据的快速访问。
+
+### 实现缓存预热的步骤：
+
+1. **确定预热数据**：根据业务重要性、数据访问频率等指标，确定需要预热的数据集合。
+
+2. **编写预热脚本/程序**：根据确定的数据集合，编写脚本或程序来读取这些数据，并将它们加载到缓存中。
+
+3. **执行预热操作**：在缓存系统启动或业务低谷期，执行预热脚本或程序，将数据加载到缓存中。
+
+4. **监控预热效果**：通过监控工具监控缓存的命中率和数据库的访问压力，评估预热的效果，并根据需要调整预热策略。
+
+### 注意事项：
+
+- 在进行缓存预热时，需要注意控制预热的速度，避免因为预热操作而对数据库造成过大压力。
+
+- 预热的数据集合需要定期更新，确保缓存中的数据能够反映最新的访问热点。
+
+- 缓存预热并不适用于所有场景，对于数据更新频繁、访问模式随机的场景，缓存预热可能效果不明显。
+
+通过缓存预热，可以有效提升缓存命中率，减轻数据库负担，提高系统的整体性能和稳定性。
+
+# RabbitMQ: order_queue 不能接收消息（详细）
+
+# RabbitMQ: order_queue 与 AtomicBoolean
+使用 `AtomicBoolean` 在多线程环境下，如在使用 `ScheduledExecutorService` 进行轮询时，是为了安全地处理共享变量。在您的场景中，`paymentCompleted` 是一个共享变量，它可能会被多个线程（轮询任务的线程和可能的超时任务的线程）同时访问和修改。
+
+### 原因概述：
+
+1. **线程安全**：`AtomicBoolean` 提供了一种线程安全的方式来操作布尔值。在并发编程中，当多个线程尝试读取和修改同一个变量时，可能会导致竞争条件（Race Condition），使得变量的状态变得不可预测。`AtomicBoolean` 内部使用了一种称为“无锁编程”的技术，可以在不使用同步的情况下保证变量操作的原子性。
+
+2. **原子操作**：`AtomicBoolean` 提供的方法（如 `get()`, `set()`, `compareAndSet()` 等）都是原子操作。这意味着每个操作都是不可分割的，要么全部执行，要么完全不执行，不会被其他线程的操作打断。这对于确保变量状态的一致性和正确性非常重要。
+
+3. **性能**：与使用 `synchronized` 关键字或显式锁来同步对普通布尔变量的访问相比，`AtomicBoolean` 通常能提供更好的性能。这是因为 `AtomicBoolean` 使用了底层硬件的原子指令来实现同步，避免了锁的开销。
+
+### 使用场景示例：
+
+在您的代码中，`paymentCompleted` 变量被用来标记支付是否已完成。轮询任务会定期检查支付状态，并在支付完成时设置 `paymentCompleted` 为 `true` 并停止轮询。同时，超时任务可能会检查 `paymentCompleted` 的状态来决定是否应该终止轮询并采取超时处理措施。由于这两个任务可能在不同的线程中执行，使用 `AtomicBoolean` 可以确保对 `paymentCompleted` 状态的修改是安全和一致的，避免了潜在的竞争条件。
 

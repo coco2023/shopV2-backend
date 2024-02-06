@@ -6,6 +6,7 @@ import com.UmiUni.shop.constant.PaymentStatus;
 import com.UmiUni.shop.dto.PayPalPaymentResponseDTO;
 import com.UmiUni.shop.dto.SalesOrderDTO;
 import com.UmiUni.shop.entity.*;
+import com.UmiUni.shop.exception.OrderNotFoundException;
 import com.UmiUni.shop.exception.PaymentExpiredException;
 import com.UmiUni.shop.exception.PaymentProcessingException;
 import com.UmiUni.shop.model.InventoryUpdateMessage;
@@ -37,6 +38,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+
+import static org.springframework.beans.BeanUtils.copyProperties;
 
 @Service
 @Log4j2
@@ -236,7 +239,7 @@ public class PayPalServiceImpl implements PayPalService {
                 rabbitMQSender.sendInventoryLock(new InventoryUpdateMessage(skuCode, quantity));
             }
 
-            return new PaymentResponse("success create payment!", createdPayment.getId(), null, null, approvalUrl);
+            return new PaymentResponse(PaymentStatus.CREATED.name(), createdPayment.getId(), null, null, approvalUrl);
         } catch (PaymentProcessingException e) {
             return  paymentErrorHandlingService.handlePaymentProcessingError(e, payPalPayment.getTransactionId(), salesOrder.getSalesOrderSn());
         } catch (PayPalRESTException e) {
@@ -445,9 +448,36 @@ public class PayPalServiceImpl implements PayPalService {
 
     @Override
     public PaymentResponse checkCreatePaymentStatus(String orderSn) {
-        PayPalPayment payment = payPalPaymentRepository.findBySalesOrderSn(orderSn).orElseThrow();
-        log.info("payment found! {}", payment);
+        log.info("orderSn: {}", orderSn);
+        // find by orderSn to check if order exist
+        SalesOrder salesOrder = salesOrderRepository.getSalesOrderBySalesOrderSn(orderSn)
+                .orElseThrow(() -> new OrderNotFoundException(orderSn));
+        // TODO: query did not return a unique result: 2
+        boolean isPaymentPresent = payPalPaymentRepository.findBySalesOrderSn(orderSn).isPresent();
 
+        PaymentResponse paymentResponse = null;
+        if (!isPaymentPresent) {
+            SalesOrderDTO salesOrderDTO = new SalesOrderDTO();
+            copyProperties(salesOrder, salesOrderDTO);
+            paymentResponse = createPayment(salesOrderDTO);
+        }
+        else {
+            PayPalPayment payment = payPalPaymentRepository.findBySalesOrderSn(orderSn).get();
+            paymentResponse = PaymentResponse.builder()
+                    .transactionId(payment.getTransactionId())
+                    .status(payment.getStatus())
+                    .description("payment create success!, token: " + payment.getPaypalToken())
+                    .errorMesg(null)
+                    .approvalUrl(payment.getApprovalURL())
+                    .build();
+        }
+//        log.info("paymentResponse: {}", paymentResponse);
+        return paymentResponse;
+    }
+
+    @Override
+    public PaymentResponse checkCompletePaymentStatus(String salesOrderSn) {
+        PayPalPayment payment = payPalPaymentRepository.findBySalesOrderSn(salesOrderSn).get();
         PaymentResponse paymentResponse = PaymentResponse.builder()
                 .transactionId(payment.getTransactionId())
                 .status(payment.getStatus())
@@ -455,7 +485,7 @@ public class PayPalServiceImpl implements PayPalService {
                 .errorMesg(null)
                 .approvalUrl(payment.getApprovalURL())
                 .build();
-//        log.info("paymentResponse: {}", paymentResponse);
+
         return paymentResponse;
     }
 
