@@ -35,8 +35,8 @@ public class S3Config {
 
     @Bean
     public AmazonS3 s3client() {
-        String accessKey = "AKIAVPHSJTQMAYMEYTWN";
-        String secretKey = "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";
+        String accessKey = "";
+        String secretKey = "";
 
         if (accessKey == null || secretKey == null) {
             throw new IllegalArgumentException("AWS Access Key and Secret Key must be configured");
