@@ -163,3 +163,12 @@ product:
   image:
     storage:
       path: src/main/resources/image/storage
+
+# AWS S3 config
+cloud:
+  aws:
+    region:
+      static: us-east-1
+aws:
+  s3:
+    bucket-name: umi-mall-product-images

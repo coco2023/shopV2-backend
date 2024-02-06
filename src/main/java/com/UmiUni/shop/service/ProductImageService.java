@@ -8,6 +8,8 @@ import java.util.List;
 public interface ProductImageService {
     ProductImage saveImage(Long productId, MultipartFile imageFile);
 
+    ProductImage saveImageToAWS(Long productId, MultipartFile imageFile);
+
     ProductImage getImage(Long id);
 
     List<ProductImage> getImagesByProductId(Long productId);

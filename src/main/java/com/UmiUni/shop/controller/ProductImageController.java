@@ -22,6 +22,14 @@ public class ProductImageController {
     @Autowired
     private ProductImageService productImageService;
 
+    // upload image to AWS S3
+    @PostMapping("/upload/s3")
+    public ResponseEntity<ProductImage> uploadImageToS3(@PathVariable Long productId, @RequestParam("image") MultipartFile imageFile) {
+        ProductImage productImage = productImageService.saveImageToAWS(productId, imageFile); // Call the method that uploads to S3
+        return ResponseEntity.ok(productImage);
+    }
+
+    // upload image to local storage
     @PostMapping("/upload")
     public ResponseEntity<ProductImage> uploadImage(@PathVariable Long productId, @RequestParam("image") MultipartFile imageFile) {
         ProductImage productImage = productImageService.saveImage(productId, imageFile);
