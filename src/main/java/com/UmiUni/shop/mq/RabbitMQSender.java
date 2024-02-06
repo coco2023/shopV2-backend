@@ -21,13 +21,6 @@ public class RabbitMQSender {
 
     @Autowired
     private RabbitTemplate rabbitTemplate;
-//    private final RabbitTemplate rabbitTemplate;
-
-//    @Autowired
-//    public RabbitMQSender(RabbitTemplate rabbitTemplate, Jackson2JsonMessageConverter messageConverter) {
-//        this.rabbitTemplate = rabbitTemplate;
-//        this.rabbitTemplate.setMessageConverter(messageConverter);
-//    }
 
     @Value("${inventory.queue.name}")
     private String inventoryQueue;

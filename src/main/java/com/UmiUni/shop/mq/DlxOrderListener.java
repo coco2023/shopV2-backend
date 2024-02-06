@@ -1,6 +1,9 @@
 package com.UmiUni.shop.mq;
 
+import com.UmiUni.shop.constant.OrderStatus;
 import com.UmiUni.shop.dto.SalesOrderDTO;
+import com.UmiUni.shop.repository.SalesOrderRepository;
+import com.UmiUni.shop.service.SalesOrderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
@@ -19,6 +22,9 @@ public class DlxOrderListener {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private SalesOrderService salesOrderService;
+
     @RabbitListener(queues = "#{@dlxQueue}")
     public void onExpiredOrderReceived(Message message, Channel channel) throws IOException {
         try {
@@ -26,8 +32,8 @@ public class DlxOrderListener {
             log.info("Received expired order in DLX: {}", salesOrder.getSalesOrderSn());
 
             // 处理过期订单逻辑，例如更新订单状态为取消
-            // ...
-
+            salesOrder.setOrderStatus(OrderStatus.EXPIRED);
+            salesOrderService.updateOrderStatusBySalesOrderSn(salesOrder.getSalesOrderSn(), OrderStatus.EXPIRED);
             // 手动确认消息
             channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
         } catch (Exception e) {
@@ -47,12 +53,5 @@ public class DlxOrderListener {
             throw new RuntimeException("Error converting message to SalesOrderDTO", e);
         }
     }
-
-//    @RabbitListener(queues = "#{@dlxQueue}")
-//    public void onExpiredOrderReceived(SalesOrderDTO salesOrder) {
-//        log.info("Received expired order in DLX: {}", salesOrder.getSalesOrderSn());
-//        // Change order status to CANCEL here
-//        // Update the order status in your database or service layer
-//    }
 
 }

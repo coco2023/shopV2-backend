@@ -93,6 +93,15 @@ public void receiveMessage(final Message message, Channel channel) throws IOExce
     }
 }
 ```
+# rabbitMQ ttl 死信队列接收不到消息
+结合使用异步方式处理 `createPayment` 并使用轮询来查询订单状态，首先异步执行 `createPayment` 方法。一旦创建支付成功，开始一个轮询过程来检查订单的支付状态，直到支付完成或达到超时条件。
+
+在发送 `channel.basicAck` 确认消息之前，确实需要检查 `completePaymentResponse` 是否表示支付成功。这是因为只在支付流程完全成功完成后才确认消息。如果支付未能成功完成（无论是在创建支付阶段还是在完成支付阶段），应该处理相应的失败情况，这可能包括拒绝消息（使用 `channel.basicNack`），并根据业务需求决定是否重新入队消息以便未来重试。
+
+只有在整个支付流程（创建和完成支付）成功完成后，消息才会被确认并从队列中移除。这确保了只有成功处理的订单才会被确认，从而提高了系统的健壮性和可靠性。
+
+
+
 
 # rabbitMQ 反序列化问题: ObjectMapper
 
@@ -1811,4 +1820,18 @@ public class RabbitConfig {
 
 # RabbitMQ: order_queue 不能接收消息（详细）
 
+# RabbitMQ: order_queue 与 AtomicBoolean
+使用 `AtomicBoolean` 在多线程环境下，如在使用 `ScheduledExecutorService` 进行轮询时，是为了安全地处理共享变量。在您的场景中，`paymentCompleted` 是一个共享变量，它可能会被多个线程（轮询任务的线程和可能的超时任务的线程）同时访问和修改。
+
+### 原因概述：
+
+1. **线程安全**：`AtomicBoolean` 提供了一种线程安全的方式来操作布尔值。在并发编程中，当多个线程尝试读取和修改同一个变量时，可能会导致竞争条件（Race Condition），使得变量的状态变得不可预测。`AtomicBoolean` 内部使用了一种称为“无锁编程”的技术，可以在不使用同步的情况下保证变量操作的原子性。
+
+2. **原子操作**：`AtomicBoolean` 提供的方法（如 `get()`, `set()`, `compareAndSet()` 等）都是原子操作。这意味着每个操作都是不可分割的，要么全部执行，要么完全不执行，不会被其他线程的操作打断。这对于确保变量状态的一致性和正确性非常重要。
+
+3. **性能**：与使用 `synchronized` 关键字或显式锁来同步对普通布尔变量的访问相比，`AtomicBoolean` 通常能提供更好的性能。这是因为 `AtomicBoolean` 使用了底层硬件的原子指令来实现同步，避免了锁的开销。
+
+### 使用场景示例：
+
+在您的代码中，`paymentCompleted` 变量被用来标记支付是否已完成。轮询任务会定期检查支付状态，并在支付完成时设置 `paymentCompleted` 为 `true` 并停止轮询。同时，超时任务可能会检查 `paymentCompleted` 的状态来决定是否应该终止轮询并采取超时处理措施。由于这两个任务可能在不同的线程中执行，使用 `AtomicBoolean` 可以确保对 `paymentCompleted` 状态的修改是安全和一致的，避免了潜在的竞争条件。
 

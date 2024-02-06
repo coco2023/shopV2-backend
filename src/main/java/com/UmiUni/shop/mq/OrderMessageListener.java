@@ -2,14 +2,12 @@ package com.UmiUni.shop.mq;
 
 import com.UmiUni.shop.constant.PaymentStatus;
 import com.UmiUni.shop.dto.SalesOrderDTO;
-import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.model.PaymentResponse;
 import com.UmiUni.shop.service.PayPalService;
 import com.UmiUni.shop.service.SalesOrderService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import lombok.extern.log4j.Log4j2;
-import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -37,17 +35,19 @@ public class OrderMessageListener {
     private Executor asyncExecutor;
 
     private static final long POLLING_INTERVAL_MS = 5000; // 轮询间隔，例如5秒
-    private static final long PAYMENT_TIMEOUT_MS = 2000; // 支付超时时间，例如2秒
+    private static final long PAYMENT_TIMEOUT_MS = 600000; // 支付超时时间，例如10分钟后
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private MessageRequeueService messageRequeueService;
 
     //    @RabbitListener(queuesToDeclare = @Queue("${rabbitmq.queues.order_process.name}"))
     @RabbitListener(queues = "#{@orderQueue}")
     public void onOrderReceived(Message message, Channel channel) throws IOException {
         try {
             SalesOrderDTO salesOrder = convertMessageToSalesOrderDTO(message);
-
             log.info("Asynchronously processing order for salesOrderSn: {}", salesOrder.getSalesOrderSn());
 
 //            // 这里使用同步处理，但会产生死信队列无法接收过期消息的情况；故使用异步处理
@@ -61,7 +61,20 @@ public class OrderMessageListener {
             }, asyncExecutor); // 使用Spring管理的异步执行器来执行异步任务
 
             paymentFuture.thenAccept(paymentResponse -> {
-                // deal with the payment response
+
+                // 如果检测到特定的错误条件，比如支付超时
+                boolean paymentTimedOut = checkPaymentTimeout(salesOrder.getOrderDate());
+                if (paymentTimedOut) {
+                    // 显式拒绝消息，并且不重新入队
+                    try {
+                        channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, false);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
+                    return; // 结束方法执行
+                }
+
+                // deal with the payment response: if payment has been created successfully, continue; else try to re-enter the queue
                 if (paymentResponse.getStatus() == PaymentStatus.CREATED.name()) {
                     // 创建支付成功，启动轮询检查支付状态
                     ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
@@ -69,6 +82,7 @@ public class OrderMessageListener {
 
                     ScheduledFuture<?> pollingTask = scheduler.scheduleAtFixedRate(() -> {
                         PaymentResponse completeResponse = payPalService.checkCompletePaymentStatus(salesOrder.getSalesOrderSn());
+                        // if the PaymentStatus is "SUCCESS", send the complete ack
                         if (completeResponse.getStatus() == PaymentStatus.SUCCESS.name()) {
                             paymentCompleted.set(true);
                             scheduler.shutdown();
@@ -97,53 +111,58 @@ public class OrderMessageListener {
                 } else {
                     // 创建支付失败，处理失败逻辑
                     log.error("Failed to create payment for salesOrderSn: {}", salesOrder.getSalesOrderSn());
+                    // 重新入队
+                    messageRequeueService.requeueMessage(
+                            message.getMessageProperties().getReceivedExchange(),
+                            message.getMessageProperties().getReceivedRoutingKey(),
+                            message,
+                            "x-retries",
+                            3 // 假设最大重试次数为3
+                    );
+                    // 确认原消息，避免消息被RabbitMQ再次投递
                     try {
-                        channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
-                    } catch (IOException e) {
-                        log.error("Failed to nack message: {}", e.getMessage());
+                        channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+                    } catch (IOException ioex) {
+                        log.error("Failed to ack message: {}", ioex.getMessage());
                     }
                 }
-//                log.info("Payment processing completed for salesOrderSn: {}", salesOrder.getSalesOrderSn());
-//                log.info("PaymentResponse: {}", paymentResponse);
-//
-//                // 成功处理后确认消息
-//                try {
-//                    channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
-//                    log.info("successfully deal with sales order!");
-//                } catch (IOException e) {
-//                    log.error("Failed to acknowledge message: {}", e.getMessage());
-//                }
             }).exceptionally(ex -> {
                 // 支付处理失败，拒绝消息并可选择是否重新入队
+                // 重新入队
+                messageRequeueService.requeueMessage(
+                        message.getMessageProperties().getReceivedExchange(),
+                        message.getMessageProperties().getReceivedRoutingKey(),
+                        message,
+                        "x-retries",
+                        3 // 假设最大重试次数为3
+                );
+                // 确认原消息，避免消息被RabbitMQ再次投递
                 try {
-                    channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
-                    log.error("Failed to process payment, message requeued: {}", ex.getMessage());
-                } catch (IOException e) {
-                    log.error("Failed to nack message: {}", e.getMessage());
+                    channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
+                } catch (IOException ioex) {
+                    log.error("Failed to ack message: {}", ioex.getMessage());
                 }
                 return null;
             });
 
-            // 如果检测到特定的错误条件，比如支付超时
-            boolean paymentTimedOut = checkPaymentTimeout(salesOrder.getOrderDate());
-            if (paymentTimedOut) {
-                // 显式拒绝消息，并且不重新入队
-                channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, false);
-                return; // 结束方法执行
-            }
-
-//            // 手动确认消息
-//            channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
         } catch (Exception e) {
             // 如果在启动异步支付处理之前发生异常，拒绝消息并可选择是否重新入队
-            try {
-                // 可以在这里实现错误处理逻辑，如重试或将失败的订单信息发送到另一个队列进行进一步处理
-                log.error("Failed to process order asynchronously: {}", e.getMessage());
+            // 可以在这里实现错误处理逻辑，如重试或将失败的订单信息发送到另一个队列进行进一步处理
+            log.error("Failed to process order asynchronously: {}", e.getMessage());
 
-                // 对于处理失败的消息，您可以选择拒绝并重新入队，或者直接丢弃
-                channel.basicNack(message.getMessageProperties().getDeliveryTag(), false, true);
+            // 重新入队
+            messageRequeueService.requeueMessage(
+                    message.getMessageProperties().getReceivedExchange(),
+                    message.getMessageProperties().getReceivedRoutingKey(),
+                    message,
+                    "x-retries",
+                    3 // 假设最大重试次数为3
+            );
+            // 确认原消息，避免消息被RabbitMQ再次投递
+            try {
+                channel.basicAck(message.getMessageProperties().getDeliveryTag(), false);
             } catch (IOException ex) {
-                log.error("Failed to nack message: {}", ex.getMessage());
+                log.error("Failed to ack message: {}", ex.getMessage());
             }
         }
     }

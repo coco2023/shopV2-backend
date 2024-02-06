@@ -14,17 +14,12 @@ import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilde
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
-import java.util.HashMap;
-import java.util.Map;
-
 @Configuration
 @Log4j2
 public class RabbitConfig {
 
     @Value("${rabbitmq.queues.order_process.name}")
     private String orderQueueName;
-
-    private int xMesgTTL = 50000;
 
     @Value("${rabbitmq.queues.order_process.ttl}")
     private int orderQueueTTL;
@@ -94,7 +89,7 @@ public class RabbitConfig {
         return QueueBuilder.durable("order_queue")
                 .deadLetterExchange("order_dlx_exchange")
                 .deadLetterRoutingKey("order_dlx")
-                .ttl(2000) // 确保这个值是从配置文件中读取的整数值
+                .ttl(180000) // 3 min
                 .build();
     }
 

@@ -148,7 +148,7 @@ rabbitmq:
   queues:
     order_process:
       name: order_queue
-      ttl: 60000  # 1分钟的TTL: 60000  1 minute in milliseconds
+      ttl: 180000  # 1分钟的TTL: 60000  1 minute in milliseconds
       exchange:
         name: order_queue_exchange
       routing-key: order_queue_routing

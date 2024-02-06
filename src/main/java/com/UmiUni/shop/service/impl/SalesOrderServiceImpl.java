@@ -96,4 +96,11 @@ public class SalesOrderServiceImpl implements SalesOrderService {
         // TODO: - Notifying the customer of the cancellation
 
     }
+
+    @Override
+    public void updateOrderStatusBySalesOrderSn(String salesOrderSn, OrderStatus orderStatus) {
+        SalesOrder salesOrder = salesOrderRepository.getSalesOrderBySalesOrderSn(salesOrderSn).orElseThrow();
+        salesOrder.setOrderStatus(orderStatus);
+        salesOrderRepository.save(salesOrder);
+    }
 }

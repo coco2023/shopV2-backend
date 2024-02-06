@@ -1,5 +1,6 @@
 package com.UmiUni.shop.service;
 
+import com.UmiUni.shop.constant.OrderStatus;
 import com.UmiUni.shop.entity.SalesOrder;
 
 import java.util.List;
@@ -16,4 +17,6 @@ public interface SalesOrderService {
     boolean canCancelOrder(String salesOrderSn);
 
     void cancelOrder(String salesOrderSn);
+
+    void updateOrderStatusBySalesOrderSn(String salesOrderSn, OrderStatus name);
 }
