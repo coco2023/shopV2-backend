@@ -52,7 +52,8 @@ public class ProductController {
 
             if (images != null && images.length > 0) {
                 for (MultipartFile image : images) {
-                    productImageService.saveImage(savedProduct.getProductId(), image);
+//                    productImageService.saveImage(savedProduct.getProductId(), image);
+                    productImageService.saveImageToAWS(savedProduct.getProductId(), image);
                 }
             }
 
@@ -69,6 +70,7 @@ public class ProductController {
         }
     }
 
+    // http://localhost:9001/api/v1/products/1
     @GetMapping("/{id}")
     public ResponseEntity<Product> getProductById(@PathVariable Long id) {
         return ResponseEntity.ok(productService.getProduct(id));
@@ -82,6 +84,7 @@ public class ProductController {
      */
     @GetMapping("/main/all")
     @Cacheable(value = "products", key = "'page:' + #page + 'size:' + #size")
+    // http://localhost:9001/api/v1/products/main/all
     public Page<ProductDTO> getProductsFromCache(@RequestParam(value = "page", defaultValue = "0") int page,
                                                  @RequestParam(value = "size", defaultValue = "20") int size) {
 //        // 更新完产品后清除所有产品列表的缓存
