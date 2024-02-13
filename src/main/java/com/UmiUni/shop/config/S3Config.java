@@ -16,38 +16,38 @@ public class S3Config {
     @Value("${cloud.aws.region.static}")
     private String region;
 
-//    @Bean
-//    public AmazonS3 s3client() {
-//        AWSCredentials awsCredentials = new BasicAWSCredentials(
-//                System.getenv("AWS_ACCESS_KEY_ID"),
-//                System.getenv("AWS_SECRET_ACCESS_KEY")
-//        );
-//
-//        System.out.println("AWS_ACCESS_KEY_ID: " + System.getenv("AWS_ACCESS_KEY_ID"));
-//        System.out.println("AWS_SECRET_ACCESS_KEY: " + System.getenv("AWS_SECRET_ACCESS_KEY"));
-//
-//        return AmazonS3ClientBuilder
-//                .standard()
-//                .withRegion(region)
-//                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
-//                .build();
-//    }
-
     @Bean
     public AmazonS3 s3client() {
-        String accessKey = "";
-        String secretKey = "";
+        AWSCredentials awsCredentials = new BasicAWSCredentials(
+                System.getenv("AWS_ACCESS_KEY_ID"),
+                System.getenv("AWS_SECRET_ACCESS_KEY")
+        );
 
-        if (accessKey == null || secretKey == null) {
-            throw new IllegalArgumentException("AWS Access Key and Secret Key must be configured");
-        }
+        System.out.println("AWS_ACCESS_KEY_ID: " + System.getenv("AWS_ACCESS_KEY_ID"));
+        System.out.println("AWS_SECRET_ACCESS_KEY: " + System.getenv("AWS_SECRET_ACCESS_KEY"));
 
-        AWSCredentials awsCredentials = new BasicAWSCredentials(accessKey, secretKey);
-
-        return AmazonS3ClientBuilder.standard()
-                .withRegion(Regions.fromName(region))
+        return AmazonS3ClientBuilder
+                .standard()
+                .withRegion(region)
                 .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
                 .build();
     }
+
+//    @Bean
+//    public AmazonS3 s3client() {
+//        String accessKey = "accessKey";
+//        String secretKey = "secretKey";
+//
+//        if (accessKey == null || secretKey == null) {
+//            throw new IllegalArgumentException("AWS Access Key and Secret Key must be configured");
+//        }
+//
+//        AWSCredentials awsCredentials = new BasicAWSCredentials(accessKey, secretKey);
+//
+//        return AmazonS3ClientBuilder.standard()
+//                .withRegion(Regions.fromName(region))
+//                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
+//                .build();
+//    }
 
 }
