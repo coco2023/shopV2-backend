@@ -268,7 +268,8 @@ public class ProductServiceImpl implements ProductService {
 
         // Delete specified images
         if (imagesToDelete != null) {
-            imagesToDelete.forEach(productImageService::deleteImage);
+//            imagesToDelete.forEach(productImageService::deleteImage);
+            imagesToDelete.forEach(productImageService::deleteImageFromAWS);
             // remove the images in the original ids
             imagesToDelete.forEach(imageIds::remove);
         }
@@ -276,7 +277,8 @@ public class ProductServiceImpl implements ProductService {
         // Save new images
         if (newImages != null) {
             for (MultipartFile image : newImages) {
-                ProductImage productImage = productImageService.saveImage(productId, image);
+//                ProductImage productImage = productImageService.saveImage(productId, image);
+                ProductImage productImage = productImageService.saveImageToAWS(productId, image);
                 // update the new images into the original image ids
                 imageIds.add(productImage.getId());
             }
@@ -330,6 +332,7 @@ public class ProductServiceImpl implements ProductService {
         dto.setRating(product.getRating());
         dto.setSalesAmount(product.getSalesAmount());
         dto.setImageUrl(product.getImageUrl());
+        // TODO: why can not get the aws s3 url?
         dto.setProductImageIds(product.getProductImageIds() != null ? new ArrayList<>(product.getProductImageIds()) : null);
         dto.setStockQuantity(product.getStockQuantity());
         dto.setStockStatus(product.getStockStatus());

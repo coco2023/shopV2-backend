@@ -17,4 +17,15 @@ public interface ProductImageService {
     void deleteImage(Long id);
 
     byte[] getImageDataByCache(Long id);
+
+    List<String> getImagesPathByProductIdFromAWS(Long productId);
+
+    List<Long> getImagesIdByProductIdFromAWS(Long productId);
+
+//    void deleteImageFromAWS(Long productId, String fileName);
+    void deleteImageFromAWS(Long id);
+
+    byte[] getImageFromAWSByCache(Long id);
+
+    String getImagesByImgIdFromAWS(Long imgId);
 }
