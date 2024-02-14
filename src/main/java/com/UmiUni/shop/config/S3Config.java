@@ -18,10 +18,10 @@ public class S3Config {
 
     @Bean
     public AmazonS3 s3client() {
-        AWSCredentials awsCredentials = new BasicAWSCredentials(
-                System.getenv("AWS_ACCESS_KEY_ID"),
-                System.getenv("AWS_SECRET_ACCESS_KEY")
-        );
+//        AWSCredentials awsCredentials = new BasicAWSCredentials(
+//                System.getenv("AWS_ACCESS_KEY_ID"),
+//                System.getenv("AWS_SECRET_ACCESS_KEY")
+//        );
 
 //        System.out.println("AWS_ACCESS_KEY_ID: " + System.getenv("AWS_ACCESS_KEY_ID"));
 //        System.out.println("AWS_SECRET_ACCESS_KEY: " + System.getenv("AWS_SECRET_ACCESS_KEY"));
@@ -29,7 +29,7 @@ public class S3Config {
         return AmazonS3ClientBuilder
                 .standard()
                 .withRegion(region)
-                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
+//                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
                 .build();
     }
 
