@@ -95,7 +95,7 @@ public class PayPalServiceImpl implements PayPalService {
 
     private APIContext createApiContextForSupplier(Long supplierId) {
         log.info("supplierId: {}", supplierId);
-        Supplier supplier = supplierRepository.findById(supplierId)  // 61L
+        Supplier supplier = supplierRepository.findById(61L)  // 61L  // supplierId
                 .orElseThrow();
         String supplierClientId = supplier.getPaypalClientId();
         String supplierSecret = supplier.getPaypalClientSecret();

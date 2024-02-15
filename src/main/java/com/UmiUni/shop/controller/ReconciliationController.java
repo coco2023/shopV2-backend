@@ -1,9 +1,11 @@
 package com.UmiUni.shop.controller;
 
+import com.UmiUni.shop.component.ReportFileGeneratorFactory;
 import com.UmiUni.shop.model.DailyReport;
 import com.UmiUni.shop.model.ReconcileOrderAndPayment;
 import com.UmiUni.shop.model.ReconcileResult;
 import com.UmiUni.shop.service.ReconciliationService;
+import com.UmiUni.shop.service.ReportFileGenerator;
 import com.UmiUni.shop.utils.DatesFormatConvert;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
@@ -15,6 +17,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -39,6 +42,9 @@ public class ReconciliationController {
 
     @Autowired
     private DatesFormatConvert datesFormatConvert;
+
+    @Autowired
+    private ReportFileGeneratorFactory fileGeneratorFactory;
 
     // http://localhost:9001/api/v1/reconciliation/reconcile?salesOrderSn=SO-1702780660237-4055
     @GetMapping("/reconcile")
@@ -66,6 +72,42 @@ public class ReconciliationController {
         } catch (DateTimeParseException e) {
             return ResponseEntity.badRequest().body("Invalid date format: " + e.getMessage());
         }
+    }
+
+    @GetMapping("/monthly-sales-report/v2")
+    // http://localhost:9001/api/v1/reconciliation/monthly-sales-report/v2?start=2023/12/10&end=2023/12/17&type=JSON
+    public ResponseEntity<?> getMonthlySalesReport2(@RequestParam String start, @RequestParam String end, @RequestParam String type) {
+        Map<LocalDate, DailyReport> reportMap = null;
+
+        try {
+            ArrayList<LocalDateTime> dates = datesFormatConvert.convertStartAndEndDateFormat(start, end);
+            LocalDateTime startDate = dates.get(0);
+            LocalDateTime endDate = dates.get(1);
+
+            reportMap = reconciliationService.generateMonthlySalesReport(startDate, endDate, type);
+
+            ReportFileGenerator fileGenerator = fileGeneratorFactory.createFileGenerator(type);
+
+            ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+            fileGenerator.generateFile(reportMap, outputStream);
+
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentDispositionFormData("attachment", "monthly_sales_report." + type.toLowerCase());
+            headers.setContentType(MediaType.parseMediaType(getMediaType(type)));
+
+            return ResponseEntity.ok()
+                    .headers(headers)
+                    .body(outputStream.toByteArray());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body("IOException: " + e.getMessage());
+        } catch (DateTimeParseException e) {
+            return ResponseEntity.badRequest().body("Invalid date format: " + e.getMessage());
+        }
+    }
+
+    private String getMediaType(String type) {
+        return type.equalsIgnoreCase("JSON") ? "application/json" : "text/csv";
     }
 
     // http://localhost:9001/api/v1/reconciliation/monthly-sales-report?start=2023/12/10&end=2023/12/17&type=JSON
@@ -98,17 +140,16 @@ public class ReconciliationController {
             // Return the report as a file download or as JSON data
             path = file.toPath();
             resource = new ByteArrayResource(Files.readAllBytes(path));
-
+            return ResponseEntity.ok()
+                    .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getName())
+                    .contentType(mediaType)
+                    .body(resource);
         } catch (IOException e) {
             e.printStackTrace();
             return ResponseEntity.badRequest().body("IOException: " + e.getMessage());
         } catch (DateTimeParseException e) {
             return ResponseEntity.badRequest().body("Invalid date format: " + e.getMessage());
         }
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + file.getName())
-                .contentType(mediaType)
-                .body(resource);
     }
 
     /**

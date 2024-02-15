@@ -154,6 +154,7 @@ public class ProductServiceImpl implements ProductService {
                 throw new InsufficientStockException("Insufficient locked stock to complete the transaction");
             }
         } catch (InsufficientStockException e) {
+            paymentErrorHandlingService.handleGenericError(e, null, null);
             return;
         }
 
