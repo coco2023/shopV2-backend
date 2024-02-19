@@ -54,18 +54,15 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         // this method works for saving the token in the header
         String token = resolveToken(request);
         try {
-            log.info("111***FilterToken: " + token);
             if (token != null && jwtTokenProvider.validateToken(token)) {
                 Authentication auth = jwtTokenProvider.getAuthentication(token);
 
                 SecurityContextHolder.getContext().setAuthentication(auth);
-                log.info("***auth: " + auth);
             }
         } catch (CustomException ex) {
             // this is very important, since it guarantees the user is not authenticated at all
             SecurityContextHolder.clearContext();
             response.sendError(ex.getHttpStatus().value(), ex.getMessage());
-            log.info("***FAIL!!!***");
             return;
         }
 
@@ -73,11 +70,8 @@ public class JwtTokenFilter extends OncePerRequestFilter {
     }
 
     private String resolveToken(HttpServletRequest request) {
-        log.info("!!!request: " + request);
         String bearerToken = request.getHeader("Authorization");
-        log.info("bearerToken: {} ", bearerToken );
         if (bearerToken != null && bearerToken.startsWith("Bearer ")) {
-            log.info("@request, {}, {}", request, bearerToken.substring(7));
             return bearerToken.substring(7);
         }
         return null;

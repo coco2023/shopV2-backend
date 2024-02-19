@@ -20,4 +20,9 @@ public class PaymentResponse { // complete payment
 
     private String approvalUrl;
 
+    public PaymentResponse(String state, String transactionId, String approvalURL) {
+        this.status = state;
+        this.transactionId = transactionId;
+        this.approvalUrl = approvalURL;
+    }
 }

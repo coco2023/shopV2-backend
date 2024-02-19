@@ -2,6 +2,7 @@ package com.UmiUni.shop.service;
 
 import com.UmiUni.shop.dto.PayPalPaymentResponseDTO;
 import com.UmiUni.shop.dto.SalesOrderDTO;
+import com.UmiUni.shop.entity.PayPalPayment;
 import com.UmiUni.shop.entity.PaymentErrorLog;
 import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.model.PaymentResponse;
@@ -26,4 +27,6 @@ public interface PayPalService {
     PaymentResponse checkCreatePaymentStatus(String orderSn);
 
     PaymentResponse checkCompletePaymentStatus(String salesOrderSn);
+
+    PayPalPayment checkCompleteStatusByTransactionId(String transactionId);
 }

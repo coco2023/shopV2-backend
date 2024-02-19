@@ -13,6 +13,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -26,10 +27,10 @@ public class RabbitMQSender {
     private String inventoryQueue;
 
     @Value("${inventory.lock.queue.name}")
-    private String inventoryLockQueue;
+    private String inventoryLockQueue;  // inventory_lock_queue
 
     @Value("${inventory.reduce.queue.name}")
-    private String inventoryReductionQueue;
+    private String inventoryReductionQueue;  // inventory_reduction_queue
 
     @Value("${rabbitmq.queues.order_process.name}")
     private String orderQueue;
@@ -40,13 +41,15 @@ public class RabbitMQSender {
     @Value("${rabbitmq.queues.order_process.routing-key}")
     private String orderRoutingKey;
 
+//     @Autowired
+//    private SimpMessagingTemplate template;
 
     @Autowired
     private PaymentErrorHandlingService paymentErrorHandlingService;
 
-    public void sendInventoryUpdate(InventoryUpdateMessage message) {
-        rabbitTemplate.convertAndSend(inventoryQueue, message);
-    }
+//    public void sendInventoryUpdate(InventoryUpdateMessage message) {
+//        rabbitTemplate.convertAndSend(inventoryQueue, message);
+//    }
 
     public void sendInventoryLock(InventoryUpdateMessage message) {
         try {
@@ -62,6 +65,9 @@ public class RabbitMQSender {
         try {
             rabbitTemplate.convertAndSend(inventoryReductionQueue, message);
             log.info("sendInventoryReduction! " + message);
+
+            // Send message to topic
+//            template.convertAndSend("/topic/inventoryReduction", message);
         } catch (AmqpException e) {
             paymentErrorHandlingService.handleAmqpException(e, message);
         }
@@ -69,11 +75,11 @@ public class RabbitMQSender {
 
     public void sendOrder(SalesOrderDTO salesOrder) {
         try {
-            log.info("sent order to queue!! {}", salesOrder );
+            log.info("sent order to queue! {}");
 
 //            rabbitTemplate.convertAndSend(orderQueue, salesOrder);
             rabbitTemplate.convertAndSend(orderExchangeName, orderRoutingKey, salesOrder);
-            log.info("Order sent to queue: {}", salesOrder);
+            log.info("Order sent to queue！ {}");
         } catch (AmqpException e) {
             e.printStackTrace();
             log.error("Failed to send order to queue: {}", e.getMessage());

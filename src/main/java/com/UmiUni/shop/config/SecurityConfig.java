@@ -59,6 +59,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(SecurityUrlConstants.CUSTOMER_PUBLIC_URLS).hasRole("CUSTOMER")
                 .antMatchers(SecurityUrlConstants.ADMIN_PUBLIC_URLS).hasAnyRole("ADMIN", "TESTER")
 
+                // Permit all requests to WebSocket endpoints
+                .antMatchers("/ws/**").permitAll()
+
 //                .anyRequest().permitAll()
                 .anyRequest().authenticated()
                 .and()

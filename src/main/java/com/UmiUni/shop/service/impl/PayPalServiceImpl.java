@@ -212,8 +212,8 @@ public class PayPalServiceImpl implements PayPalService {
                     .paymentState(createdPayment.getState())
                     .build();
             payPalPaymentRepository.save(payPalPayment);
-            log.info("createPayment: " + createdPayment);
-            log.info("payPalPayment: " + payPalPayment);
+//            log.info("createPayment: " + createdPayment);
+//            log.info("payPalPayment: " + payPalPayment);
 
             // update the orderStatus
             salesOrder.setOrderStatus(OrderStatus.PENDING);
@@ -232,10 +232,12 @@ public class PayPalServiceImpl implements PayPalService {
                 int quantity = salesOrderDetail.getQuantity();
                 log.info("create: salesOrderDetails product Info: " + skuCode + " " + quantity);
 
-                // Lock inventory - part of the database transaction
-                productService.lockInventory(skuCode, quantity);
+                // the rabbitMQ has already send the "lock inventory queue", no need this anymore.
+//                // Lock inventory - part of the database transaction
+//                productService.lockInventory(skuCode, quantity);
 
                 // After successful transaction, send message to RabbitMQ
+                // InventoryUpdateListener will receive the message to lock the product inventory
                 rabbitMQSender.sendInventoryLock(new InventoryUpdateMessage(skuCode, quantity));
             }
 
@@ -270,7 +272,6 @@ public class PayPalServiceImpl implements PayPalService {
 
             // get cart(Token)
             payPalPayment = payPalPaymentRepository.findByPaypalToken("EC-" + getCreatePayment.getCart());
-            log.info("**payPalPayment: " + payPalPayment);
 
             // get expireDate
             String expiredDate = extractDescription(getCreatePayment);
@@ -294,7 +295,6 @@ public class PayPalServiceImpl implements PayPalService {
                 payPalPayment.setPaymentState(PaymentStatus.EXPIRED.name());
                 payPalPayment.setStatus(PaymentStatus.EXPIRED.name());
                 payPalPayment.setUpdatedAt(now);
-                log.info("update payPalPayment: " + payPalPayment);
                 payPalPaymentRepository.save(payPalPayment);
 
                 throw new PaymentExpiredException("*ERROR: Payment has been expired!!");
@@ -311,7 +311,6 @@ public class PayPalServiceImpl implements PayPalService {
 
             // EXEC payment
             Payment executedPayment = payment.execute(apiContext, paymentExecution);
-            log.info("executedPayment: " + executedPayment);
 
             // save the executedPayment response
             PayPalPaymentResponseEntity paymentResponse = saveExecutedPayment(executedPayment);
@@ -352,10 +351,12 @@ public class PayPalServiceImpl implements PayPalService {
                 int quantity = salesOrderDetail.getQuantity();
                 log.info("complete: salesOrderDetails product Info: " + skuCode + " " + quantity);
 
-                // Reduce inventory - part of the database transaction
-                productService.reduceProductInventory(skuCode, quantity);
+                // the rabbitMQ has already send the "lock inventory queue", no need this anymore.
+//                // Reduce inventory - part of the database transaction
+//                productService.reduceProductInventory(skuCode, quantity);
 
                 // After successful transaction, send message to RabbitMQ
+                // InventoryUpdateListener will receive the message to reduce the product inventory
                 rabbitMQSender.sendInventoryReduction(new InventoryUpdateMessage(skuCode, quantity));
             }
 
@@ -478,6 +479,7 @@ public class PayPalServiceImpl implements PayPalService {
     @Override
     public PaymentResponse checkCompletePaymentStatus(String salesOrderSn) {
         PayPalPayment payment = payPalPaymentRepository.findBySalesOrderSn(salesOrderSn).get();
+        log.info("checkCompletePaymentStatus: {}", payment);
         PaymentResponse paymentResponse = PaymentResponse.builder()
                 .transactionId(payment.getTransactionId())
                 .status(payment.getStatus())
@@ -487,6 +489,12 @@ public class PayPalServiceImpl implements PayPalService {
                 .build();
 
         return paymentResponse;
+    }
+
+    @Override
+    public PayPalPayment checkCompleteStatusByTransactionId(String transactionId) {
+        PayPalPayment payment = payPalPaymentRepository.findByTransactionId(transactionId);
+        return payment;
     }
 
     // Additional method to check if the customer has insufficient funds
