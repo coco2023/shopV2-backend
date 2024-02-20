@@ -14,6 +14,8 @@ import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilde
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.Map;
+
 @Configuration
 @Log4j2
 public class RabbitConfig {
@@ -119,6 +121,42 @@ public class RabbitConfig {
     @Bean
     public Binding dlxBinding(Queue dlxQueue, DirectExchange deadLetterExchange) {
         return BindingBuilder.bind(dlxQueue).to(deadLetterExchange).with("order_dlx");
+    }
+
+    /**
+     * Settings of Lock Queue
+     */
+    @Bean
+    Queue inventoryLockQueue() {
+        return new Queue("inventory_lock_queue", true, false, false, Map.of("x-message-ttl", 100000));
+    }
+
+    @Bean
+    DirectExchange inventoryLockExchange() {
+        return new DirectExchange("inventory_lock_queue_exchange");
+    }
+
+    @Bean
+    Binding inventoryLockBinding(Queue inventoryLockQueue, DirectExchange inventoryLockExchange) {
+        return BindingBuilder.bind(inventoryLockQueue).to(inventoryLockExchange).with("inventory_lock_queue_routing");
+    }
+
+    /**
+     * settings of inventory reduction queue
+     */
+    @Bean
+    Queue inventoryReductionQueue() {
+        return new Queue("inventory_reduction_queue", true, false, false, Map.of("x-message-ttl", 100000));
+    }
+
+    @Bean
+    DirectExchange inventoryReductionExchange() {
+        return new DirectExchange("inventory_reduction_queue_exchange");
+    }
+
+    @Bean
+    Binding inventoryReductionBinding(Queue inventoryReductionQueue, DirectExchange inventoryReductionExchange) {
+        return BindingBuilder.bind(inventoryReductionQueue).to(inventoryReductionExchange).with("inventory_reduction_queue_routing");
     }
 
 }

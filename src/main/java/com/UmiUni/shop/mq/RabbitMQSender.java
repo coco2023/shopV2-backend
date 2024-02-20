@@ -23,15 +23,6 @@ public class RabbitMQSender {
     @Autowired
     private RabbitTemplate rabbitTemplate;
 
-    @Value("${inventory.queue.name}")
-    private String inventoryQueue;
-
-    @Value("${inventory.lock.queue.name}")
-    private String inventoryLockQueue;  // inventory_lock_queue
-
-    @Value("${inventory.reduce.queue.name}")
-    private String inventoryReductionQueue;  // inventory_reduction_queue
-
     @Value("${rabbitmq.queues.order_process.name}")
     private String orderQueue;
 
@@ -44,16 +35,26 @@ public class RabbitMQSender {
 //     @Autowired
 //    private SimpMessagingTemplate template;
 
+    // inventory lock queue part
+    @Value("${rabbitmq.queues.inventory_lock_process.exchange.name}")
+    private String inventoryLockExchange;
+
+    @Value("${rabbitmq.queues.inventory_lock_process.routing-key}")
+    private String inventoryLockRoutingKey;
+
+    // inventory reduction queue part
+    @Value("${rabbitmq.queues.inventory_reduction_process.exchange.name}")
+    private String inventoryReductionExchangeName;
+
+    @Value("${rabbitmq.queues.inventory_reduction_process.routing-key}")
+    private String inventoryReductionRoutingKey;
+
     @Autowired
     private PaymentErrorHandlingService paymentErrorHandlingService;
 
-//    public void sendInventoryUpdate(InventoryUpdateMessage message) {
-//        rabbitTemplate.convertAndSend(inventoryQueue, message);
-//    }
-
     public void sendInventoryLock(InventoryUpdateMessage message) {
         try {
-            rabbitTemplate.convertAndSend(inventoryLockQueue, message);
+            rabbitTemplate.convertAndSend(inventoryLockExchange, inventoryLockRoutingKey, message);
             log.info("sendInventoryLock! " + message);
 //            throw new AmqpException("error test for AmqpException!");
         } catch (AmqpException e) {
@@ -63,7 +64,7 @@ public class RabbitMQSender {
 
     public void sendInventoryReduction(InventoryUpdateMessage message) {
         try {
-            rabbitTemplate.convertAndSend(inventoryReductionQueue, message);
+            rabbitTemplate.convertAndSend(inventoryReductionExchangeName, inventoryReductionRoutingKey, message);
             log.info("sendInventoryReduction! " + message);
 
             // Send message to topic

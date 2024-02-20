@@ -53,7 +53,7 @@ public class OrderMessageListener {
     private MessageRequeueService messageRequeueService;
 
     //    @RabbitListener(queuesToDeclare = @Queue("${rabbitmq.queues.order_process.name}"))
-    @RabbitListener(queues = "#{@orderQueue}")
+    @RabbitListener(queues = "#{@orderQueue}") // the name of the orderQueue @bean in the RabbitConfig
     public void onOrderReceived(Message message, Channel channel) throws IOException {
         try {
             SalesOrderDTO salesOrder = convertMessageToSalesOrderDTO(message);
