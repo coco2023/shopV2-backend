@@ -14,7 +14,7 @@ public interface ProductImageService {
 
     List<ProductImage> getImagesByProductId(Long productId);
 
-    void deleteImage(Long id);
+    void deleteImageLocal(Long id);
 
     byte[] getImageDataByCache(Long id);
 

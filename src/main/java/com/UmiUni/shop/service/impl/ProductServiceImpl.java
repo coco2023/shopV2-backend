@@ -9,6 +9,7 @@ import com.UmiUni.shop.exception.ProductNotFoundException;
 import com.UmiUni.shop.model.ProductWithAttributes;
 import com.UmiUni.shop.redis.InventoryLockService;
 import com.UmiUni.shop.repository.ProductAttributeRepository;
+import com.UmiUni.shop.repository.ProductImageRepository;
 import com.UmiUni.shop.repository.ProductRepository;
 import com.UmiUni.shop.service.PaymentErrorHandlingService;
 import com.UmiUni.shop.service.ProductImageService;
@@ -46,6 +47,9 @@ public class ProductServiceImpl implements ProductService {
 
     @Autowired
     private ProductImageService productImageService;
+
+    @Autowired
+    private ProductImageRepository productImageRepository;
 
     @Autowired
     private ObjectMapper objectMapper;
@@ -307,6 +311,28 @@ public class ProductServiceImpl implements ProductService {
                 .collect(Collectors.toList());
 
         return new PageImpl<>(productDTOList, pageRequest, productPage.getTotalElements());
+    }
+
+    @Override
+    @CacheEvict(value = "products", allEntries = true)
+    public void deleteProductImageById(Long productId, Long imgId) {
+        Product product = productRepository.findById(productId).orElseThrow(() -> new RuntimeException("Product Not Found"));
+
+        // get image ids
+        List<Long> imageIds = product.getProductImageIds();
+
+        // check if local image exit
+        boolean isExit = productImageRepository.existsById(imgId);
+        if (isExit) {
+            productImageService.deleteImageLocal(imgId);
+//            productImageService.deleteImageFromAWS(imgId);
+        }
+
+        //        productImageService.deleteImageFromAWS(imgId);
+        imageIds.remove(imgId);
+        product.setProductImageIds(imageIds);
+        log.info("delete img: {} of product {} success!", imgId, productId);
+        productRepository.save(product);
     }
 
     public ProductDTO convertToProductDTO(Product product) {

@@ -11,6 +11,7 @@ import com.amazonaws.util.IOUtils;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
@@ -144,7 +145,8 @@ public class ProductImageServiceImpl implements ProductImageService {
     }
 
     @Override
-    public void deleteImage(Long id) {
+    @CacheEvict(value = "products", allEntries = true)
+    public void deleteImageLocal(Long id) {
         ProductImage image = getImage(id);
         try {
             Path fileToDelete = Paths.get(image.getFilePath());
@@ -186,6 +188,7 @@ public class ProductImageServiceImpl implements ProductImageService {
 
         if (imageData == null || imageData.length == 0) {
             // Cache miss, load image data from S3
+            log.info("this is imgId: {}", id);
             ProductImage productImage = getImage(id); // Assume this fetches the product image details from the database
             String s3Url = productImage.getFilePath(); // Assuming the filePath stores the S3 URL
 
@@ -211,6 +214,7 @@ public class ProductImageServiceImpl implements ProductImageService {
     }
 
     @Override
+    @CacheEvict(value = "products", allEntries = true)
     public void deleteImageFromAWS(Long id) {
         // Fetch the ProductImage entity by id
         ProductImage image = productImageRepository.findById(id)

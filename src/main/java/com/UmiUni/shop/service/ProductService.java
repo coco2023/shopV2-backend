@@ -28,4 +28,6 @@ public interface ProductService {
     Product updateProductAndImages(Long productId, String productStr, MultipartFile[] newImages, List<Long> imagesToDelete) throws JsonProcessingException;
 
     Page<ProductDTO> getProductsByPage(int page, int size);
+
+    void deleteProductImageById(Long productId, Long imgId);
 }

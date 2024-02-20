@@ -3,6 +3,8 @@ package com.UmiUni.shop.controller;
 import com.UmiUni.shop.entity.ProductImage;
 import com.UmiUni.shop.service.ProductImageService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.data.redis.core.RedisTemplate;
@@ -42,15 +44,23 @@ public class ProductImageController {
     // http://localhost:9001/api/v1/products/78/images/main/s3/img/90
     @GetMapping("/main/s3/img/{id}")
     public ResponseEntity<byte[]> getImageFromAWSByCache(@PathVariable Long id, @PathVariable String productId) {
-        byte[] imageData = productImageService.getImageFromAWSByCache(id);
+//        byte[] imageData = productImageService.getImageFromAWSByCache(id);
+        byte[] imageData = getImageDataFromCacheOrAWS(id);
 
         return ResponseEntity.ok()
                 .contentType(MediaType.IMAGE_JPEG) // 根据实际情况动态确定内容类型
                 .body(imageData);
     }
 
+    @Cacheable(value = "images", key = "#id")
+    public byte[] getImageDataFromCacheOrAWS(Long id) {
+//        clearAllProductsCache();
+        // This method will only be called if the data is not already in the cache
+        return productImageService.getImageFromAWSByCache(id);
+    }
+
     @GetMapping("/main/img/{id}")
-    public ResponseEntity<byte[]> getImageByCache(@PathVariable Long id) {
+    public ResponseEntity<byte[]> getImageByCache(@PathVariable Long id, @PathVariable String productId) {
         byte[] imageData = productImageService.getImageDataByCache(id);
 
         return ResponseEntity.ok()
@@ -84,7 +94,7 @@ public class ProductImageController {
 
     // get images without redis cache
     @GetMapping("/{id}")
-    public ResponseEntity<Resource> getImage(@PathVariable Long id) {
+    public ResponseEntity<Resource> getImage(@PathVariable Long id, @PathVariable String productId) {
         try {
             ProductImage productImage = productImageService.getImage(id);
             Path path = Paths.get(productImage.getFilePath());
@@ -120,9 +130,17 @@ public class ProductImageController {
 //        }
 //    }
 
+    // http://localhost:9001/api/v1/products/1/images/1
     @DeleteMapping("/{id}")
-    public ResponseEntity<?> deleteImage(@PathVariable Long id) {
-        productImageService.deleteImage(id);
+    public ResponseEntity<?> deleteImage(@PathVariable Long id, @PathVariable String productId) {
+//        productImageService.deleteImageLocal(id);
+        productImageService.deleteImageFromAWS(id);
         return ResponseEntity.ok().build();
     }
+
+    @CacheEvict(value = "products", allEntries = true)
+    public void clearAllProductsCache() {
+        // 这个方法体可以留空，因为@CacheEvict注解会负责清除缓存
+    }
+
 }
