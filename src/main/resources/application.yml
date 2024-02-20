@@ -75,7 +75,7 @@ springfox:
   documentation:
     swagger:
       ui:
-        base-url: /api-docs
+        base-url: /swagger-ui.html
 
 springdoc:
   api-docs:
