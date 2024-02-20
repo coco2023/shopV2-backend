@@ -324,8 +324,8 @@ public class ProductServiceImpl implements ProductService {
         // check if local image exit
         boolean isExit = productImageRepository.existsById(imgId);
         if (isExit) {
-            productImageService.deleteImageLocal(imgId);
-//            productImageService.deleteImageFromAWS(imgId);
+//            productImageService.deleteImageLocal(imgId);
+            productImageService.deleteImageFromAWS(imgId);
         }
 
         //        productImageService.deleteImageFromAWS(imgId);
