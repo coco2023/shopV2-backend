@@ -1,11 +1,9 @@
 package com.UmiUni.shop.controller;
 
-import com.UmiUni.shop.constant.OrderStatus;
 import com.UmiUni.shop.dto.PayPalPaymentResponseDTO;
 import com.UmiUni.shop.dto.SalesOrderDTO;
 import com.UmiUni.shop.entity.Payment;
 import com.UmiUni.shop.entity.PaymentErrorLog;
-import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.exception.OrderNotFoundException;
 import com.UmiUni.shop.exception.PaymentProcessingException;
 import com.UmiUni.shop.model.*;

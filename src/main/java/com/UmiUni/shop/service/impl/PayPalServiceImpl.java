@@ -16,7 +16,6 @@ import com.UmiUni.shop.repository.*;
 import com.UmiUni.shop.service.PayPalService;
 import com.UmiUni.shop.service.PaymentErrorHandlingService;
 import com.UmiUni.shop.service.ProductService;
-import com.UmiUni.shop.service.SalesOrderDetailService;
 import com.paypal.api.payments.*;
 import com.paypal.api.payments.Payment;
 import com.paypal.base.rest.APIContext;

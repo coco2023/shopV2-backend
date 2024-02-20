@@ -4,7 +4,6 @@ import com.UmiUni.shop.dto.PayPalPaymentResponseDTO;
 import com.UmiUni.shop.dto.SalesOrderDTO;
 import com.UmiUni.shop.entity.PayPalPayment;
 import com.UmiUni.shop.entity.PaymentErrorLog;
-import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.model.PaymentResponse;
 
 import java.util.List;

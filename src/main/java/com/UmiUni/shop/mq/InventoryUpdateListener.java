@@ -6,12 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.amqp.core.Message;
-import org.springframework.amqp.rabbit.annotation.Queue;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
-import org.springframework.amqp.support.AmqpHeaders;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.handler.annotation.Header;
-import org.springframework.messaging.handler.annotation.Payload;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -94,10 +90,3 @@ public class InventoryUpdateListener {
 //            channel.basicNack(tag, false, true);
 //        }
 //    }
-
-//    @RabbitListener(queuesToDeclare = @Queue(name = "inventory_lock_queue"))
-//    public void handleInventoryLock(InventoryUpdateMessage message) {
-//        productService.lockInventory(message.getSkuCode(), message.getQuantity());
-//        log.info("handleInventoryLock message: " + message);
-//    }
-

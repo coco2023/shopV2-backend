@@ -1,19 +1,13 @@
 package com.UmiUni.shop.mq;
 
 import com.UmiUni.shop.dto.SalesOrderDTO;
-import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.exception.AmqpException;
 import com.UmiUni.shop.model.InventoryUpdateMessage;
 import com.UmiUni.shop.service.PaymentErrorHandlingService;
-import com.UmiUni.shop.service.SalesOrderService;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
-import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Service;
 
 @Service

@@ -7,7 +7,6 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
-import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -120,15 +119,6 @@ public class ProductImageController {
             return ResponseEntity.badRequest().build();
         }
     }
-//    @DeleteMapping("/s3/img/{fileName}")
-//    public ResponseEntity<Void> deleteImageFromAWS(@PathVariable Long productId, @PathVariable String fileName) {
-//        try {
-//            productImageService.deleteImageFromAWS(productId, fileName);
-//            return ResponseEntity.ok().build();
-//        } catch (Exception e) {
-//            return ResponseEntity.badRequest().build();
-//        }
-//    }
 
     // http://localhost:9001/api/v1/products/1/images/1
     @DeleteMapping("/{id}")

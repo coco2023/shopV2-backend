@@ -1,10 +1,8 @@
 package com.UmiUni.shop.service.impl;
 
 import com.UmiUni.shop.entity.PayPalPayment;
-import com.UmiUni.shop.entity.Payment;
 import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.repository.PayPalPaymentRepository;
-import com.UmiUni.shop.repository.PaymentRepository;
 import com.UmiUni.shop.repository.SalesOrderRepository;
 import com.UmiUni.shop.service.SupplierPaymentService;
 import org.springframework.beans.factory.annotation.Autowired;

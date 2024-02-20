@@ -3,7 +3,6 @@ package com.UmiUni.shop.service.impl;
 import com.UmiUni.shop.constant.ErrorCategory;
 import com.UmiUni.shop.constant.OrderStatus;
 import com.UmiUni.shop.entity.PayPalPayment;
-import com.UmiUni.shop.entity.PaymentErrorLog;
 import com.UmiUni.shop.entity.ReconcileErrorLog;
 import com.UmiUni.shop.entity.SalesOrder;
 import com.UmiUni.shop.exception.DBPaymentNotExitException;

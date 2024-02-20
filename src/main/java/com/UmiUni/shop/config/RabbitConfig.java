@@ -9,7 +9,6 @@ import org.springframework.amqp.rabbit.connection.ConnectionFactory;
 import org.springframework.amqp.rabbit.core.RabbitAdmin;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.amqp.support.converter.Jackson2JsonMessageConverter;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.jackson.Jackson2ObjectMapperBuilderCustomizer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -19,26 +18,6 @@ import java.util.Map;
 @Configuration
 @Log4j2
 public class RabbitConfig {
-
-    @Value("${rabbitmq.queues.order_process.name}")
-    private String orderQueueName;
-
-    @Value("${rabbitmq.queues.order_process.ttl}")
-    private int orderQueueTTL;
-
-    @Value("${rabbitmq.dlx.exchange.name}")
-    private String dlxExchangeName;
-
-    @Value("${rabbitmq.dlx.queue.name}")
-    private String dlxQueueName;
-
-    @Value("${rabbitmq.dlx.routing-key}")
-    private String dlxRoutingKey;
-
-//    @Bean
-//    public Queue orderQueue() {
-//        return new Queue(orderQueueName, true); // true 表示队列是持久的
-//    }
 
     @Bean
     public Jackson2JsonMessageConverter producerJackson2MessageConverter() {
@@ -76,16 +55,9 @@ public class RabbitConfig {
         return new RabbitAdmin(connectionFactory);
     }
 
-    // 配置订单队列，设置消息TTL和DLX: 声明队列：在声明队列时，需要指定一些参数，将队列与DLX绑定
-//    @Bean
-//    public Queue orderQueue() {
-//        Map<String, Object> args = new HashMap<>();
-//        log.info("Attempting to declare order_queue with x-message-ttl: {}", orderQueueTTL);
-//        args.put("x-message-ttl", 0);  // "60000" Long.valueOf(60000)
-//        args.put("x-dead-letter-exchange", dlxExchangeName); //"dlx_exchange"
-//        args.put("x-dead-letter-routing-key", dlxRoutingKey); //"dlx_order"
-//        return new Queue(orderQueueName, true, false, false, args);
-//    }
+    /**
+     * Settings of order Queue
+     */
     @Bean
     public Queue orderQueue() {
         return QueueBuilder.durable("order_queue")
