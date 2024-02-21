@@ -1,9 +1,11 @@
 package com.UmiUni.shop.entity;
 
+import com.UmiUni.shop.dto.ForumPostDTO;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
 
 import javax.persistence.*;
+import java.io.Serializable;
 import java.time.LocalDateTime;
 
 @Entity
@@ -13,7 +15,9 @@ import java.time.LocalDateTime;
 @Builder
 @ToString
 @Table(name = "forum_posts")
-public class ForumPost {
+public class ForumPost implements Serializable {
+
+    private static final long serialVersionUID = 7727871091681128507L;
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,5 +38,15 @@ public class ForumPost {
     @CreationTimestamp
     @Column(name = "publish_timestamp", nullable = false, updatable = false)
     private LocalDateTime publishTimestamp;
+    public ForumPostDTO convertToForumPostDTO() {
+        ForumPostDTO dto = new ForumPostDTO();
+        dto.setId(this.id);
+        dto.setForumTopicId(this.forumTopicId);
+        dto.setFloor(this.floor);
+        dto.setUserId(this.userId);
+        dto.setContent(this.content);
+        dto.setPublishTimestamp(this.publishTimestamp);
+        return dto;
+    }
 
 }

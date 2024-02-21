@@ -1,11 +1,16 @@
 package com.UmiUni.shop.controller;
 
+import com.UmiUni.shop.dto.ForumPostDTO;
 import com.UmiUni.shop.entity.ForumPost;
 import com.UmiUni.shop.service.ForumPostService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.awt.print.Pageable;
 import java.util.List;
 
 @RestController
@@ -30,8 +35,12 @@ public class ForumPostController {
     }
 
     @GetMapping()
-    public List<ForumPost> getAllForumPostsASEC() {
-        return forumPostService.getAllForumPostsSortedByTimestampAsc();
+    @Cacheable(value = "forumPostsCache", key = "'getAllForumPostsSortedByTimestampAsc-page:' + #page + '-size:' + #size")
+    public Page<ForumPostDTO> getAllForumPostsDESC(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size) {
+//        return forumPostService.getAllForumPostsSortedByTimestampAsc(page, size);
+        return forumPostService.getAllForumPostsSortedByTimestampDesc(page, size);
     }
 
     @GetMapping("/{id}")

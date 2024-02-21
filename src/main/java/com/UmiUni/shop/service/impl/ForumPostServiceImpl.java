@@ -1,12 +1,16 @@
 package com.UmiUni.shop.service.impl;
 
+import com.UmiUni.shop.dto.ForumPostDTO;
 import com.UmiUni.shop.entity.ForumPost;
 import com.UmiUni.shop.repository.ForumPostRepository;
 import com.UmiUni.shop.service.ForumPostService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
+import java.awt.print.Pageable;
 import java.util.List;
 import java.util.Optional;
 
@@ -54,7 +58,18 @@ public class ForumPostServiceImpl implements ForumPostService {
     }
 
     @Override
-    public List<ForumPost> getAllForumPostsSortedByTimestampAsc() {
-        return forumPostRepository.findAll(Sort.by(Sort.Direction.ASC, "publishTimestamp"));
+    public Page<ForumPostDTO> getAllForumPostsSortedByTimestampAsc(int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size);
+        Page<ForumPost> forumPostPage = forumPostRepository.findAllByOrderByPublishTimestampAsc(pageRequest);
+
+        return forumPostPage.map(ForumPost::convertToForumPostDTO);
+    }
+
+    @Override
+    public Page<ForumPostDTO> getAllForumPostsSortedByTimestampDesc(int page, int size) {
+        PageRequest pageRequest = PageRequest.of(page, size);
+        Page<ForumPost> forumPostPage = forumPostRepository.findAllByOrderByPublishTimestampDesc(pageRequest);
+
+        return forumPostPage.map(ForumPost::convertToForumPostDTO);
     }
 }
