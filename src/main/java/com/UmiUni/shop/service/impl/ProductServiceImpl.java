@@ -237,6 +237,37 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
+    @Transactional
+    public void unlockInventory(String skuCode, int quantity) {
+        try {
+            // Acquire local lock
+            inventoryLockService.localLock(skuCode);
+            log.info("Acquired local lock for skuCode: " + skuCode);
+
+            Product product = productRepository.findBySkuCode(skuCode)
+                    .orElseThrow(() -> new ProductNotFoundException("Product not found for unlock"));
+
+            // Ensure there's enough locked stock to unlock
+            int lockedQuantity = product.getLockedStockQuantity() != null ? product.getLockedStockQuantity() : 0;
+            if (lockedQuantity < quantity) {
+                throw new IllegalStateException("Attempted to unlock more stock than is currently locked for skuCode: " + skuCode);
+            }
+
+            // Unlock the inventory
+            product.setLockedStockQuantity(lockedQuantity - quantity);
+            productRepository.save(product);
+            log.info("Unlocked inventory for skuCode: " + skuCode + ", quantity: " + quantity);
+
+        } catch (Exception e) {
+            log.error("Error unlocking inventory for skuCode: " + skuCode, e);
+            // Handle error appropriately
+        } finally {
+            // Release local lock
+            inventoryLockService.localUnlock(skuCode);
+        }
+    }
+
+    @Override
     @CacheEvict(value = "products", allEntries = true)
     public Product updateProductAndImages(
             Long productId, String productStr,

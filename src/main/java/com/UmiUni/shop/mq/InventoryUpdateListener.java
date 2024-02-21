@@ -11,6 +11,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 @Service
 @Log4j2
@@ -28,9 +31,21 @@ public class InventoryUpdateListener {
         try {
             productService.lockInventory(inventoryUpdateMessage.getSkuCode(), inventoryUpdateMessage.getQuantity());
             log.info("handleInventoryLock message: " + inventoryUpdateMessage);
+
+            // Schedule the unlock task to run after 5 minutes
+            ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+            scheduler.schedule(() -> {
+                try {
+                    productService.unlockInventory(inventoryUpdateMessage.getSkuCode(), inventoryUpdateMessage.getQuantity());
+                    log.info("Inventory unlocked for: " + inventoryUpdateMessage.getSkuCode());
+                } catch (Exception e) {
+                    log.error("Error unlocking inventory for: " + inventoryUpdateMessage.getSkuCode(), e);
+                }
+            }, 5, TimeUnit.MILLISECONDS);  // TimeUnit.MILLISECONDS
+
             // Manually acknowledge the message
             long deliveryTag = message.getMessageProperties().getDeliveryTag();
-//            channel.basicAck(deliveryTag, false);
+            channel.basicAck(deliveryTag, false);
         } catch (Exception e) {
             log.error("Error processing message", e);
             // Optionally, you can negatively acknowledge the message if an error occurs

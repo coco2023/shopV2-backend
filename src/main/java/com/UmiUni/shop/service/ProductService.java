@@ -30,4 +30,6 @@ public interface ProductService {
     Page<ProductDTO> getProductsByPage(int page, int size);
 
     void deleteProductImageById(Long productId, Long imgId);
+
+    void unlockInventory(String skuCode, int quantity);
 }
