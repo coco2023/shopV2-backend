@@ -77,57 +77,106 @@ public class RabbitConfig {
         return BindingBuilder.bind(orderQueue).to(businessExchange).with("order_queue_routing");
     }
 
-    // 配置死信交换器: 声明交换机：这可以是任意类型的交换机（direct, topic, fanout, headers)
+    // 配置死信交换器: 声明交换机：这可以是任意类型的交换机（direct, topic, fanout, headers) order_dlx_exchange
     @Bean
     public DirectExchange deadLetterExchange() {
         return new DirectExchange("order_dlx_exchange");
     }
 
-    // 配置死信队列: 声明死信队列：这个队列就是用来接收死信的。
+    // 配置死信队列: 声明死信队列：这个队列就是用来接收死信的。order_dlx_queue
     @Bean
-    public Queue dlxQueue() {
+    public Queue orderDlxQueue() {
         return new Queue("order_dlx_queue", true);
     }
 
     // 绑定死信队列和死信交换器: 绑定DLX到死信队列：这样DLX上的消息就会路由到这个死信队列
     @Bean
-    public Binding dlxBinding(Queue dlxQueue, DirectExchange deadLetterExchange) {
-        return BindingBuilder.bind(dlxQueue).to(deadLetterExchange).with("order_dlx");
+    public Binding dlxBinding(Queue orderDlxQueue, DirectExchange deadLetterExchange) {
+        return BindingBuilder.bind(orderDlxQueue).to(deadLetterExchange).with("order_dlx");
     }
 
     /**
      * Settings of Lock Queue
      */
     @Bean
-    Queue inventoryLockQueue() {
-        return new Queue("inventory_lock_queue", true, false, false, Map.of("x-message-ttl", 100000));
+    public Queue inventoryLockQueue() {
+        return QueueBuilder.durable("inventory_lock_queue")
+                .deadLetterExchange("inventory_lock_dlx_exchange")
+                .deadLetterRoutingKey("inventory_lock_dlx_routing")
+                .ttl(180000)
+                .build();
     }
 
+//    @Bean
+//    public DirectExchange inventoryLockExchange() {
+//        return new DirectExchange("inventory_lock_queue_exchange");
+//    }
     @Bean
-    DirectExchange inventoryLockExchange() {
+    public DirectExchange inventoryLockExchange() {
         return new DirectExchange("inventory_lock_queue_exchange");
     }
 
+    //    @Bean
+//    public Binding inventoryLockBinding(Queue inventoryLockQueue, DirectExchange inventoryLockExchange) {
+//        return BindingBuilder.bind(inventoryLockQueue).to(inventoryLockExchange).with("inventory_lock_queue_routing");
+//    }
+//    @Bean
+//    public Binding inventoryLockBinding(Queue inventoryLockQueue, DirectExchange inventoryLockExchange) {
+//        return BindingBuilder.bind(inventoryLockQueue).to(inventoryLockExchange).with("inventory_lock_queue_routing");
+//    }
     @Bean
-    Binding inventoryLockBinding(Queue inventoryLockQueue, DirectExchange inventoryLockExchange) {
+    public Binding inventoryLockBinding(Queue inventoryLockQueue, DirectExchange inventoryLockExchange) {
         return BindingBuilder.bind(inventoryLockQueue).to(inventoryLockExchange).with("inventory_lock_queue_routing");
+    }
+
+//    // Dead Letter Queue (DLQ): inventory_lock_dlq
+//    @Bean
+//    public Queue inventoryLockDlxQueue() {
+//        return new Queue("inventory_lock_dlx_queue", true);
+//    }
+    // 配置死信队列: 声明死信队列：这个队列就是用来接收死信的。order_dlx_queue
+    @Bean
+    public Queue inventoryLockDlxQueue() {
+        return new Queue("inventory_lock_dlx_queue", true);
+    }
+
+//    // Dead Letter Exchange (DLX): inventory_lock_dlx
+//    @Bean
+//    public DirectExchange inventoryLockDlx() {
+//        return new DirectExchange("inventory_lock_dlx_exchange");
+//    }
+    // 配置死信交换器: 声明交换机：这可以是任意类型的交换机（direct, topic, fanout, headers) order_dlx_exchange
+    @Bean
+    public DirectExchange inventoryLockDlx() {
+        return new DirectExchange("inventory_lock_dlx_exchange");
+    }
+
+    // Binding of DLQ and DLX
+//    @Bean
+//    public Binding inventoryLockDlxBinding(Queue inventoryLockDlxQueue, DirectExchange inventoryLockDlx) {
+//        return BindingBuilder.bind(inventoryLockDlxQueue).to(inventoryLockDlx).with("inventory_lock_dlx_routing");
+//    }
+    // 绑定死信队列和死信交换器: 绑定DLX到死信队列：这样DLX上的消息就会路由到这个死信队列
+    @Bean
+    public Binding inventoryLockDlxBinding(Queue inventoryLockDlxQueue, DirectExchange inventoryLockDlx) {
+        return BindingBuilder.bind(inventoryLockDlxQueue).to(inventoryLockDlx).with("inventory_lock_dlx_routing");
     }
 
     /**
      * settings of inventory reduction queue
      */
     @Bean
-    Queue inventoryReductionQueue() {
-        return new Queue("inventory_reduction_queue", true, false, false, Map.of("x-message-ttl", 100000));
+    public Queue inventoryReductionQueue() {
+        return new Queue("inventory_reduction_queue", true, false, false, Map.of("x-message-ttl", 180000));
     }
 
     @Bean
-    DirectExchange inventoryReductionExchange() {
+    public DirectExchange inventoryReductionExchange() {
         return new DirectExchange("inventory_reduction_queue_exchange");
     }
 
     @Bean
-    Binding inventoryReductionBinding(Queue inventoryReductionQueue, DirectExchange inventoryReductionExchange) {
+    public Binding inventoryReductionBinding(Queue inventoryReductionQueue, DirectExchange inventoryReductionExchange) {
         return BindingBuilder.bind(inventoryReductionQueue).to(inventoryReductionExchange).with("inventory_reduction_queue_routing");
     }
 

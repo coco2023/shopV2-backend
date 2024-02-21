@@ -30,7 +30,7 @@ public class InventoryUpdateListener {
             log.info("handleInventoryLock message: " + inventoryUpdateMessage);
             // Manually acknowledge the message
             long deliveryTag = message.getMessageProperties().getDeliveryTag();
-            channel.basicAck(deliveryTag, false);
+//            channel.basicAck(deliveryTag, false);
         } catch (Exception e) {
             log.error("Error processing message", e);
             // Optionally, you can negatively acknowledge the message if an error occurs

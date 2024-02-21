@@ -55,7 +55,7 @@ spring:
           paypal:
             clientId: AYQwg1YezCe92zHxmpD8Y8q6M3_AbaGYpjs--ATI3WZzYBdcupomPY3L5lO91mdnv48iYjD6FQ41_QwE
             clientSecret: ECbVzUVjhR2Pu_x5PYeXGvmcBnQWK-9sJe1T5D-TlfwJwuXplM666HmJH9A8pvvjkU0UgvftWkSzw23b
-            redirectUri: ${local-auth-backend}/login/oauth2/code/paypal
+            redirectUri: ${prod-backend}/login/oauth2/code/paypal
             authorizationGrantType: authorization_code
         #            scope: openid, email, profile
         provider:
@@ -105,16 +105,16 @@ paypal:
     secret: ECbVzUVjhR2Pu_x5PYeXGvmcBnQWK-9sJe1T5D-TlfwJwuXplM666HmJH9A8pvvjkU0UgvftWkSzw23b #EGVLVd0YufvNfz8ID2uN_mGRubofoTt2oZNy7CaYLGx2vHPCryZ5PuIve7LpLXxKQ7tDClvFePHBS7lN
   mode: 'sandbox'
   redirect:
-    uri: ${local-auth-backend}/api/v1/suppliers/v2/callback # ${local-auth-backend}  # ${prod-backend}
+    uri: ${prod-backend}/api/v1/suppliers/v2/callback # ${local-auth-backend}  # ${prod-backend}
   frontend:
     base:
-      uri: ${local-frontend} # ${local-frontend}  # ${prod-frontend}
+      uri: ${prod-frontend} # ${local-frontend}  # ${prod-frontend}
     redirect:
-      uri: ${local-frontend}/supplier-ims/ # ${local-frontend}  # ${prod-frontend}
+      uri: ${prod-frontend}/supplier-ims/ # ${local-frontend}  # ${prod-frontend}
   referral:
     uri: ${prod-backend}/api/v1/suppliers/refer # ${local-backend} # ${prod-backend}
   login-success-redirect:
-    uri: ${local-frontend}  # local-frontend
+    uri: ${prod-frontend}  # local-frontend
 
 #    id: ASWE1Q8AfwFxHoTDbB8tanMwQB8qRxb0i72hdPMD23RGzhNqY2DQoClXqQv8ONJWGPi_cy5ro5y_6tHB
 #    secret: EAxzPdtbxhyDw3mmSCRvcputnBrx5Ko_7a73fhfXNP5IRCDYoFExYJS5Qi--OhBTdEv0h0Cat7T_IZXj
@@ -149,19 +149,19 @@ rabbitmq:
   queues:
     order_process:
       name: order_queue
-      ttl: 100000  # 1分钟的TTL: 60000  1 minute in milliseconds
+      ttl: 10000  # 1分钟的TTL: 60000  1 minute in milliseconds
       exchange:
         name: order_queue_exchange
       routing-key: order_queue_routing
     inventory_lock_process:
       name: inventory_lock_queue
-      ttl: 100000  # time-to-live for messages in the inventory_lock_queue
+      ttl: 10000  # time-to-live for messages in the inventory_lock_queue
       exchange:
         name: inventory_lock_queue_exchange # exchange used to route messages to the queue
       routing-key: inventory_lock_queue_routing # routing key used with the exchange to route messages to the queue
     inventory_reduction_process:
       name: inventory_reduction_queue
-      ttl: 100000  # time-to-live for messages in the inventory_lock_queue
+      ttl: 10000  # time-to-live for messages in the inventory_lock_queue
       exchange:
         name: inventory_reduction_queue_exchange # exchange used to route messages to the queue
       routing-key: inventory_reduction_queue_routing # routing key used with the exchange to route messages to the queue
@@ -171,6 +171,12 @@ rabbitmq:
     exchange:
       name: order_dlx_exchange
     routing-key: order_dlx
+  inventory_lock_process_dlx:
+    queue:
+      name: inventory_lock_dlx_queue
+    exchange:
+      name: inventory_lock_dlx_exchange
+    routing-key: inventory_lock_dlx_routing
 
 product:
   image:
@@ -185,3 +191,23 @@ cloud:
 aws:
   s3:
     bucket-name: umi-mall-product-images
+
+#rabbitmq2:
+#  queues:
+#    inventory_lock:
+#      name: inventory_lock_queue
+#      durable: true
+#      ttl: 10000  # TTL for messages in milliseconds (10 seconds)
+#      dead-letter-exchange: inventory_lock_dlx
+#  exchanges:
+#    inventory_lock_dlx:
+#      name: inventory_lock_dlx
+#      type: direct
+#  bindings:
+#    inventory_lock:
+#      queue: inventory_lock_queue
+#      exchange: inventory_lock_dlx
+#      routing-key: inventory_lock_dlx_routing_key
+
+  logging.level.org.springframework.amqp: DEBUG
+  logging.level.org.springframework.rabbit: DEBUG
