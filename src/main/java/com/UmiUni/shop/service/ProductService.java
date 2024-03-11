@@ -32,4 +32,6 @@ public interface ProductService {
     void deleteProductImageById(Long productId, Long imgId);
 
     void unlockInventory(String skuCode, int quantity);
+
+    String getSupplierIdBySkuCode(String skuCode);
 }

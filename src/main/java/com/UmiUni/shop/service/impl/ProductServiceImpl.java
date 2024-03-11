@@ -154,7 +154,7 @@ public class ProductServiceImpl implements ProductService {
 
         try {
             // Check if enough locked stock is available to reduce
-            if (product.getStockQuantity() == null || product.getLockedStockQuantity() < quantity) {
+            if (product.getStockQuantity() == null || product.getStockQuantity() < quantity) {
                 throw new InsufficientStockException("Insufficient locked stock to complete the transaction");
             }
         } catch (InsufficientStockException e) {
@@ -265,6 +265,12 @@ public class ProductServiceImpl implements ProductService {
             // Release local lock
             inventoryLockService.localUnlock(skuCode);
         }
+    }
+
+    @Override
+    public String getSupplierIdBySkuCode(String skuCode) {
+        Product product = productRepository.findBySkuCode(skuCode).orElseThrow();
+        return product.getSkuCode();
     }
 
     @Override

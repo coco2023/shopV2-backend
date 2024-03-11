@@ -211,3 +211,10 @@ aws:
 
   logging.level.org.springframework.amqp: DEBUG
   logging.level.org.springframework.rabbit: DEBUG
+
+openai:
+  api:
+    key: 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
+    url: https://api.openai.com/v1/chat/completions
+
+

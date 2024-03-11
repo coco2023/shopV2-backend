@@ -25,6 +25,7 @@ public class CorsConfig implements WebMvcConfigurer {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowCredentials(true);
         config.addAllowedOrigin("http://localhost:9001");
+        config.addAllowedOrigin("ws://127.0.0.1:9001");
         config.addAllowedOrigin("http://localhost:3000");
         config.addAllowedOrigin("https://www.sandbox.paypal.com");
         config.addAllowedOrigin("https://api.sandbox.paypal.com");

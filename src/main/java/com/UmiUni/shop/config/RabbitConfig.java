@@ -180,4 +180,24 @@ public class RabbitConfig {
         return BindingBuilder.bind(inventoryReductionQueue).to(inventoryReductionExchange).with("inventory_reduction_queue_routing");
     }
 
+    // notification
+    private static final String NOTIFICATION_EXCHANGE = "supplier_notification_exchange";
+    private static final String NOTIFICATION_QUEUE = "supplier_notification_queue";
+    private static final String NOTIFICATION_ROUTING_KEY = "supplier.notification";
+
+    @Bean
+    public DirectExchange notificationExchange() {
+        return new DirectExchange(NOTIFICATION_EXCHANGE);
+    }
+
+    @Bean
+    public Queue notificationQueue() {
+        return new Queue(NOTIFICATION_QUEUE, true);  // true for a durable queue
+    }
+
+    @Bean
+    public Binding notificationBinding(Queue notificationQueue, DirectExchange notificationExchange) {
+        return BindingBuilder.bind(notificationQueue).to(notificationExchange).with(NOTIFICATION_ROUTING_KEY);
+    }
+
 }

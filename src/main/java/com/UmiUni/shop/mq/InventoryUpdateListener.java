@@ -1,6 +1,7 @@
 package com.UmiUni.shop.mq;
 
 import com.UmiUni.shop.model.InventoryUpdateMessage;
+import com.UmiUni.shop.mq.notification.SupplierNotificationSender;
 import com.UmiUni.shop.service.ProductService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
@@ -24,6 +25,9 @@ public class InventoryUpdateListener {
 
     @Autowired
     private ObjectMapper objectMapper;
+
+    @Autowired
+    private SupplierNotificationSender supplierNotificationSender;
 
     @RabbitListener(queues = "#{@inventoryLockQueue}") // the name of the inventoryLockQueue @bean in the RabbitConfig
     public void handleInventoryLock(Message message, Channel channel) throws Exception {
@@ -61,6 +65,11 @@ public class InventoryUpdateListener {
         try {
             productService.reduceProductInventory(inventoryUpdateMessage.getSkuCode(), inventoryUpdateMessage.getQuantity());
             log.info("Inventory reduced: " + inventoryUpdateMessage);
+
+            // Notify the supplier about the inventory reduction
+            String supplierId = productService.getSupplierIdBySkuCode(inventoryUpdateMessage.getSkuCode());
+            supplierNotificationSender.notifySupplier(supplierId, inventoryUpdateMessage.getSkuCode(), inventoryUpdateMessage.getQuantity());
+
             long deliveryTag = message.getMessageProperties().getDeliveryTag();
             channel.basicAck(deliveryTag, false);  // Acknowledge the message
         } catch (Exception e) {
