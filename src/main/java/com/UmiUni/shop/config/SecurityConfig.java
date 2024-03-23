@@ -2,6 +2,7 @@ package com.UmiUni.shop.config;
 
 import com.UmiUni.shop.component.CustomAuthenticationSuccessHandler;
 import com.UmiUni.shop.constant.SecurityUrlConstants;
+import com.UmiUni.shop.mq.notification.exception.AccessDeniedException;
 import com.UmiUni.shop.security.JwtTokenFilter;
 import com.UmiUni.shop.security.JwtTokenProvider;
 import com.UmiUni.shop.security.service.CustomOAuth2UserService;

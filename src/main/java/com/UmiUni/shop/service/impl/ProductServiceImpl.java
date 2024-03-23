@@ -268,9 +268,9 @@ public class ProductServiceImpl implements ProductService {
     }
 
     @Override
-    public String getSupplierIdBySkuCode(String skuCode) {
+    public Long getSupplierIdBySkuCode(String skuCode) {
         Product product = productRepository.findBySkuCode(skuCode).orElseThrow();
-        return product.getSkuCode();
+        return product.getSupplierId();
     }
 
     @Override
@@ -340,8 +340,8 @@ public class ProductServiceImpl implements ProductService {
 //        List<Product> productList = productRepository.findAll(pageRequest).getContent();
         Page<Product> productPage = productRepository.findAll(pageRequest);
 
-        Page<ProductDTO> response = productPage.map(this::convertToProductDTO); // 使用map转换Product到ProductDTO
-        log.info("return Page<ProductDTO>: {} ", response);
+//        Page<ProductDTO> response = productPage.map(this::convertToProductDTO); // 使用map转换Product到ProductDTO
+//        log.info("return Page<ProductDTO>: {} ", response);
 
         List<ProductDTO> productDTOList = productPage.getContent().stream()
                 .map(this::convertToProductDTO)

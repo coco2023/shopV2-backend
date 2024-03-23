@@ -37,7 +37,6 @@ public class SecurityUrlConstants {
             "/api/v1/products/**",
             "/api/v1/products/**/images/**",
             "/api/v1/forumPosts/**",
-            "/ws/**",
             "/api/v1/chat",
     };
 

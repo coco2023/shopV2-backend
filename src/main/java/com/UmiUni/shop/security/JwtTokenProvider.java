@@ -2,8 +2,10 @@ package com.UmiUni.shop.security;
 
 import com.UmiUni.shop.constant.SecurityConstants;
 import com.UmiUni.shop.constant.UserType;
+import com.UmiUni.shop.service.SupplierService;
 import io.jsonwebtoken.*;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
@@ -30,6 +32,9 @@ public class JwtTokenProvider {
 
     @Value("${security.jwt.token.expire-length:3600000}") // 1h by default
     private long validityInMilliseconds;
+
+    @Autowired
+    private SupplierService supplierService;
 
     // Initialization block that encodes the secretKey
     @PostConstruct
@@ -141,6 +146,7 @@ public class JwtTokenProvider {
             if (username.endsWith("@business.example.com")) {
                 claims.put("roles", "SUPPLIER"); // role
                 claims.put("supplierId", supplierId); // Add supplierId to the claims
+                claims.put("supplierName", supplierService.getSupplier(supplierId).getName());
             } else {
                 claims.put("roles", "CUSTOMER"); // role
                 claims.put("customerId", supplierId); // Add customerId to the claims

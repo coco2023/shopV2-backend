@@ -1,7 +1,7 @@
 package com.UmiUni.shop.mq;
 
 import com.UmiUni.shop.model.InventoryUpdateMessage;
-import com.UmiUni.shop.mq.notification.SupplierNotificationSender;
+import com.UmiUni.shop.mq.notification.service.SupplierNotificationSender;
 import com.UmiUni.shop.service.ProductService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
@@ -67,8 +67,9 @@ public class InventoryUpdateListener {
             log.info("Inventory reduced: " + inventoryUpdateMessage);
 
             // Notify the supplier about the inventory reduction
-            String supplierId = productService.getSupplierIdBySkuCode(inventoryUpdateMessage.getSkuCode());
-            supplierNotificationSender.notifySupplier(supplierId, inventoryUpdateMessage.getSkuCode(), inventoryUpdateMessage.getQuantity());
+            Long supplierId = productService.getSupplierIdBySkuCode(inventoryUpdateMessage.getSkuCode());
+            log.info("supplierId: {}, inventoryUpdateMessage: {}", supplierId, inventoryUpdateMessage);
+            supplierNotificationSender.notifySupplier(supplierId.toString(), inventoryUpdateMessage.getSkuCode(), inventoryUpdateMessage.getQuantity());
 
             long deliveryTag = message.getMessageProperties().getDeliveryTag();
             channel.basicAck(deliveryTag, false);  // Acknowledge the message

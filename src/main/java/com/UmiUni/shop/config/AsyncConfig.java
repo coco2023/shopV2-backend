@@ -14,8 +14,8 @@ public class AsyncConfig {
     @Bean(name = "asyncExecutor")
     public Executor asyncExecutor() {
         ThreadPoolTaskExecutor executor = new ThreadPoolTaskExecutor();
-        executor.setCorePoolSize(3); // 核心线程数
-        executor.setMaxPoolSize(10); // 最大线程数
+        executor.setCorePoolSize(3); // 核心线程数: 即使线程是空闲的，线程池也会保持的线程数。
+        executor.setMaxPoolSize(10); // 最大线程数: 线程池允许创建的最大线程数。
         executor.setQueueCapacity(100); // 队列容量
         executor.initialize();
         return executor;

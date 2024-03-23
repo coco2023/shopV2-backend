@@ -11,6 +11,58 @@ create payment Log_ERROR_DB to save every error/interrupts occur during payment 
 
 ![payment Log_ERROR_DB.png](doc/img/payment_ERROR_Log_database.png)
 
+# RabbitMQ + WebSocket + Security for informing supplier when customer finish an order
+![](/doc/img/WebSocket-RabbitMQ-Security-JWT.png)
+
+Refer: 
+1. https://chat.openai.com/share/ac36fbe7-f56f-480d-ac37-1ba23e8ce83d   | [gpt](https://chat.openai.com/g/g-WKIaLGGem-tech-support-advisor/c/78285a22-aad6-4f86-a991-aee0cc124551)
+2. https://chat.openai.com/share/f69ec57a-f503-451d-b9fd-0f54539e55ab |   [gpt](https://chat.openai.com/g/g-WKIaLGGem-tech-support-advisor/c/b3e7f88a-f64f-4e14-83dd-2cf23537b6a9)
+3. https://chat.openai.com/share/fbb9a091-da3c-4a4c-83ba-354222e28239 | [gpt](https://chat.openai.com/g/g-WKIaLGGem-tech-support-advisor/c/cc776412-9a5e-43ae-a9dc-abd769a69d2d)
+4. [gpt](https://chat.openai.com/g/g-WKIaLGGem-tech-support-advisor/c/12f224fd-b6c0-419e-9e5e-a0e837447736)
+
+# Integrate Intercom Bot 整合客服机器人
+https://chat.openai.com/share/08e6cc81-a3ea-4249-94eb-3a43ba99c515  | [gpt](https://chat.openai.com/g/g-WKIaLGGem-tech-support-advisor/c/747d82d3-46c3-4abd-8b4c-b572410b75ab)
+
+# 易错点Rabbit MQ
+由于yml中配置了手动确认，需要在Listener中代码最后加上channel.basicAck 手动确认收到消息：
+`channel.basicAck(deliveryTag, false);`
+```md
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: guest
+    password: guest
+    listener:
+      simple:
+        concurrency: 1
+        max-concurrency: 1
+        acknowledge-mode: manual
+        prefetch: 1
+```
+exp: 在class `supplierNotificationListener` 中
+Manually acknowledge the message
+```java
+    @RabbitListener(queues = "supplier_notification_queue")
+    public void receiveNotification(Message message, Channel channel) throws IOException {
+        try{
+
+        NotificationMessage notificationMessage=convertMessageToObject(message);
+
+        String supplierId=notificationMessage.getSupplierId();
+        String skuCode=notificationMessage.getSkuCode();
+        int quantity=notificationMessage.getQuantity();
+
+        // Example processing logic
+        System.out.println("RabbitListener: Received inventory reduction notification for supplier "+supplierId+
+        ": SKU "+skuCode+" reduced by "+quantity);
+
+        // Manually acknowledge the message
+        long deliveryTag=message.getMessageProperties().getDeliveryTag();
+        channel.basicAck(deliveryTag,false);  // Acknowledge the message
+        }
+}
+```
+
 # Redis
 有几种优化策略可以提高电商网站加载商品主页的效率，并减少对数据库的重复访问。以下是一些推荐的做法：
 
@@ -1835,3 +1887,32 @@ public class RabbitConfig {
 
 在您的代码中，`paymentCompleted` 变量被用来标记支付是否已完成。轮询任务会定期检查支付状态，并在支付完成时设置 `paymentCompleted` 为 `true` 并停止轮询。同时，超时任务可能会检查 `paymentCompleted` 的状态来决定是否应该终止轮询并采取超时处理措施。由于这两个任务可能在不同的线程中执行，使用 `AtomicBoolean` 可以确保对 `paymentCompleted` 状态的修改是安全和一致的，避免了潜在的竞争条件。
 
+# @Transactional 数据库注解
+在使用`@Transactional`注解的情况下，如果方法内部抛出了一个异常但被`try-catch`块捕获并处理了，那么Spring默认行为不会自动回滚事务。这是因为Spring的声明式事务管理是基于异常回滚的：只有当异常从一个`@Transactional`标记的方法中冒泡出来，未被捕获时，Spring才会将当前事务标记为回滚。
+
+### 关键点
+- **捕获处理异常**：如果你在一个`@Transactional`注解的方法内部捕获了一个异常并处理了它（比如打印日志，然后继续执行），Spring认为你已经妥善处理了这个异常，所以不会自动触发事务回滚。
+- **异常类型**：值得注意的是，默认情况下，Spring只对运行时异常(`RuntimeException`)和错误(`Error`)进行回滚。如果你抛出的是检查型异常（即非运行时异常，比如`IOException`），则不会触发回滚，除非你在`@Transactional`注解中显式声明。
+
+### 显式控制事务回滚
+如果你需要在捕获异常后显式地控制事务回滚，你可以采取以下几种方法之一：
+
+1. **使用`setRollbackOnly`**：
+   ```java
+   catch (SomeException e) {
+       TransactionAspectSupport.currentTransactionStatus().setRollbackOnly();
+   }
+   ```
+   使用这种方式，即使异常被捕获，事务也会被标记为回滚。
+
+2. **在`@Transactional`中指定异常**：
+   ```java
+   @Transactional(rollbackFor = SomeException.class)
+   public void yourMethod() {
+       // ...
+   }
+   ```
+   这样可以声明方法在遇到特定异常时触发回滚。
+
+### 实践建议
+在实际应用中，应谨慎使用`try-catch`块捕获异常，特别是在`@Transactional`注解的方法中。如果事务中的操作必须作为一个整体成功或失败，那么应避免内部捕获可能导致事务部分成功的异常，以保持数据的一致性和完整性。如果确实需要在事务方法中捕获异常，应明确考虑是否需要手动回滚事务，并采用适当的方式实现。

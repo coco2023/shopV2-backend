@@ -33,5 +33,5 @@ public interface ProductService {
 
     void unlockInventory(String skuCode, int quantity);
 
-    String getSupplierIdBySkuCode(String skuCode);
+    Long getSupplierIdBySkuCode(String skuCode);
 }

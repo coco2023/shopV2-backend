@@ -3,6 +3,7 @@ package com.UmiUni.shop.controller;
 import com.UmiUni.shop.security.JwtTokenProvider;
 import com.UmiUni.shop.service.SupplierService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 @Service
