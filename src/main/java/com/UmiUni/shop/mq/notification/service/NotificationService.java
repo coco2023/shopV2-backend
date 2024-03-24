@@ -22,12 +22,6 @@ public class NotificationService {
     @Value("${rabbitmq.queues.supplier_notification_for_inventory_reduction_process.name}")
     private String notificationQueue;
 
-    @Value("${rabbitmq.queues.supplier_notification_for_inventory_reduction_process.exchange.name}")
-    private String notificationExchange;
-
-    @Value("${rabbitmq.queues.supplier_notification_for_inventory_reduction_process.routing-key}")
-    private String notificationRoutingKey;
-
     @Autowired
     private ObjectMapper objectMapper; // Jackson's ObjectMapper for JSON processing
 

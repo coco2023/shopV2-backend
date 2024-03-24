@@ -112,33 +112,16 @@ public class RabbitConfig {
                 .build();
     }
 
-//    @Bean
-//    public DirectExchange inventoryLockExchange() {
-//        return new DirectExchange("inventory_lock_queue_exchange");
-//    }
     @Bean
     public DirectExchange inventoryLockExchange() {
         return new DirectExchange("inventory_lock_queue_exchange");
     }
 
-    //    @Bean
-//    public Binding inventoryLockBinding(Queue inventoryLockQueue, DirectExchange inventoryLockExchange) {
-//        return BindingBuilder.bind(inventoryLockQueue).to(inventoryLockExchange).with("inventory_lock_queue_routing");
-//    }
-//    @Bean
-//    public Binding inventoryLockBinding(Queue inventoryLockQueue, DirectExchange inventoryLockExchange) {
-//        return BindingBuilder.bind(inventoryLockQueue).to(inventoryLockExchange).with("inventory_lock_queue_routing");
-//    }
     @Bean
     public Binding inventoryLockBinding(Queue inventoryLockQueue, DirectExchange inventoryLockExchange) {
         return BindingBuilder.bind(inventoryLockQueue).to(inventoryLockExchange).with("inventory_lock_queue_routing");
     }
 
-//    // Dead Letter Queue (DLQ): inventory_lock_dlq
-//    @Bean
-//    public Queue inventoryLockDlxQueue() {
-//        return new Queue("inventory_lock_dlx_queue", true);
-//    }
     // 配置死信队列: 声明死信队列：这个队列就是用来接收死信的。order_dlx_queue
     @Bean
     public Queue inventoryLockDlxQueue() {
@@ -146,22 +129,12 @@ public class RabbitConfig {
     }
 
 //    // Dead Letter Exchange (DLX): inventory_lock_dlx
-//    @Bean
-//    public DirectExchange inventoryLockDlx() {
-//        return new DirectExchange("inventory_lock_dlx_exchange");
-//    }
-    // 配置死信交换器: 声明交换机：这可以是任意类型的交换机（direct, topic, fanout, headers) order_dlx_exchange
     @Bean
     public DirectExchange inventoryLockDlx() {
         return new DirectExchange("inventory_lock_dlx_exchange");
     }
 
     // Binding of DLQ and DLX
-//    @Bean
-//    public Binding inventoryLockDlxBinding(Queue inventoryLockDlxQueue, DirectExchange inventoryLockDlx) {
-//        return BindingBuilder.bind(inventoryLockDlxQueue).to(inventoryLockDlx).with("inventory_lock_dlx_routing");
-//    }
-    // 绑定死信队列和死信交换器: 绑定DLX到死信队列：这样DLX上的消息就会路由到这个死信队列
     @Bean
     public Binding inventoryLockDlxBinding(Queue inventoryLockDlxQueue, DirectExchange inventoryLockDlx) {
         return BindingBuilder.bind(inventoryLockDlxQueue).to(inventoryLockDlx).with("inventory_lock_dlx_routing");

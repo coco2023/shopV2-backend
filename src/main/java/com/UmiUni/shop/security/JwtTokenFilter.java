@@ -67,7 +67,7 @@ public class JwtTokenFilter extends OncePerRequestFilter {
         }
         return null;
     }
-
+}
 //    // Method to extract supplierId from the request path
 //    public Long extractSupplierIdFromPath(String path) {
 //        // Implement logic to extract supplierId from the path
@@ -108,9 +108,6 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 //        }
 //        return null;
 //    }
-
-}
-
 //        // Bypass filter for OAuth2 login URLs
 //        log.info("request: " + request.getPathInfo() + "response: " + response + " chain: " + chain);
 //        if (request.getRequestURI().startsWith("/login") || request.getRequestURI().startsWith("/login/oauth2/")) {

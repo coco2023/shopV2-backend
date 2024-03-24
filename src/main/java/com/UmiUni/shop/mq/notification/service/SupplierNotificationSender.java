@@ -41,9 +41,6 @@ public class SupplierNotificationSender {
     public void notifySupplier(String supplierId, String skuCode, int quantity) {
 
         NotificationMessage notificationMessage = new NotificationMessage(supplierId, skuCode, quantity);
-//        String routingKeyForSupplier = notificationRoutingKey + supplierId;
-//        rabbitTemplate.convertAndSend(notificationExchange, routingKeyForSupplier, notificationMessage);
-//        log.info("Published message to RabbitMQ for supplier: {}", supplierId);
 
         // Send the message to the specific supplier's WebSocket session via supplierName
         Supplier supplier = supplierService.getSupplier(Long.valueOf(supplierId));
