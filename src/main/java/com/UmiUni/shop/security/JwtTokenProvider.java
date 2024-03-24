@@ -70,6 +70,7 @@ public class JwtTokenProvider {
     public Authentication getAuthentication(String token) {
         Claims claims = Jwts.parser().setSigningKey(secretKey).parseClaimsJws(token).getBody();
         String username = claims.getSubject();
+//        Long supplierId = claims.get("supplierId", Long.class);
         log.info("***claims: " + claims);
 
         String rolesStr = claims.get("roles", String.class);
@@ -87,6 +88,7 @@ public class JwtTokenProvider {
 //            permissions.forEach(permission -> authorities.add(new SimpleGrantedAuthority(permission)));
 //        }
 
+        // here use the username in principle
         User principal = new User(username, "", authorities);
         UsernamePasswordAuthenticationToken res = new UsernamePasswordAuthenticationToken(principal, token, authorities);
         log.info("***UsernamePasswordAuthenticationToken: " + res);

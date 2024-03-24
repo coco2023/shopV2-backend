@@ -1,6 +1,7 @@
 package com.UmiUni.shop.mq;
 
 import com.UmiUni.shop.model.InventoryUpdateMessage;
+import com.UmiUni.shop.mq.notification.model.NotificationMessage;
 import com.UmiUni.shop.mq.notification.service.SupplierNotificationSender;
 import com.UmiUni.shop.service.ProductService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -8,7 +9,9 @@ import com.rabbitmq.client.Channel;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.amqp.core.Message;
 import org.springframework.amqp.rabbit.annotation.RabbitListener;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.io.IOException;
@@ -69,7 +72,8 @@ public class InventoryUpdateListener {
             // Notify the supplier about the inventory reduction
             Long supplierId = productService.getSupplierIdBySkuCode(inventoryUpdateMessage.getSkuCode());
             log.info("supplierId: {}, inventoryUpdateMessage: {}", supplierId, inventoryUpdateMessage);
-            supplierNotificationSender.notifySupplier(supplierId.toString(), inventoryUpdateMessage.getSkuCode(), inventoryUpdateMessage.getQuantity());
+//            supplierNotificationSender.notifySupplier(supplierId.toString(), inventoryUpdateMessage.getSkuCode(), inventoryUpdateMessage.getQuantity());
+            supplierNotificationSender.notifySupplierWithHistoryMessage(supplierId.toString(), inventoryUpdateMessage.getSkuCode(), inventoryUpdateMessage.getQuantity());
 
             long deliveryTag = message.getMessageProperties().getDeliveryTag();
             channel.basicAck(deliveryTag, false);  // Acknowledge the message

@@ -50,6 +50,11 @@ public class RabbitConfig {
         return objectMapper;
     }
 
+    /**
+     * RabbitAdmin allows us programmatically declare queues, exchanges, and bindings in your RabbitMQ broker from within your Spring application
+     * @param connectionFactory
+     * @return
+     */
     @Bean
     public RabbitAdmin rabbitAdmin(ConnectionFactory connectionFactory) {
         return new RabbitAdmin(connectionFactory);

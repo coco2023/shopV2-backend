@@ -1,6 +1,5 @@
 package com.UmiUni.shop.mq.notification.service;
 
-import com.UmiUni.shop.model.InventoryUpdateMessage;
 import com.UmiUni.shop.mq.notification.model.NotificationMessage;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.rabbitmq.client.Channel;
@@ -39,8 +38,6 @@ public class SupplierNotificationListener {
 
 //            // Broadcast the message to WebSocket clients
 //            messagingTemplate.convertAndSend("/topic/supplierNotifications", notificationMessage);
-
-            // Add actual business logic here, like updating the supplier's inventory system
 
             // Manually acknowledge the message
             long deliveryTag = message.getMessageProperties().getDeliveryTag();

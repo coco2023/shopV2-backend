@@ -63,6 +63,7 @@ public class SecurityUrlConstants {
             "/api/v1/suppliers/products/**",
             "/api/v1/suppliers/salesOrders/**",
             "/api/v1/suppliers/payments/**",
+            "/api/v1/suppliers/notification/**",
     };
 
     public static final String[] CUSTOMER_PUBLIC_URLS = {

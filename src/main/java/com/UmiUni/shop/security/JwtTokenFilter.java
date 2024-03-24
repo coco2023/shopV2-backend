@@ -34,15 +34,6 @@ public class JwtTokenFilter extends OncePerRequestFilter {
 
     private JwtTokenProvider jwtTokenProvider;
 
-//    @Value("${security.jwt.token.secret-key:secret}")
-//    private String secretKey;
-//
-//    // the same encoded version of the secret key is used both for creating and validating the JWT token
-//    @PostConstruct
-//    protected void init() {
-//        secretKey = Base64.getEncoder().encodeToString(secretKey.getBytes());
-//    }
-
     public JwtTokenFilter(JwtTokenProvider jwtTokenProvider) {
         this.jwtTokenProvider = jwtTokenProvider;
     }

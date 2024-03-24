@@ -3,6 +3,7 @@ package com.UmiUni.shop.entity;
 import lombok.*;
 
 import javax.persistence.*;
+import javax.validation.constraints.Pattern;
 import java.math.BigDecimal;
 
 @Entity
@@ -19,17 +20,16 @@ public class Supplier extends User {
 //    @GeneratedValue(strategy = GenerationType.IDENTITY)
 //    private Long supplierId;
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
+    @Pattern(regexp = "\\S+", message = "Supplier Name must not contain spaces")
     private String supplierName;
-
-//    private String password;
 
     private String contactInfo;
 
     @Column(unique = true)
     private String paypalEmail; // PayPal account email
 
-    private String paypalName; // PayPal account email
+    private String paypalName; // PayPal account name
 
     @Column(unique = true)
     private String paypalAccessToken; // Store PayPal access token
@@ -45,4 +45,12 @@ public class Supplier extends User {
     private BigDecimal balance;
 
     private String userType;
+
+    public void setSupplierName(String supplierName) {
+        if(supplierName.contains(" ")) {
+            throw new IllegalArgumentException("Supplier Name must not contain spaces");
+        }
+        this.supplierName = supplierName;
+    }
+
 }
