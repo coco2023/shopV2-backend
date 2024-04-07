@@ -19,9 +19,9 @@ spring:
       max-file-size: 10MB
       max-request-size: 50MB
   datasource:
-    url: jdbc:mysql://us.umiuni.com:3306/umi_shop
+    url: ${UMIUNI_DB_URL}
     username: root
-    password: Voidmain4Voidmain4@
+    password: ${UMIUNI_DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
     hibernate:
