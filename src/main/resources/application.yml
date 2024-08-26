@@ -20,7 +20,7 @@ spring:
       max-request-size: 50MB
   datasource:
     url: ${UMIUNI_DB_URL}
-    username: root
+    username: admin
     password: ${UMIUNI_DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
   jpa:
